@@ -14,13 +14,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const siteDescription =
+  "Website dan sistem informasi resmi Himpunan Alumni Santri Lirboyo (HIMASAL) Probolinggo.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "HIMASAL Probolinggo",
     template: "%s | HIMASAL Probolinggo",
   },
-  description:
-    "Website dan sistem informasi resmi Himpunan Alumni Santri Lirboyo (HIMASAL) Probolinggo.",
+  description: siteDescription,
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: "HIMASAL Probolinggo",
+    title: "HIMASAL Probolinggo",
+    description: siteDescription,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

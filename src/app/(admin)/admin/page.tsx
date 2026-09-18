@@ -63,8 +63,8 @@ export default async function AdminDashboardPage() {
       )}
 
       <p className="text-xs text-muted-foreground">
-        Statistik kehadiran, agenda, Fiqh, dan bank soal akan tersedia pada
-        fase implementasi berikutnya.
+        Statistik kehadiran, agenda, dan bank soal akan tersedia pada fase
+        implementasi berikutnya.
       </p>
     </div>
   );

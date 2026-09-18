@@ -109,6 +109,102 @@ export type Database = {
           },
         ]
       }
+      masayikh: {
+        Row: {
+          created_at: string
+          deskripsi: string | null
+          display_order: number
+          foto_url: string | null
+          id: string
+          is_active: boolean
+          nama: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deskripsi?: string | null
+          display_order?: number
+          foto_url?: string | null
+          id?: string
+          is_active?: boolean
+          nama: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deskripsi?: string | null
+          display_order?: number
+          foto_url?: string | null
+          id?: string
+          is_active?: boolean
+          nama?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organization_profile: {
+        Row: {
+          deskripsi: string | null
+          id: string
+          misi: string | null
+          sejarah: string | null
+          tujuan: string | null
+          updated_at: string
+          visi: string | null
+        }
+        Insert: {
+          deskripsi?: string | null
+          id?: string
+          misi?: string | null
+          sejarah?: string | null
+          tujuan?: string | null
+          updated_at?: string
+          visi?: string | null
+        }
+        Update: {
+          deskripsi?: string | null
+          id?: string
+          misi?: string | null
+          sejarah?: string | null
+          tujuan?: string | null
+          updated_at?: string
+          visi?: string | null
+        }
+        Relationships: []
+      }
+      organization_structure: {
+        Row: {
+          created_at: string
+          display_order: number
+          foto_url: string | null
+          id: string
+          is_active: boolean
+          jabatan: string
+          nama: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          foto_url?: string | null
+          id?: string
+          is_active?: boolean
+          jabatan: string
+          nama: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          foto_url?: string | null
+          id?: string
+          is_active?: boolean
+          jabatan?: string
+          nama?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -139,6 +235,54 @@ export type Database = {
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          alamat: string | null
+          email: string | null
+          facebook_url: string | null
+          id: string
+          instagram_url: string | null
+          maps_embed_url: string | null
+          nama_organisasi: string | null
+          tagline: string | null
+          telepon: string | null
+          tiktok_url: string | null
+          updated_at: string
+          whatsapp: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          alamat?: string | null
+          email?: string | null
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          maps_embed_url?: string | null
+          nama_organisasi?: string | null
+          tagline?: string | null
+          telepon?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          alamat?: string | null
+          email?: string | null
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          maps_embed_url?: string | null
+          nama_organisasi?: string | null
+          tagline?: string | null
+          telepon?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }
@@ -266,6 +410,13 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      public_stats: {
+        Args: never
+        Returns: {
+          total_alumni_aktif: number
+          total_wilayah: number
+        }[]
+      }
       update_own_alumni_profile: {
         Args: {
           p_alamat?: string

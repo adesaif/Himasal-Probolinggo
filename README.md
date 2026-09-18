@@ -65,6 +65,8 @@ Lihat `.env.example`. **Jangan pernah commit `.env.local`** (sudah di-ignore lew
 
 Untuk deployment di Cloudflare, nilai-nilai ini **tidak** disimpan di `wrangler.jsonc`, melainkan lewat `wrangler secret put <NAME>` (untuk secret) atau environment variable di dashboard Cloudflare Workers (lihat bagian [Cloudflare Deployment](#cloudflare-deployment)).
 
+**Penting (sejak Fase 3):** halaman publik (`/`, `/profil`, `/struktur`, `/masayikh`, `/kontak`, dst.) di-generate sebagai halaman statis dengan ISR (revalidate 5 menit), sehingga `npm run build` butuh `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY` yang valid **saat build**, bukan hanya saat runtime. Pastikan `.env.local` terisi sebelum menjalankan `npm run build` secara lokal, dan environment variable ini juga harus tersedia di step build CI/CD Cloudflare.
+
 ## Supabase Setup
 
 Project Supabase yang dipakai aplikasi ini **harus** bernama **"Himasal Probolinggo"** — bukan project `ruangberita` atau project lain milik pemilik akun.

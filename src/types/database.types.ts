@@ -171,6 +171,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_alumni_status: {
+        Args: { p_alumni_id: string; p_status: string }
+        Returns: {
+          alamat: string | null
+          angkatan: number | null
+          created_at: string
+          id: string
+          profile_id: string | null
+          status_keanggotaan: string
+          tanggal_lahir: string | null
+          tempat_lahir: string | null
+          updated_at: string
+          wilayah_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "alumni"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_set_role: {
         Args: {
           p_new_role: Database["public"]["Enums"]["app_role"]
@@ -192,6 +213,52 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      admin_update_alumni: {
+        Args: {
+          p_alamat?: string
+          p_alumni_id: string
+          p_angkatan?: number
+          p_full_name?: string
+          p_phone?: string
+          p_tanggal_lahir?: string
+          p_tempat_lahir?: string
+          p_wilayah_id?: string
+        }
+        Returns: {
+          alamat: string | null
+          angkatan: number | null
+          created_at: string
+          id: string
+          profile_id: string | null
+          status_keanggotaan: string
+          tanggal_lahir: string | null
+          tempat_lahir: string | null
+          updated_at: string
+          wilayah_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "alumni"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      alumni_stats: {
+        Args: never
+        Returns: {
+          aktif: number
+          nonaktif: number
+          total: number
+        }[]
+      }
+      alumni_stats_by_wilayah: {
+        Args: never
+        Returns: {
+          total: number
+          wilayah_id: string
+          wilayah_nama: string
+        }[]
       }
       current_app_role: {
         Args: never

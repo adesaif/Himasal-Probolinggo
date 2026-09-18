@@ -1,10 +1,13 @@
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { createClient } from "@/lib/supabase/server";
+import { AlumniList } from "@/components/admin/alumni-list";
 
-export default function AdminAlumniPage() {
-  return (
-    <PagePlaceholder
-      title="Data Alumni"
-      description="Kelola data alumni/santri dan pembuatan akun."
-    />
-  );
+export default async function AdminAlumniPage() {
+  const supabase = await createClient();
+  const { data: wilayahList } = await supabase
+    .from("wilayah")
+    .select("id, nama")
+    .eq("is_active", true)
+    .order("nama");
+
+  return <AlumniList wilayahList={wilayahList ?? []} />;
 }

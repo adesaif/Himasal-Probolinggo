@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Nama project Cloudflare Workers. HARUS "himasal-probolinggo" dan tidak
+  // boleh diarahkan ke project Cloudflare lain (mis. RuangBerita).
+  "name": "himasal-probolinggo",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+  "observability": {
+    "enabled": true
+  }
+  // Secrets (SUPABASE_SERVICE_ROLE_KEY, dll) TIDAK didefinisikan di sini.
+  // Set lewat `wrangler secret put <NAME>` atau dashboard Cloudflare, dan
+  // NEXT_PUBLIC_* lewat `wrangler.jsonc` "vars" hanya untuk nilai non-rahasia
+  // jika diperlukan saat build produksi (lihat README bagian Cloudflare).
+}

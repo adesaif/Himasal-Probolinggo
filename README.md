@@ -151,8 +151,19 @@ npm run deploy               # build + deploy ke Cloudflare Workers
 
 - Tahap awal memakai subdomain `*.workers.dev` bawaan Cloudflare. Domain custom ditambahkan kemudian lewat dashboard Cloudflare (Workers → Triggers → Custom Domain) tanpa perlu mengubah kode.
 - **Secret** (`SUPABASE_SERVICE_ROLE_KEY`, dll) diset lewat `npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY`, **tidak pernah** ditulis di `wrangler.jsonc` atau file yang di-commit.
-- Variable publik (`NEXT_PUBLIC_*`) sudah aman ditanam saat build karena memang untuk client; tetap tidak disimpan sebagai secret.
+- Variable publik (`NEXT_PUBLIC_*`) sudah aman ditanam saat build karena memang untuk client; tetap tidak disimpan sebagai secret. **Wajib tersedia saat build** (lihat catatan di bagian Environment Variables) karena halaman publik di-generate statis dengan ISR.
 - `wrangler.jsonc` menggunakan `nodejs_compat` agar Next.js dapat berjalan di Cloudflare Workers runtime.
+- `wrangler.jsonc` punya blok `"build": { "command": "npx opennextjs-cloudflare build" }` — Wrangler menjalankan perintah ini secara otomatis sebelum `deploy`/`dev`. Ini membuat deployment tetap benar walau Cloudflare Workers Builds (Git integration) dikonfigurasi untuk hanya menjalankan `npx wrangler deploy` tanpa build step terpisah.
+
+### Konfigurasi Cloudflare Workers Builds (Git integration)
+
+Kalau menyambungkan repo ini ke Cloudflare lewat **Workers → Settings → Builds** (deploy otomatis saat push), pastikan pengaturan build project di dashboard Cloudflare adalah:
+
+- **Build command**: kosongkan, atau `npm install` saja (blok `build.command` di `wrangler.jsonc` sudah menangani build Next.js + OpenNext).
+- **Deploy command**: `npx wrangler deploy`.
+- **Environment variables** (build & runtime): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL` harus diisi di project Cloudflare (Settings → Environment Variables), dan `SUPABASE_SERVICE_ROLE_KEY` sebagai **secret** (bukan variable biasa).
+
+Kalau deploy dari command line/lokal, cukup `npm run deploy` (sudah menjalankan build + deploy dalam satu perintah).
 
 ## GitHub Workflow
 
@@ -169,6 +180,7 @@ npm run deploy               # build + deploy ke Cloudflare Workers
 | Redirect loop di `/login` | Middleware belum melihat session — pastikan cookie Supabase tidak diblokir browser |
 | `relation "public.profiles" does not exist` | Migration belum diterapkan ke project Supabase yang sedang dipakai |
 | Build Cloudflare gagal karena API Node.js | Pastikan `compatibility_flags: ["nodejs_compat"]` ada di `wrangler.jsonc` |
+| `Could not detect a directory containing static files` saat deploy | Cloudflare menjalankan `wrangler deploy` tanpa build OpenNext terlebih dulu. Pastikan `wrangler.jsonc` punya blok `build.command` (lihat bagian Cloudflare Deployment) — tanpa ini `.open-next/assets` tidak pernah dibuat |
 
 ## Backup / Migration Data
 

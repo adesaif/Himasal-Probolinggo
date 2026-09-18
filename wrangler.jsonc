@@ -6,6 +6,17 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-01-01",
   "compatibility_flags": ["nodejs_compat"],
+  // Wrangler menjalankan perintah ini secara otomatis sebelum `wrangler
+  // deploy`/`wrangler dev` (dan sebelum membaca "main"/"assets.directory"
+  // di bawah). Ini WAJIB ada supaya deployment Cloudflare Workers Builds
+  // yang hanya menjalankan `npx wrangler deploy` (tanpa build step
+  // terpisah) tetap menghasilkan `.open-next/` lebih dulu - tanpa ini,
+  // wrangler tidak menemukan direktori assets apa pun ("Could not detect
+  // a directory containing static files") karena `.open-next/` memang
+  // belum pernah dibuat.
+  "build": {
+    "command": "npx opennextjs-cloudflare build"
+  },
   "assets": {
     "binding": "ASSETS",
     "directory": ".open-next/assets"

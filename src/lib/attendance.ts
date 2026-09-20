@@ -18,6 +18,24 @@ export const ATTENDANCE_STATUS_BADGE_CLASS: Record<string, string> = {
 export const BELUM_ABSEN_BADGE_CLASS =
   "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300";
 
+export const BELUM_ABSEN_LABEL = "Belum Absen";
+
+/**
+ * Warna dipakai konsisten antara legend chart (Tailwind class) dan
+ * conic-gradient donut (butuh nilai hex literal - tidak bisa pakai class
+ * Tailwind di dalam inline style).
+ */
+export const ATTENDANCE_STATUS_CHART_COLOR: Record<
+  string,
+  { hex: string; className: string }
+> = {
+  HADIR: { hex: "#16a34a", className: "bg-green-600" },
+  TIDAK_HADIR: { hex: "#dc2626", className: "bg-red-600" },
+  IZIN: { hex: "#2563eb", className: "bg-blue-600" },
+  SAKIT: { hex: "#9333ea", className: "bg-purple-600" },
+  BELUM_ABSEN: { hex: "#a3a3a3", className: "bg-neutral-400" },
+};
+
 /**
  * QR absensi berisi link ke halaman scan + token acak di query string -
  * bisa dipindai kamera bawaan HP (bukan hanya scanner in-app). Token TIDAK

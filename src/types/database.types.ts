@@ -664,6 +664,52 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      monitoring_available_years: {
+        Args: never
+        Returns: {
+          year: number
+        }[]
+      }
+      monitoring_overview: {
+        Args: { p_event_id?: string; p_wilayah_id?: string; p_year?: number }
+        Returns: {
+          total_alumni_aktif: number
+          total_alumni_nonaktif: number
+          total_events: number
+          total_hadir: number
+          total_izin: number
+          total_mandatory_events: number
+          total_sakit: number
+          total_tidak_hadir: number
+        }[]
+      }
+      monitoring_period_stats: {
+        Args: { p_event_id?: string; p_wilayah_id?: string; p_year?: number }
+        Returns: {
+          hadir: number
+          izin: number
+          month: number
+          sakit: number
+          tidak_hadir: number
+          total_events: number
+          total_mandatory_events: number
+        }[]
+      }
+      monitoring_recent_events: {
+        Args: { p_limit?: number; p_wilayah_id?: string; p_year?: number }
+        Returns: {
+          belum_absen: number
+          hadir: number
+          id: string
+          is_mandatory: boolean
+          izin: number
+          sakit: number
+          start_at: string
+          status: string
+          tidak_hadir: number
+          title: string
+        }[]
+      }
       public_stats: {
         Args: never
         Returns: {

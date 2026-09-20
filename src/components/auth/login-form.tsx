@@ -26,6 +26,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { ROLE_HOME_ROUTE } from "@/lib/constants";
 import { loginSchema, type LoginInput } from "@/lib/validators/auth";
+import { HimasalLogo } from "@/components/shared/himasal-logo";
 
 export function LoginForm() {
   const router = useRouter();
@@ -78,6 +79,9 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader>
+        <div className="mb-2 flex justify-center">
+          <HimasalLogo heightClassName="h-16" />
+        </div>
         <CardTitle>Masuk ke Akun</CardTitle>
         <CardDescription>
           Satu halaman login untuk Alumni, Admin, dan Super Admin.

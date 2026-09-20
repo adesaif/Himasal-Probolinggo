@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Mail, Phone } from "lucide-react";
 
+import { HimasalLogo } from "@/components/shared/himasal-logo";
+
 type SiteSettings = {
   nama_organisasi: string | null;
   tagline: string | null;
@@ -33,9 +35,12 @@ export function PublicFooter({ settings }: { settings: SiteSettings | null }) {
     <footer className="border-t bg-muted/30">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-3">
         <div>
-          <p className="font-semibold tracking-tight">{namaOrganisasi}</p>
+          <div className="flex items-center gap-2">
+            <HimasalLogo heightClassName="h-10" />
+            <p className="font-semibold tracking-tight">{namaOrganisasi}</p>
+          </div>
           {settings?.tagline ? (
-            <p className="mt-1 text-sm text-muted-foreground">{settings.tagline}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{settings.tagline}</p>
           ) : null}
         </div>
 

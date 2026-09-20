@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { HimasalLogo } from "@/components/shared/himasal-logo";
 
 const NAV_ITEMS = [
   { href: "/", label: "Beranda" },
@@ -29,8 +30,9 @@ export function PublicNav() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="text-sm font-semibold tracking-tight">
-          HIMASAL Probolinggo
+        <Link href="/" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+          <HimasalLogo heightClassName="h-9" />
+          <span className="hidden sm:inline">HIMASAL Probolinggo</span>
         </Link>
 
         <nav
@@ -66,9 +68,13 @@ export function PublicNav() {
             </DialogTrigger>
             <DialogContent className="top-0 max-h-none translate-y-0 rounded-none sm:max-w-full">
               <DialogTitle className="sr-only">Menu Navigasi</DialogTitle>
+              <div className="flex items-center gap-2 px-3 pt-4">
+                <HimasalLogo heightClassName="h-10" />
+                <span className="font-semibold tracking-tight">HIMASAL Probolinggo</span>
+              </div>
               <nav
                 aria-label="Navigasi mobile"
-                className="flex flex-col gap-1 pt-6"
+                className="flex flex-col gap-1 pt-4"
               >
                 {NAV_ITEMS.map((item) => (
                   <Link

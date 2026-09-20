@@ -37,13 +37,11 @@ export default async function BerandaPage() {
 
   const [
     { data: profile },
-    { data: stats },
     { data: masayikhList },
     { data: heroNews, error: heroNewsError },
     { data: categoryNewsRows, error: categoryNewsError },
   ] = await Promise.all([
     supabase.from("organization_profile").select("deskripsi").single(),
-    supabase.rpc("public_stats").single(),
     supabase
       .from("masayikh")
       .select("id, nama, foto_url, deskripsi")
@@ -178,30 +176,6 @@ export default async function BerandaPage() {
         </section>
       </Reveal>
 
-      {/* Statistik */}
-      {stats && (stats.total_alumni_aktif > 0 || stats.total_wilayah > 0) ? (
-        <Reveal>
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Card className="card-hover border-primary/10">
-              <CardContent className="text-center">
-                <p className="text-3xl font-semibold tracking-tight text-primary">
-                  {stats.total_alumni_aktif}
-                </p>
-                <p className="text-sm text-muted-foreground">Alumni Aktif</p>
-              </CardContent>
-            </Card>
-            <Card className="card-hover border-primary/10">
-              <CardContent className="text-center">
-                <p className="text-3xl font-semibold tracking-tight text-primary">
-                  {stats.total_wilayah}
-                </p>
-                <p className="text-sm text-muted-foreground">Wilayah</p>
-              </CardContent>
-            </Card>
-          </section>
-        </Reveal>
-      ) : null}
-
       {/* Preview Masayikh */}
       <Reveal>
         <section>
@@ -243,21 +217,6 @@ export default async function BerandaPage() {
               ))}
             </div>
           )}
-        </section>
-      </Reveal>
-
-      {/* CTA */}
-      <Reveal>
-        <section className="rounded-xl border bg-secondary/50 p-8 text-center sm:p-12">
-          <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-            Sudah terdaftar sebagai alumni?
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Masuk untuk melihat profil, agenda, dan informasi terbaru.
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/login">Masuk ke Akun</Link>
-          </Button>
         </section>
       </Reveal>
     </div>

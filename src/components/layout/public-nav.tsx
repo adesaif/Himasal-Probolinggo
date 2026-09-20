@@ -107,7 +107,7 @@ export function PublicNav() {
             <DialogPrimitive.Portal>
               <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
               <DialogPrimitive.Content
-                className="fixed inset-y-0 right-0 z-50 flex h-full w-[80vw] max-w-[320px] flex-col overflow-y-auto border-l bg-background shadow-xl outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right duration-300"
+                className="fixed inset-y-0 right-0 z-50 flex h-full w-[80vw] max-w-[280px] flex-col overflow-y-auto border-l bg-background shadow-xl outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right duration-300"
               >
                 <DialogPrimitive.Title className="sr-only">Menu Navigasi</DialogPrimitive.Title>
                 <div className="flex items-center gap-2 px-4 pt-5 pb-2">

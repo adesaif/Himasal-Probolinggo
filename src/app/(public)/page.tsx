@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
+import type { Database } from "@/types/database.types";
 import { createPublicClient } from "@/lib/supabase/public";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,35 +16,57 @@ export const metadata: Metadata = {
     "Website resmi Himpunan Alumni Santri Lirboyo (HIMASAL) Probolinggo.",
 };
 
-// revalidate = 0 -> beranda selalu dirender fresh per-request (bukan ISR
-// statis 5 menit). Root cause wallpaper Hero Carousel tidak langsung
-// tampil: sebelumnya halaman ini di-cache (ISR revalidate=300) sehingga
-// snapshot HTML yang sudah dibuat sebelum Admin mengaktifkan wallpaper
-// terus disajikan sampai cache expired/revalidate - yang tidak selalu
-// terjadi tepat waktu di edge runtime. Data lain di halaman ini
-// (profil, statistik, masayikh) ikut selalu fresh, tanpa ada perubahan
-// pada query atau tampilannya.
-export const revalidate = 0;
+// Beranda selalu dirender fresh per-request (bukan ISR statis) supaya
+// wallpaper Hero Carousel dari CMS langsung tampil begitu Admin
+// mengaktifkannya, tanpa menunggu revalidasi apa pun.
+export const dynamic = "force-dynamic";
 
 export default async function BerandaPage() {
   const supabase = createPublicClient();
 
-  const [{ data: profile }, { data: stats }, { data: masayikhList }, { data: heroSlides }] =
-    await Promise.all([
-      supabase.from("organization_profile").select("deskripsi").single(),
-      supabase.rpc("public_stats").single(),
-      supabase
-        .from("masayikh")
-        .select("id, nama, foto_url, deskripsi")
-        .eq("is_active", true)
-        .order("display_order")
-        .limit(3),
-      supabase
-        .from("hero_slides")
-        .select("id, image_url, alt_text")
-        .eq("is_active", true)
-        .order("display_order"),
-    ]);
+  // Klien khusus untuk hero_slides: fetch dipaksa "no-store" di level HTTP
+  // (bukan hanya lewat konfigurasi revalidate halaman) supaya query ini
+  // tidak pernah terjebak di lapisan cache mana pun. Klien createPublicClient()
+  // di atas TIDAK diubah - dipakai persis seperti sebelumnya untuk
+  // profil/statistik/masayikh.
+  const heroSlidesClient = createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: {
+        fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+      },
+    },
+  );
+
+  const [
+    { data: profile },
+    { data: stats },
+    { data: masayikhList },
+    { data: heroSlides, error: heroSlidesError },
+  ] = await Promise.all([
+    supabase.from("organization_profile").select("deskripsi").single(),
+    supabase.rpc("public_stats").single(),
+    supabase
+      .from("masayikh")
+      .select("id, nama, foto_url, deskripsi")
+      .eq("is_active", true)
+      .order("display_order")
+      .limit(3),
+    heroSlidesClient
+      .from("hero_slides")
+      .select("id, image_url, alt_text")
+      .eq("is_active", true)
+      .order("display_order"),
+  ]);
+
+  if (heroSlidesError) {
+    // Log server-side saja (muncul di Cloudflare Worker logs) supaya
+    // penyebab asli terlihat kalau query ini pernah gagal, tanpa
+    // menampilkan apa pun ke pengunjung - hero tetap fallback ke
+    // background gradient premium seperti biasa.
+    console.error("[beranda] gagal memuat hero_slides:", heroSlidesError.message);
+  }
 
   return (
     <div className="flex flex-col gap-16">

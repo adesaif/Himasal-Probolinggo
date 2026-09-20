@@ -3,13 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { HimasalLogo } from "@/components/shared/himasal-logo";
 import { cn } from "@/lib/utils";
@@ -108,40 +104,45 @@ export function PublicNav() {
                 </span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="top-0 max-h-none translate-y-0 rounded-none sm:max-w-full">
-              <DialogTitle className="sr-only">Menu Navigasi</DialogTitle>
-              <div className="flex items-center gap-2 px-3 pt-4">
-                <HimasalLogo heightClassName="h-10" />
-                <span className="font-semibold tracking-tight">HIMASAL Probolinggo</span>
-              </div>
-              <nav
-                aria-label="Navigasi mobile"
-                className="flex flex-col gap-1 pt-4"
+            <DialogPrimitive.Portal>
+              <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+              <DialogPrimitive.Content
+                className="fixed inset-y-0 right-0 z-50 flex h-full w-[80vw] max-w-[320px] flex-col overflow-y-auto border-l bg-background shadow-xl outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right duration-300"
               >
-                {NAV_ITEMS.map((item) => {
-                  const active = isActivePath(pathname, item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "rounded-md px-3 py-3 text-base font-medium transition-colors",
-                        active
-                          ? "bg-accent text-primary"
-                          : "text-foreground hover:bg-accent",
-                      )}
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                })}
-                <Button asChild className="mt-2" onClick={() => setMobileOpen(false)}>
-                  <Link href="/login">Login</Link>
-                </Button>
-              </nav>
-            </DialogContent>
+                <DialogPrimitive.Title className="sr-only">Menu Navigasi</DialogPrimitive.Title>
+                <div className="flex items-center gap-2 px-4 pt-5 pb-2">
+                  <HimasalLogo heightClassName="h-10" />
+                  <span className="font-semibold tracking-tight">HIMASAL Probolinggo</span>
+                </div>
+                <nav
+                  aria-label="Navigasi mobile"
+                  className="flex flex-col gap-1 px-3 pt-2 pb-4"
+                >
+                  {NAV_ITEMS.map((item) => {
+                    const active = isActivePath(pathname, item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "rounded-md px-3 py-3 text-base font-medium transition-colors",
+                          active
+                            ? "bg-accent text-primary"
+                            : "text-foreground hover:bg-accent",
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                  <Button asChild className="mt-2" onClick={() => setMobileOpen(false)}>
+                    <Link href="/login">Login</Link>
+                  </Button>
+                </nav>
+              </DialogPrimitive.Content>
+            </DialogPrimitive.Portal>
           </Dialog>
         </div>
       </div>

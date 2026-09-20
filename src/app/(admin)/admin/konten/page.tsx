@@ -19,6 +19,11 @@ const SECTIONS = [
     description: "Kelola data masayikh.",
   },
   {
+    href: "/admin/konten/hero",
+    title: "Hero Wallpaper",
+    description: "Kelola foto/wallpaper carousel hero beranda.",
+  },
+  {
     href: "/admin/konten/pengaturan",
     title: "Pengaturan Situs",
     description: "Nama organisasi, tagline, kontak, dan media sosial.",

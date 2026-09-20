@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/reveal";
 import { HimasalLogo } from "@/components/shared/himasal-logo";
+import { HeroCarousel } from "@/components/public/hero-carousel";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -18,7 +19,7 @@ export const revalidate = 300;
 export default async function BerandaPage() {
   const supabase = createPublicClient();
 
-  const [{ data: profile }, { data: stats }, { data: masayikhList }] =
+  const [{ data: profile }, { data: stats }, { data: masayikhList }, { data: heroSlides }] =
     await Promise.all([
       supabase.from("organization_profile").select("deskripsi").single(),
       supabase.rpc("public_stats").single(),
@@ -28,30 +29,43 @@ export default async function BerandaPage() {
         .eq("is_active", true)
         .order("display_order")
         .limit(3),
+      supabase
+        .from("hero_slides")
+        .select("id, image_url, alt_text")
+        .eq("is_active", true)
+        .order("display_order"),
     ]);
 
   return (
     <div className="flex flex-col gap-16">
       {/* Hero */}
-      <section className="flex flex-col items-center gap-6 py-16 text-center">
-        <HimasalLogo heightClassName="h-20" plate />
-        <div className="flex flex-col items-center gap-3">
-          <span className="h-1 w-10 rounded-full bg-brand-gold" aria-hidden="true" />
-          <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-5xl">
-            Himpunan Alumni Santri Lirboyo Probolinggo
-          </h1>
-        </div>
-        <p className="max-w-xl text-balance text-muted-foreground sm:text-lg">
-          Merajut silaturahmi dan mengabdi bersama para alumni Pondok
-          Pesantren Lirboyo di wilayah Probolinggo.
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Button asChild size="lg">
-            <Link href="/login">Masuk ke Akun</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link href="/profil">Tentang HIMASAL</Link>
-          </Button>
+      <section className="hero-premium-bg relative flex flex-col items-center gap-6 overflow-hidden rounded-2xl py-16 text-center">
+        <HeroCarousel slides={heroSlides ?? []} />
+        <div className="relative z-10 flex flex-col items-center gap-6">
+          <HimasalLogo heightClassName="h-20" plate />
+          <div className="flex flex-col items-center gap-3">
+            <span className="h-1 w-10 rounded-full bg-brand-gold" aria-hidden="true" />
+            <h1 className="text-3xl font-bold tracking-tight text-balance text-white sm:text-5xl">
+              Himpunan Alumni Santri Lirboyo Probolinggo
+            </h1>
+          </div>
+          <p className="max-w-xl text-balance text-white/75 sm:text-lg">
+            Merajut silaturahmi dan mengabdi bersama para alumni Pondok
+            Pesantren Lirboyo di wilayah Probolinggo.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button asChild size="lg">
+              <Link href="/login">Masuk ke Akun</Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white/30 bg-white/5 text-white hover:bg-white/15 hover:text-white"
+            >
+              <Link href="/profil">Tentang HIMASAL</Link>
+            </Button>
+          </div>
         </div>
       </section>
 

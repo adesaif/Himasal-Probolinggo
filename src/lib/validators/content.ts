@@ -23,6 +23,12 @@ export const masayikhSchema = z.object({
 });
 export type MasayikhInput = z.infer<typeof masayikhSchema>;
 
+export const heroSlideSchema = z.object({
+  alt_text: z.string().trim().min(1, "Alt text wajib diisi").max(200),
+  display_order: z.string().trim().optional().or(z.literal("")),
+});
+export type HeroSlideInput = z.infer<typeof heroSlideSchema>;
+
 export const siteSettingsSchema = z.object({
   nama_organisasi: z.string().trim().max(150).optional().or(z.literal("")),
   tagline: z.string().trim().max(200).optional().or(z.literal("")),

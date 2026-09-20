@@ -6,9 +6,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-export type HeroNewsSlide = {
+export type HeroSlide = {
   id: string;
-  slug: string;
+  href: string;
   title: string;
   thumbnail_url: string;
 };
@@ -17,13 +17,14 @@ const AUTOPLAY_MS = 3000;
 const TRANSITION_MS = 700;
 
 /**
- * Hero portal berita: setiap slide adalah berita Unggulan (is_featured,
- * published, punya thumbnail) yang diambil langsung dari CMS Admin
- * (/admin/berita) - judul TIDAK pernah di-hardcode. Jika belum ada
- * berita unggulan, komponen ini return null dan hero memakai background
+ * Hero portal konten: setiap slide adalah konten Unggulan (is_featured,
+ * published, punya thumbnail) dari topik yang mengizinkan Unggulan
+ * (site_topics.allow_featured) - saat ini Berita dan/atau Agenda, diambil
+ * langsung dari CMS Admin, judul TIDAK pernah di-hardcode. Jika belum ada
+ * konten unggulan, komponen ini return null dan hero memakai background
  * gradient premium (.hero-premium-bg) sebagai fallback.
  */
-export function HeroCarousel({ slides }: { slides: HeroNewsSlide[] }) {
+export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -80,7 +81,7 @@ export function HeroCarousel({ slides }: { slides: HeroNewsSlide[] }) {
 
       <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-14 sm:px-12 sm:pb-16">
         <Link
-          href={`/berita/${active.slug}`}
+          href={active.href}
           className="mx-auto block max-w-3xl text-center text-xl leading-tight font-bold text-balance text-white transition-opacity hover:opacity-90 sm:text-3xl"
         >
           {active.title}

@@ -5,8 +5,9 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/reveal";
-import { HeroCarousel } from "@/components/public/hero-carousel";
+import { HeroCarousel, type HeroSlide } from "@/components/public/hero-carousel";
 import { formatDateID } from "@/lib/format-date";
+import { TOPIC_SELECT_COLUMNS, isTopicActive, isTopicFeaturedAllowed } from "@/lib/topics";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -39,7 +40,9 @@ export default async function BerandaPage() {
     { data: profile },
     { data: masayikhList },
     { data: heroNews, error: heroNewsError },
+    { data: heroEvents, error: heroEventsError },
     { data: categoryNewsRows, error: categoryNewsError },
+    { data: topics },
   ] = await Promise.all([
     supabase.from("organization_profile").select("deskripsi").single(),
     supabase
@@ -48,15 +51,27 @@ export default async function BerandaPage() {
       .eq("is_active", true)
       .order("display_order")
       .limit(3),
-    // Hero portal berita: berita Unggulan (is_featured), published, dan
-    // punya thumbnail - foto + judul asli dari Admin, tidak di-hardcode.
+    // Kandidat hero dari Berita: berita Unggulan (is_featured), published,
+    // punya thumbnail. Ikut tampil di Hero HANYA jika topik Berita
+    // mengizinkan Unggulan (site_topics.allow_featured) - lihat gating di
+    // bawah. Judul/foto asli dari Admin, tidak di-hardcode.
     supabase
       .from("news")
-      .select("id, slug, title, thumbnail_url")
+      .select("id, slug, title, thumbnail_url, published_at")
       .eq("status", "published")
       .eq("is_featured", true)
       .not("thumbnail_url", "is", null)
       .order("published_at", { ascending: false })
+      .limit(6),
+    // Kandidat hero dari Agenda - sama seperti Berita, ikut tampil HANYA
+    // jika topik Agenda mengizinkan Unggulan.
+    supabase
+      .from("events")
+      .select("id, title, thumbnail_url, start_at")
+      .eq("status", "published")
+      .eq("is_featured", true)
+      .not("thumbnail_url", "is", null)
+      .order("start_at", { ascending: false })
       .limit(6),
     // Kategori dinamis: RPC mengembalikan N berita terbaru per kategori
     // aktif+tampil-di-beranda, dikelola penuh oleh Admin lewat
@@ -64,14 +79,24 @@ export default async function BerandaPage() {
     supabase.rpc("public_homepage_news_by_category", {
       p_limit_per_category: 4,
     }),
+    // Topik: nama, status aktif, dan izin Unggulan tiap bagian website,
+    // dikelola Admin lewat /admin/konten/topik.
+    supabase.from("site_topics").select(TOPIC_SELECT_COLUMNS),
   ]);
 
   if (heroNewsError) {
     console.error("[beranda] gagal memuat berita unggulan untuk hero:", heroNewsError.message);
   }
+  if (heroEventsError) {
+    console.error("[beranda] gagal memuat agenda unggulan untuk hero:", heroEventsError.message);
+  }
   if (categoryNewsError) {
     console.error("[beranda] gagal memuat kategori:", categoryNewsError.message);
   }
+
+  const beritaActive = isTopicActive(topics, "berita");
+  const profilActive = isTopicActive(topics, "profil");
+  const masayikhActive = isTopicActive(topics, "masayikh");
 
   const categorySections: CategorySection[] = [];
   const sectionByCategoryId = new Map<string, CategorySection>();
@@ -97,10 +122,44 @@ export default async function BerandaPage() {
     });
   }
 
-  const heroSlides = (heroNews ?? []).filter(
-    (n): n is { id: string; slug: string; title: string; thumbnail_url: string } =>
-      Boolean(n.thumbnail_url),
-  );
+  // Hero Carousel menggabungkan kandidat Berita + Agenda, tapi HANYA yang
+  // topiknya aktif dan mengizinkan Unggulan (site_topics.allow_featured).
+  // "Unggulan ON" di topik tidak berarti semua kontennya otomatis tampil -
+  // konten itu sendiri tetap harus is_featured=true (sudah difilter di
+  // query di atas). Diurutkan gabungan berdasarkan tanggal, dibatasi 6.
+  const heroFromNews: (HeroSlide & { sortDate: string })[] = isTopicFeaturedAllowed(
+    topics,
+    "berita",
+  )
+    ? (heroNews ?? [])
+        .filter((n): n is typeof n & { thumbnail_url: string } => Boolean(n.thumbnail_url))
+        .map((n) => ({
+          id: `news-${n.id}`,
+          href: `/berita/${n.slug}`,
+          title: n.title,
+          thumbnail_url: n.thumbnail_url,
+          sortDate: n.published_at ?? "",
+        }))
+    : [];
+
+  const heroFromEvents: (HeroSlide & { sortDate: string })[] = isTopicFeaturedAllowed(
+    topics,
+    "agenda",
+  )
+    ? (heroEvents ?? [])
+        .filter((e): e is typeof e & { thumbnail_url: string } => Boolean(e.thumbnail_url))
+        .map((e) => ({
+          id: `event-${e.id}`,
+          href: `/agenda/${e.id}`,
+          title: e.title,
+          thumbnail_url: e.thumbnail_url,
+          sortDate: e.start_at ?? "",
+        }))
+    : [];
+
+  const heroSlides = [...heroFromNews, ...heroFromEvents]
+    .sort((a, b) => (a.sortDate < b.sortDate ? 1 : -1))
+    .slice(0, 6);
 
   return (
     <div className="flex flex-col gap-16">
@@ -110,8 +169,10 @@ export default async function BerandaPage() {
       </section>
 
       {/* Kategori Berita - dinamis, dikelola penuh oleh Admin lewat
-          /admin/konten/kategori. Tidak ada kategori yang di-hardcode. */}
-      {categorySections.map((cat) => (
+          /admin/konten/kategori. Tidak ada kategori yang di-hardcode.
+          Seluruh section ini juga ikut disembunyikan kalau topik Berita
+          dinonaktifkan lewat /admin/konten/topik. */}
+      {beritaActive && categorySections.map((cat) => (
         <Reveal key={cat.id}>
           <section>
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -158,7 +219,8 @@ export default async function BerandaPage() {
         </Reveal>
       ))}
 
-      {/* Tentang */}
+      {/* Tentang - ikut disembunyikan kalau topik Profil dinonaktifkan. */}
+      {profilActive ? (
       <Reveal>
         <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:items-center">
           <div>
@@ -175,8 +237,11 @@ export default async function BerandaPage() {
           </div>
         </section>
       </Reveal>
+      ) : null}
 
-      {/* Preview Masayikh */}
+      {/* Preview Masayikh - ikut disembunyikan kalau topik Masayikh
+          dinonaktifkan. */}
+      {masayikhActive ? (
       <Reveal>
         <section>
           <div className="mb-4 flex items-center justify-between">
@@ -219,6 +284,7 @@ export default async function BerandaPage() {
           )}
         </section>
       </Reveal>
+      ) : null}
     </div>
   );
 }

@@ -8,6 +8,7 @@ export const eventSchema = z
     start_at: z.string().trim().min(1, "Tanggal & waktu mulai wajib diisi"),
     end_at: z.string().trim().optional().or(z.literal("")),
     is_mandatory: z.boolean(),
+    is_featured: z.boolean(),
     status: z.enum(["draft", "published"]),
   })
   .refine(

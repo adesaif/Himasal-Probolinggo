@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Mail, Phone } from "lucide-react";
 
 import { HimasalLogo } from "@/components/shared/himasal-logo";
+import { isTopicActive, topicLabel, type SiteTopic, type TopicKey } from "@/lib/topics";
 
 type SiteSettings = {
   nama_organisasi: string | null;
@@ -16,15 +17,33 @@ type SiteSettings = {
   tiktok_url: string | null;
 };
 
-const NAV_LINKS = [
-  { href: "/profil", label: "Profil" },
-  { href: "/struktur", label: "Struktur" },
-  { href: "/masayikh", label: "Masayikh" },
-  { href: "/kontak", label: "Kontak" },
+// Kontak bukan Topik - selalu tampil. Profil/Struktur/Masayikh mengikuti
+// label + status aktif dari site_topics.
+const TOPIC_FOOTER_LINKS: { href: string; key: TopicKey; fallback: string }[] = [
+  { href: "/profil", key: "profil", fallback: "Profil" },
+  { href: "/struktur", key: "struktur", fallback: "Struktur" },
+  { href: "/masayikh", key: "masayikh", fallback: "Masayikh" },
 ];
 
-export function PublicFooter({ settings }: { settings: SiteSettings | null }) {
+function buildFooterLinks(topics: SiteTopic[] | null | undefined) {
+  const links: { href: string; label: string }[] = [];
+  for (const item of TOPIC_FOOTER_LINKS) {
+    if (!isTopicActive(topics, item.key)) continue;
+    links.push({ href: item.href, label: topicLabel(topics, item.key, item.fallback) });
+  }
+  links.push({ href: "/kontak", label: "Kontak" });
+  return links;
+}
+
+export function PublicFooter({
+  settings,
+  topics,
+}: {
+  settings: SiteSettings | null;
+  topics?: SiteTopic[] | null;
+}) {
   const namaOrganisasi = settings?.nama_organisasi || "HIMASAL Probolinggo";
+  const navLinks = buildFooterLinks(topics);
   const socialLinks = [
     settings?.instagram_url && { href: settings.instagram_url, label: "Instagram" },
     settings?.facebook_url && { href: settings.facebook_url, label: "Facebook" },
@@ -45,7 +64,7 @@ export function PublicFooter({ settings }: { settings: SiteSettings | null }) {
         </div>
 
         <nav aria-label="Navigasi footer" className="flex flex-col gap-2 text-sm">
-          {NAV_LINKS.map((item) => (
+          {navLinks.map((item) => (
             <Link
               key={item.href}
               href={item.href}

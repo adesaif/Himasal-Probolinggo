@@ -33,6 +33,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { createClient } from "@/lib/supabase/client";
 import { toDatetimeLocalInput } from "@/lib/format-date";
 import { eventSchema, type EventInput } from "@/lib/validators/event";
@@ -45,19 +46,26 @@ type Editing = {
   start_at: string;
   end_at: string | null;
   is_mandatory: boolean;
+  is_featured: boolean;
+  thumbnail_url: string | null;
   status: string;
 };
 
 export function EventFormDialog({
   editing,
+  featuredAllowed,
   trigger,
 }: {
   editing?: Editing;
+  featuredAllowed: boolean;
   trigger: ReactNode;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(
+    editing?.thumbnail_url ?? null,
+  );
 
   const form = useForm<EventInput>({
     resolver: zodResolver(eventSchema),
@@ -68,6 +76,7 @@ export function EventFormDialog({
       start_at: editing ? toDatetimeLocalInput(editing.start_at) : "",
       end_at: editing?.end_at ? toDatetimeLocalInput(editing.end_at) : "",
       is_mandatory: editing?.is_mandatory ?? false,
+      is_featured: editing?.is_featured ?? false,
       status: (editing?.status as "draft" | "published") ?? "draft",
     },
   });
@@ -83,6 +92,8 @@ export function EventFormDialog({
       start_at: new Date(values.start_at).toISOString(),
       end_at: values.end_at ? new Date(values.end_at).toISOString() : null,
       is_mandatory: values.is_mandatory,
+      is_featured: featuredAllowed ? values.is_featured : false,
+      thumbnail_url: thumbnailUrl,
       status: values.status,
     };
 
@@ -112,6 +123,10 @@ export function EventFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+            <div>
+              <p className="mb-1 text-sm font-medium">Foto (opsional)</p>
+              <ImageUploadField folder="events" value={thumbnailUrl} onChange={setThumbnailUrl} />
+            </div>
             <FormField
               control={form.control}
               name="title"
@@ -225,6 +240,33 @@ export function EventFormDialog({
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="is_featured"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Agenda Unggulan</FormLabel>
+                  <FormControl>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex h-9 items-center">
+                        <Switch
+                          checked={featuredAllowed && field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isSubmitting || !featuredAllowed}
+                        />
+                      </div>
+                      {!featuredAllowed ? (
+                        <p className="text-xs text-muted-foreground">
+                          Topik Agenda belum mengizinkan Unggulan. Aktifkan
+                          dulu di Admin → Konten → Topik & Navigasi.
+                        </p>
+                      ) : null}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Menyimpan..." : "Simpan"}

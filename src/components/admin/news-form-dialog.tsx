@@ -58,10 +58,12 @@ const NO_CATEGORY_VALUE = "__none__";
 export function NewsFormDialog({
   editing,
   categories,
+  featuredAllowed,
   trigger,
 }: {
   editing?: Editing;
   categories: CategoryOption[];
+  featuredAllowed: boolean;
   trigger: ReactNode;
 }) {
   const router = useRouter();
@@ -98,7 +100,7 @@ export function NewsFormDialog({
           : null,
       author_name: values.author_name || null,
       thumbnail_url: thumbnailUrl,
-      is_featured: values.is_featured,
+      is_featured: featuredAllowed ? values.is_featured : false,
       status: values.status,
       published_at:
         values.status === "published"
@@ -284,12 +286,20 @@ export function NewsFormDialog({
                   <FormItem>
                     <FormLabel>Berita Unggulan</FormLabel>
                     <FormControl>
-                      <div className="flex h-9 items-center">
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isSubmitting}
-                        />
+                      <div className="flex flex-col gap-1">
+                        <div className="flex h-9 items-center">
+                          <Switch
+                            checked={featuredAllowed && field.value}
+                            onCheckedChange={field.onChange}
+                            disabled={isSubmitting || !featuredAllowed}
+                          />
+                        </div>
+                        {!featuredAllowed ? (
+                          <p className="text-xs text-muted-foreground">
+                            Topik Berita belum mengizinkan Unggulan. Aktifkan
+                            dulu di Admin → Konten → Topik & Navigasi.
+                          </p>
+                        ) : null}
                       </div>
                     </FormControl>
                     <FormMessage />

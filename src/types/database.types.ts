@@ -253,10 +253,12 @@ export type Database = {
           description: string | null
           end_at: string | null
           id: string
+          is_featured: boolean
           is_mandatory: boolean
           location: string | null
           start_at: string
           status: string
+          thumbnail_url: string | null
           title: string
           updated_at: string
         }
@@ -267,10 +269,12 @@ export type Database = {
           description?: string | null
           end_at?: string | null
           id?: string
+          is_featured?: boolean
           is_mandatory?: boolean
           location?: string | null
           start_at: string
           status?: string
+          thumbnail_url?: string | null
           title: string
           updated_at?: string
         }
@@ -281,10 +285,12 @@ export type Database = {
           description?: string | null
           end_at?: string | null
           id?: string
+          is_featured?: boolean
           is_mandatory?: boolean
           location?: string | null
           start_at?: string
           status?: string
+          thumbnail_url?: string | null
           title?: string
           updated_at?: string
         }
@@ -591,6 +597,60 @@ export type Database = {
           updated_at?: string
           whatsapp?: string | null
           youtube_url?: string | null
+        }
+        Relationships: []
+      }
+      site_topics: {
+        Row: {
+          allow_featured: boolean
+          created_at: string
+          default_allow_featured: boolean
+          default_description: string | null
+          default_display_order: number
+          default_is_active: boolean
+          default_label: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          supports_featured: boolean
+          updated_at: string
+        }
+        Insert: {
+          allow_featured?: boolean
+          created_at?: string
+          default_allow_featured?: boolean
+          default_description?: string | null
+          default_display_order?: number
+          default_is_active?: boolean
+          default_label: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          supports_featured?: boolean
+          updated_at?: string
+        }
+        Update: {
+          allow_featured?: boolean
+          created_at?: string
+          default_allow_featured?: boolean
+          default_description?: string | null
+          default_display_order?: number
+          default_is_active?: boolean
+          default_label?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          supports_featured?: boolean
+          updated_at?: string
         }
         Relationships: []
       }

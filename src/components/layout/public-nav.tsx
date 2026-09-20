@@ -11,17 +11,28 @@ import { HimasalLogo } from "@/components/shared/himasal-logo";
 import { HeaderSearch } from "@/components/shared/header-search";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { cn } from "@/lib/utils";
+import { isTopicActive, topicLabel, type SiteTopic, type TopicKey } from "@/lib/topics";
 
-const NAV_ITEMS = [
-  { href: "/", label: "Beranda" },
-  { href: "/profil", label: "Profil" },
-  { href: "/struktur", label: "Struktur" },
-  { href: "/berita", label: "Berita" },
-  { href: "/agenda", label: "Agenda" },
-  { href: "/masayikh", label: "Masayikh" },
-  { href: "/galeri", label: "Galeri" },
-  { href: "/kontak", label: "Kontak" },
+// Beranda dan Kontak bukan Topik (tidak ada di site_topics) - selalu tetap
+// tampil. Sisanya mengikuti label + status aktif dari site_topics.
+const TOPIC_NAV_ITEMS: { href: string; key: TopicKey; fallback: string }[] = [
+  { href: "/profil", key: "profil", fallback: "Profil" },
+  { href: "/struktur", key: "struktur", fallback: "Struktur" },
+  { href: "/berita", key: "berita", fallback: "Berita" },
+  { href: "/agenda", key: "agenda", fallback: "Agenda" },
+  { href: "/masayikh", key: "masayikh", fallback: "Masayikh" },
+  { href: "/galeri", key: "galeri", fallback: "Galeri" },
 ];
+
+function buildNavItems(topics: SiteTopic[] | null | undefined) {
+  const items: { href: string; label: string }[] = [{ href: "/", label: "Beranda" }];
+  for (const item of TOPIC_NAV_ITEMS) {
+    if (!isTopicActive(topics, item.key)) continue;
+    items.push({ href: item.href, label: topicLabel(topics, item.key, item.fallback) });
+  }
+  items.push({ href: "/kontak", label: "Kontak" });
+  return items;
+}
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -30,9 +41,10 @@ function isActivePath(pathname: string, href: string) {
 
 const ICON_BUTTON_CLASS = "rounded-full border border-border/70 bg-background/60";
 
-export function PublicNav() {
+export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const navItems = buildNavItems(topics);
 
   return (
     <header className="site-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
@@ -49,7 +61,7 @@ export function PublicNav() {
           aria-label="Navigasi utama"
           className="hidden items-center gap-1 text-sm lg:flex"
         >
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = isActivePath(pathname, item.href);
             return (
               <Link
@@ -128,7 +140,7 @@ export function PublicNav() {
                   aria-label="Navigasi mobile"
                   className="flex flex-col gap-1 px-3 pt-2 pb-4"
                 >
-                  {NAV_ITEMS.map((item) => {
+                  {navItems.map((item) => {
                     const active = isActivePath(pathname, item.href);
                     return (
                       <Link

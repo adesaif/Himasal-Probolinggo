@@ -31,10 +31,12 @@ type EventRow = {
   start_at: string;
   end_at: string | null;
   is_mandatory: boolean;
+  is_featured: boolean;
+  thumbnail_url: string | null;
   status: string;
 };
 
-export function EventList() {
+export function EventList({ featuredAllowed }: { featuredAllowed: boolean }) {
   const [rows, setRows] = useState<EventRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,9 @@ export function EventList() {
 
       const { data, error } = await supabase
         .from("events")
-        .select("id, title, description, location, start_at, end_at, is_mandatory, status")
+        .select(
+          "id, title, description, location, start_at, end_at, is_mandatory, is_featured, thumbnail_url, status",
+        )
         .order("start_at", { ascending: false });
 
       if (cancelled) return;
@@ -108,6 +112,7 @@ export function EventList() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Agenda</h1>
         <EventFormDialog
+          featuredAllowed={featuredAllowed}
           trigger={
             <Button>
               <Plus />
@@ -156,6 +161,11 @@ export function EventList() {
                         Wajib Hadir
                       </span>
                     ) : null}
+                    {row.is_featured ? (
+                      <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                        Unggulan
+                      </span>
+                    ) : null}
                   </div>
                   <p className="mt-1 truncate font-medium">{row.title}</p>
                   <p className="text-sm text-muted-foreground">
@@ -179,6 +189,7 @@ export function EventList() {
                   </Button>
                   <EventFormDialog
                     editing={row}
+                    featuredAllowed={featuredAllowed}
                     trigger={
                       <Button variant="outline" size="sm" disabled={busyId === row.id}>
                         <Pencil />

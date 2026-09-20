@@ -56,9 +56,11 @@ const ALL_VALUE = "__all__";
 export function NewsList({
   categories,
   initialCategorySlug,
+  featuredAllowed,
 }: {
   categories: CategoryOption[];
   initialCategorySlug?: string;
+  featuredAllowed: boolean;
 }) {
   const initialCategoryId =
     categories.find((c) => c.slug === initialCategorySlug)?.id ?? ALL_VALUE;
@@ -179,6 +181,7 @@ export function NewsList({
         <h1 className="text-2xl font-semibold tracking-tight">Berita</h1>
         <NewsFormDialog
           categories={categories}
+          featuredAllowed={featuredAllowed}
           trigger={
             <Button>
               <Plus />
@@ -293,6 +296,7 @@ export function NewsList({
                   <NewsFormDialog
                     editing={row}
                     categories={categories}
+                    featuredAllowed={featuredAllowed}
                     trigger={
                       <Button variant="outline" size="sm" disabled={busyId === row.id}>
                         <Pencil />

@@ -36,6 +36,13 @@ export const categorySchema = z.object({
 });
 export type CategoryInput = z.infer<typeof categorySchema>;
 
+export const topicSchema = z.object({
+  label: z.string().trim().min(1, "Nama topik wajib diisi").max(80),
+  description: z.string().trim().max(300).optional().or(z.literal("")),
+  allow_featured: z.boolean(),
+});
+export type TopicInput = z.infer<typeof topicSchema>;
+
 export const siteSettingsSchema = z.object({
   nama_organisasi: z.string().trim().max(150).optional().or(z.literal("")),
   tagline: z.string().trim().max(200).optional().or(z.literal("")),

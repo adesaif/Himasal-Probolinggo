@@ -59,7 +59,7 @@ export default async function BerandaPage() {
   return (
     <div className="flex flex-col gap-16">
       {/* Hero */}
-      <section className="hero-premium-bg relative flex flex-col items-center gap-6 overflow-hidden rounded-2xl py-16 text-center">
+      <section className="hero-premium-bg relative z-0 flex flex-col items-center gap-6 overflow-hidden rounded-2xl py-16 text-center">
         <HeroCarousel slides={heroSlides ?? []} />
         <div className="relative z-10 flex flex-col items-center gap-6">
           <HimasalLogo heightClassName="h-20" plate />

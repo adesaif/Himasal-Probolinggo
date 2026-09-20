@@ -14,7 +14,15 @@ export const metadata: Metadata = {
     "Website resmi Himpunan Alumni Santri Lirboyo (HIMASAL) Probolinggo.",
 };
 
-export const revalidate = 300;
+// revalidate = 0 -> beranda selalu dirender fresh per-request (bukan ISR
+// statis 5 menit). Root cause wallpaper Hero Carousel tidak langsung
+// tampil: sebelumnya halaman ini di-cache (ISR revalidate=300) sehingga
+// snapshot HTML yang sudah dibuat sebelum Admin mengaktifkan wallpaper
+// terus disajikan sampai cache expired/revalidate - yang tidak selalu
+// terjadi tepat waktu di edge runtime. Data lain di halaman ini
+// (profil, statistik, masayikh) ikut selalu fresh, tanpa ada perubahan
+// pada query atau tampilannya.
+export const revalidate = 0;
 
 export default async function BerandaPage() {
   const supabase = createPublicClient();

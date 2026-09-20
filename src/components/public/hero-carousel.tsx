@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 export type HeroSlide = { id: string; image_url: string; alt_text: string };
 
-const AUTOPLAY_MS = 7000;
+const AUTOPLAY_MS = 3000;
 const TRANSITION_MS = 700;
 
 /**

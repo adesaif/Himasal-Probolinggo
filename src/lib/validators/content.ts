@@ -29,6 +29,13 @@ export const heroSlideSchema = z.object({
 });
 export type HeroSlideInput = z.infer<typeof heroSlideSchema>;
 
+export const categorySchema = z.object({
+  name: z.string().trim().min(1, "Nama kategori wajib diisi").max(80),
+  tagline: z.string().trim().max(200).optional().or(z.literal("")),
+  display_order: z.string().trim().optional().or(z.literal("")),
+});
+export type CategoryInput = z.infer<typeof categorySchema>;
+
 export const siteSettingsSchema = z.object({
   nama_organisasi: z.string().trim().max(150).optional().or(z.literal("")),
   tagline: z.string().trim().max(200).optional().or(z.literal("")),

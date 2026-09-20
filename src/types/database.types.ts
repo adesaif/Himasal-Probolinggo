@@ -164,6 +164,42 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          show_on_homepage: boolean
+          slug: string
+          tagline: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          show_on_homepage?: boolean
+          slug: string
+          tagline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          show_on_homepage?: boolean
+          slug?: string
+          tagline?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       event_qr_tokens: {
         Row: {
           created_at: string
@@ -359,6 +395,7 @@ export type Database = {
         Row: {
           author_name: string | null
           category: string | null
+          category_id: string | null
           content: string
           created_at: string
           excerpt: string | null
@@ -374,6 +411,7 @@ export type Database = {
         Insert: {
           author_name?: string | null
           category?: string | null
+          category_id?: string | null
           content: string
           created_at?: string
           excerpt?: string | null
@@ -389,6 +427,7 @@ export type Database = {
         Update: {
           author_name?: string | null
           category?: string | null
+          category_id?: string | null
           content?: string
           created_at?: string
           excerpt?: string | null
@@ -401,7 +440,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "news_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organization_profile: {
         Row: {
@@ -738,6 +785,21 @@ export type Database = {
           status: string
           tidak_hadir: number
           title: string
+        }[]
+      }
+      public_homepage_news_by_category: {
+        Args: { p_limit_per_category?: number }
+        Returns: {
+          category_display_order: number
+          category_id: string
+          category_name: string
+          category_slug: string
+          category_tagline: string
+          news_id: string
+          news_published_at: string
+          news_slug: string
+          news_thumbnail_url: string
+          news_title: string
         }[]
       }
       public_stats: {

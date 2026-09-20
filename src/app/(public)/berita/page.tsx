@@ -16,11 +16,22 @@ const PAGE_SIZE = 9;
 export default async function BeritaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; category?: string }>;
 }) {
-  const { q, page: pageParam } = await searchParams;
+  const { q, page: pageParam, category } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
   const supabase = createPublicClient();
+
+  let activeCategory: { id: string; name: string; slug: string } | null = null;
+  if (category) {
+    const { data } = await supabase
+      .from("categories")
+      .select("id, name, slug")
+      .eq("slug", category)
+      .eq("is_active", true)
+      .maybeSingle();
+    activeCategory = data;
+  }
 
   let query = supabase
     .from("news")
@@ -32,6 +43,9 @@ export default async function BeritaPage({
   if (q?.trim()) {
     query = query.or(`title.ilike.%${q.trim()}%,excerpt.ilike.%${q.trim()}%`);
   }
+  if (activeCategory) {
+    query = query.eq("category_id", activeCategory.id);
+  }
 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
@@ -42,13 +56,28 @@ export default async function BeritaPage({
 
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
 
+  function pageHref(targetPage: number) {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (category) params.set("category", category);
+    params.set("page", String(targetPage));
+    return `/berita?${params.toString()}`;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Berita</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {activeCategory ? activeCategory.name : "Berita"}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Kabar dan informasi terbaru seputar HIMASAL Probolinggo.
         </p>
+        {activeCategory ? (
+          <Link href="/berita" className="mt-1 inline-block text-sm text-primary hover:underline">
+            ← Lihat semua berita
+          </Link>
+        ) : null}
       </div>
 
       <div className="max-w-sm">
@@ -128,9 +157,7 @@ export default async function BeritaPage({
               asChild={page > 1}
             >
               {page > 1 ? (
-                <Link href={`/berita?${q ? `q=${encodeURIComponent(q)}&` : ""}page=${page - 1}`}>
-                  Sebelumnya
-                </Link>
+                <Link href={pageHref(page - 1)}>Sebelumnya</Link>
               ) : (
                 <span>Sebelumnya</span>
               )}
@@ -142,9 +169,7 @@ export default async function BeritaPage({
               asChild={page < totalPages}
             >
               {page < totalPages ? (
-                <Link href={`/berita?${q ? `q=${encodeURIComponent(q)}&` : ""}page=${page + 1}`}>
-                  Berikutnya
-                </Link>
+                <Link href={pageHref(page + 1)}>Berikutnya</Link>
               ) : (
                 <span>Berikutnya</span>
               )}

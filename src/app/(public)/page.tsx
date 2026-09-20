@@ -5,8 +5,8 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/reveal";
-import { HimasalLogo } from "@/components/shared/himasal-logo";
 import { HeroCarousel } from "@/components/public/hero-carousel";
+import { formatDateID } from "@/lib/format-date";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -15,14 +15,22 @@ export const metadata: Metadata = {
 };
 
 // Beranda selalu dirender fresh per-request (bukan ISR statis) supaya
-// wallpaper Hero Carousel dari CMS langsung tampil begitu Admin
-// mengaktifkannya, tanpa menunggu revalidasi apa pun. Ini murni directive
-// Next.js di level route - tidak bergantung pada dukungan runtime tertentu
-// terhadap opsi fetch seperti `cache`, yang TIDAK didukung penuh oleh
-// runtime fetch bawaan Cloudflare Workers (beda dari Node/browser) dan
-// sebelumnya sempat dipakai secara keliru di sini, menyebabkan query
-// hero_slides gagal senyap khusus di production Cloudflare.
+// berita/kategori dari CMS Admin langsung tampil tanpa menunggu revalidasi.
 export const dynamic = "force-dynamic";
+
+type CategorySection = {
+  id: string;
+  name: string;
+  slug: string;
+  tagline: string | null;
+  items: {
+    id: string;
+    slug: string;
+    title: string;
+    thumbnail_url: string | null;
+    published_at: string | null;
+  }[];
+};
 
 export default async function BerandaPage() {
   const supabase = createPublicClient();
@@ -31,7 +39,8 @@ export default async function BerandaPage() {
     { data: profile },
     { data: stats },
     { data: masayikhList },
-    { data: heroSlides, error: heroSlidesError },
+    { data: heroNews, error: heroNewsError },
+    { data: categoryNewsRows, error: categoryNewsError },
   ] = await Promise.all([
     supabase.from("organization_profile").select("deskripsi").single(),
     supabase.rpc("public_stats").single(),
@@ -41,53 +50,115 @@ export default async function BerandaPage() {
       .eq("is_active", true)
       .order("display_order")
       .limit(3),
+    // Hero portal berita: berita Unggulan (is_featured), published, dan
+    // punya thumbnail - foto + judul asli dari Admin, tidak di-hardcode.
     supabase
-      .from("hero_slides")
-      .select("id, image_url, alt_text")
-      .eq("is_active", true)
-      .order("display_order"),
+      .from("news")
+      .select("id, slug, title, thumbnail_url")
+      .eq("status", "published")
+      .eq("is_featured", true)
+      .not("thumbnail_url", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(6),
+    // Kategori dinamis: RPC mengembalikan N berita terbaru per kategori
+    // aktif+tampil-di-beranda, dikelola penuh oleh Admin lewat
+    // /admin/konten/kategori - tidak ada kategori yang di-hardcode.
+    supabase.rpc("public_homepage_news_by_category", {
+      p_limit_per_category: 4,
+    }),
   ]);
 
-  if (heroSlidesError) {
-    // Log server-side saja (muncul di Cloudflare Worker logs) supaya
-    // penyebab asli terlihat kalau query ini pernah gagal, tanpa
-    // menampilkan apa pun ke pengunjung - hero tetap fallback ke
-    // background gradient premium seperti biasa.
-    console.error("[beranda] gagal memuat hero_slides:", heroSlidesError.message);
+  if (heroNewsError) {
+    console.error("[beranda] gagal memuat berita unggulan untuk hero:", heroNewsError.message);
   }
+  if (categoryNewsError) {
+    console.error("[beranda] gagal memuat kategori:", categoryNewsError.message);
+  }
+
+  const categorySections: CategorySection[] = [];
+  const sectionByCategoryId = new Map<string, CategorySection>();
+  for (const row of categoryNewsRows ?? []) {
+    let section = sectionByCategoryId.get(row.category_id);
+    if (!section) {
+      section = {
+        id: row.category_id,
+        name: row.category_name,
+        slug: row.category_slug,
+        tagline: row.category_tagline,
+        items: [],
+      };
+      sectionByCategoryId.set(row.category_id, section);
+      categorySections.push(section);
+    }
+    section.items.push({
+      id: row.news_id,
+      slug: row.news_slug,
+      title: row.news_title,
+      thumbnail_url: row.news_thumbnail_url,
+      published_at: row.news_published_at,
+    });
+  }
+
+  const heroSlides = (heroNews ?? []).filter(
+    (n): n is { id: string; slug: string; title: string; thumbnail_url: string } =>
+      Boolean(n.thumbnail_url),
+  );
 
   return (
     <div className="flex flex-col gap-16">
-      {/* Hero */}
-      <section className="hero-premium-bg relative z-0 flex flex-col items-center gap-6 overflow-hidden rounded-2xl py-16 text-center">
-        <HeroCarousel slides={heroSlides ?? []} />
-        <div className="relative z-10 flex flex-col items-center gap-6">
-          <HimasalLogo heightClassName="h-20" plate />
-          <div className="flex flex-col items-center gap-3">
-            <span className="h-1 w-10 rounded-full bg-brand-gold" aria-hidden="true" />
-            <h1 className="text-3xl font-bold tracking-tight text-balance text-white sm:text-5xl">
-              Himpunan Alumni Santri Lirboyo Probolinggo
-            </h1>
-          </div>
-          <p className="max-w-xl text-balance text-white/75 sm:text-lg">
-            Merajut silaturahmi dan mengabdi bersama para alumni Pondok
-            Pesantren Lirboyo di wilayah Probolinggo.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button asChild size="lg">
-              <Link href="/login">Masuk ke Akun</Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="border-white/30 bg-white/5 text-white hover:bg-white/15 hover:text-white"
-            >
-              <Link href="/profil">Tentang HIMASAL</Link>
-            </Button>
-          </div>
-        </div>
+      {/* Hero: portal berita - foto + judul asli berita Unggulan */}
+      <section className="hero-premium-bg relative z-0 h-[380px] overflow-hidden rounded-2xl sm:h-[460px] lg:h-[520px]">
+        <HeroCarousel slides={heroSlides} />
       </section>
+
+      {/* Kategori Berita - dinamis, dikelola penuh oleh Admin lewat
+          /admin/konten/kategori. Tidak ada kategori yang di-hardcode. */}
+      {categorySections.map((cat) => (
+        <Reveal key={cat.id}>
+          <section>
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">{cat.name}</h2>
+                {cat.tagline ? (
+                  <p className="mt-1 text-sm text-muted-foreground">{cat.tagline}</p>
+                ) : null}
+              </div>
+              <Button asChild variant="link" className="shrink-0">
+                <Link href={`/berita?category=${cat.slug}`}>Lihat semua →</Link>
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {cat.items.map((item) => (
+                <Link key={item.id} href={`/berita/${item.slug}`}>
+                  <Card className="card-hover h-full overflow-hidden">
+                    {item.thumbnail_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.thumbnail_url}
+                        alt={item.title}
+                        loading="lazy"
+                        className="aspect-video w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex aspect-video w-full items-center justify-center bg-muted text-sm text-muted-foreground">
+                        Tidak ada gambar
+                      </div>
+                    )}
+                    <CardContent className="flex flex-col gap-1">
+                      <p className="line-clamp-2 font-medium">{item.title}</p>
+                      {item.published_at ? (
+                        <p className="text-xs text-muted-foreground">
+                          {formatDateID(item.published_at)}
+                        </p>
+                      ) : null}
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </Reveal>
+      ))}
 
       {/* Tentang */}
       <Reveal>

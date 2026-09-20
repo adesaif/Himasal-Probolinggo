@@ -1,22 +1,29 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-export type HeroSlide = { id: string; image_url: string; alt_text: string };
+export type HeroNewsSlide = {
+  id: string;
+  slug: string;
+  title: string;
+  thumbnail_url: string;
+};
 
 const AUTOPLAY_MS = 3000;
 const TRANSITION_MS = 700;
 
 /**
- * Menampilkan wallpaper hero yang dikelola Admin lewat
- * /admin/konten/hero (tabel hero_slides, hanya yang is_active=true).
- * Jika belum ada wallpaper aktif, komponen ini sengaja return null -
- * hero tetap memakai background gradient premium (.hero-premium-bg).
+ * Hero portal berita: setiap slide adalah berita Unggulan (is_featured,
+ * published, punya thumbnail) yang diambil langsung dari CMS Admin
+ * (/admin/berita) - judul TIDAK pernah di-hardcode. Jika belum ada
+ * berita unggulan, komponen ini return null dan hero memakai background
+ * gradient premium (.hero-premium-bg) sebagai fallback.
  */
-export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
+export function HeroCarousel({ slides }: { slides: HeroNewsSlide[] }) {
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -48,9 +55,11 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     return null;
   }
 
+  const active = slides[index];
+
   return (
     <div
-      className="absolute inset-0 -z-10 overflow-hidden"
+      className="absolute inset-0 overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -58,8 +67,8 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={slide.id}
-          src={slide.image_url}
-          alt={slide.alt_text}
+          src={slide.thumbnail_url}
+          alt={slide.title}
           className={cn(
             "absolute inset-0 size-full object-cover transition-opacity ease-in-out",
             i === index ? "opacity-100" : "opacity-0",
@@ -69,6 +78,15 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       ))}
       <div className="hero-slide-overlay absolute inset-0" aria-hidden="true" />
 
+      <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-14 sm:px-12 sm:pb-16">
+        <Link
+          href={`/berita/${active.slug}`}
+          className="mx-auto block max-w-3xl text-center text-xl leading-tight font-bold text-balance text-white transition-opacity hover:opacity-90 sm:text-3xl"
+        >
+          {active.title}
+        </Link>
+      </div>
+
       {slides.length > 1 ? (
         <>
           <button
@@ -77,8 +95,8 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               setIsPaused(true);
               goTo(index - 1);
             }}
-            aria-label="Foto sebelumnya"
-            className="absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white transition-colors hover:bg-black/50"
+            aria-label="Berita sebelumnya"
+            className="absolute top-1/2 left-3 z-10 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white transition-colors hover:bg-black/50"
           >
             <ChevronLeft className="size-5" />
           </button>
@@ -88,12 +106,12 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               setIsPaused(true);
               goTo(index + 1);
             }}
-            aria-label="Foto berikutnya"
-            className="absolute top-1/2 right-3 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white transition-colors hover:bg-black/50"
+            aria-label="Berita berikutnya"
+            className="absolute top-1/2 right-3 z-10 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white transition-colors hover:bg-black/50"
           >
             <ChevronRight className="size-5" />
           </button>
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+          <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
             {slides.map((slide, i) => (
               <button
                 key={slide.id}
@@ -102,7 +120,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                   setIsPaused(true);
                   goTo(i);
                 }}
-                aria-label={`Ke foto ${i + 1}`}
+                aria-label={`Ke berita ${i + 1}`}
                 aria-current={i === index ? "true" : undefined}
                 className={cn(
                   "h-1.5 rounded-full transition-all",

@@ -44,18 +44,24 @@ type Editing = {
   title: string;
   excerpt: string | null;
   content: string;
-  category: string | null;
+  category_id: string | null;
   author_name: string | null;
   thumbnail_url: string | null;
   is_featured: boolean;
   status: string;
 };
 
+type CategoryOption = { id: string; name: string; slug: string };
+
+const NO_CATEGORY_VALUE = "__none__";
+
 export function NewsFormDialog({
   editing,
+  categories,
   trigger,
 }: {
   editing?: Editing;
+  categories: CategoryOption[];
   trigger: ReactNode;
 }) {
   const router = useRouter();
@@ -71,7 +77,7 @@ export function NewsFormDialog({
       title: editing?.title ?? "",
       excerpt: editing?.excerpt ?? "",
       content: editing?.content ?? "",
-      category: editing?.category ?? "",
+      category_id: editing?.category_id ?? NO_CATEGORY_VALUE,
       author_name: editing?.author_name ?? "",
       is_featured: editing?.is_featured ?? false,
       status: (editing?.status as "draft" | "published") ?? "draft",
@@ -86,7 +92,10 @@ export function NewsFormDialog({
       title: values.title,
       excerpt: values.excerpt || null,
       content: values.content,
-      category: values.category || null,
+      category_id:
+        values.category_id && values.category_id !== NO_CATEGORY_VALUE
+          ? values.category_id
+          : null,
       author_name: values.author_name || null,
       thumbnail_url: thumbnailUrl,
       is_featured: values.is_featured,
@@ -201,13 +210,29 @@ export function NewsFormDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
-                name="category"
+                name="category_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kategori</FormLabel>
-                    <FormControl>
-                      <Input disabled={isSubmitting} {...field} />
-                    </FormControl>
+                    <Select
+                      disabled={isSubmitting}
+                      value={field.value || NO_CATEGORY_VALUE}
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Tanpa kategori" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NO_CATEGORY_VALUE}>Tanpa kategori</SelectItem>
+                        {categories.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

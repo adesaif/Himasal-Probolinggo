@@ -8,6 +8,8 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { HimasalLogo } from "@/components/shared/himasal-logo";
+import { HeaderSearch } from "@/components/shared/header-search";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -33,14 +35,16 @@ export function PublicNav() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+        <Link href="/" className="flex items-center gap-2.5 text-sm font-semibold tracking-tight">
           <HimasalLogo heightClassName="h-9" />
-          <span className="hidden sm:inline">HIMASAL Probolinggo</span>
+          <span className="hidden text-base font-extrabold tracking-wide uppercase sm:inline">
+            HIMASAL PROBOLINGGO
+          </span>
         </Link>
 
         <nav
           aria-label="Navigasi utama"
-          className="hidden items-center gap-1 text-sm md:flex"
+          className="hidden items-center gap-1 text-sm lg:flex"
         >
           {NAV_ITEMS.map((item) => {
             const active = isActivePath(pathname, item.href);
@@ -69,17 +73,20 @@ export function PublicNav() {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <Button asChild size="sm" className="hidden md:inline-flex">
+        <div className="flex items-center gap-1">
+          <Button asChild size="sm" className="mr-1 hidden lg:inline-flex">
             <Link href="/login">Login</Link>
           </Button>
+
+          <HeaderSearch />
+          <ThemeToggle />
 
           <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
             <DialogTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden"
+                className="lg:hidden"
                 aria-label={mobileOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
               >
                 <span className="relative flex size-4 items-center justify-center">

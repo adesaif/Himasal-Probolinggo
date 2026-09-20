@@ -34,15 +34,33 @@ export const metadata: Metadata = {
   },
 };
 
+// Tema default HARUS tetap Navy Blue (class ".dark" di globals.css). Script
+// ini HANYA melepas class "dark" kalau pengunjung sebelumnya memilih Light
+// Mode (disimpan localStorage["himasal-theme"] oleh ThemeToggle) - dijalankan
+// sebelum hydration supaya tidak ada flash warna. Tanpa preferensi tersimpan,
+// halaman tetap Navy persis seperti sebelumnya.
+const THEME_INIT_SCRIPT = `
+try {
+  if (localStorage.getItem("himasal-theme") === "light") {
+    document.documentElement.classList.remove("dark");
+  }
+} catch (e) {}
+`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="id"
-      // Tema HIMASAL (navy + azure/gold, lihat token ".dark" di globals.css)
-      // dipakai sebagai satu-satunya tema di seluruh website - tidak ada
-      // toggle light/dark, jadi diaktifkan permanen di sini.
+      suppressHydrationWarning
+      // Tema HIMASAL Navy tetap default (lihat token ".dark" di globals.css).
+      // Class ini di-render dari server sebagai Navy; ThemeToggle + script
+      // di <head> di bawah yang mengelola pergantian ke Light Mode di
+      // client tanpa mengubah default ini.
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster position="top-center" richColors />

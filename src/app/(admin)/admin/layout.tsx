@@ -7,6 +7,7 @@ const ADMIN_NAV_ITEMS = [
   { href: "/admin/agenda", label: "Agenda" },
   { href: "/admin/galeri", label: "Galeri" },
   { href: "/admin/absensi", label: "Absensi" },
+  { href: "/admin/konten", label: "Konten" },
 ];
 
 export default function AdminLayout({

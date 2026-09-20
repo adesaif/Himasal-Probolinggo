@@ -20,7 +20,7 @@ const SECTIONS = [
   },
   {
     href: "/admin/konten/hero",
-    title: "Hero Wallpaper",
+    title: "Hero Carousel",
     description: "Kelola foto/wallpaper carousel hero beranda.",
   },
   {

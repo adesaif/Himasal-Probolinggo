@@ -32,8 +32,8 @@ export function PublicFooter({ settings }: { settings: SiteSettings | null }) {
   ].filter((v): v is { href: string; label: string } => Boolean(v));
 
   return (
-    <footer className="border-t bg-muted/30">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-3">
+    <footer className="border-t bg-secondary/40">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-8 sm:grid-cols-3">
         <div>
           <div className="flex items-center gap-2">
             <HimasalLogo heightClassName="h-10" />

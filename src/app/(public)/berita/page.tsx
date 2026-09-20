@@ -73,7 +73,7 @@ export default async function BeritaPage({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {newsList.map((item) => (
             <Link key={item.id} href={`/berita/${item.slug}`}>
-              <Card className="h-full overflow-hidden transition-colors hover:bg-muted/50">
+              <Card className="card-hover h-full overflow-hidden">
                 {item.thumbnail_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

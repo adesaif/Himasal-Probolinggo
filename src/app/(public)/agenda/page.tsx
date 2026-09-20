@@ -50,7 +50,7 @@ export default async function AgendaPage() {
             const isUpcoming = new Date(event.end_at ?? event.start_at).getTime() >= now;
             return (
               <Link key={event.id} href={`/agenda/${event.id}`}>
-                <Card className="transition-colors hover:bg-muted/50">
+                <Card className="card-hover">
                   <CardContent className="flex flex-col gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span

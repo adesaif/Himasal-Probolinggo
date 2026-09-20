@@ -1,3 +1,5 @@
+import { PageTransition } from "@/components/shared/page-transition";
+
 export default function AuthLayout({
   children,
 }: {
@@ -5,7 +7,9 @@ export default function AuthLayout({
 }) {
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm">{children}</div>
+      <div className="w-full max-w-sm">
+        <PageTransition>{children}</PageTransition>
+      </div>
     </main>
   );
 }

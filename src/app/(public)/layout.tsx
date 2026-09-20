@@ -1,5 +1,6 @@
 import { PublicNav } from "@/components/layout/public-nav";
 import { PublicFooter } from "@/components/layout/public-footer";
+import { PageTransition } from "@/components/shared/page-transition";
 import { createPublicClient } from "@/lib/supabase/public";
 
 export const revalidate = 300;
@@ -21,7 +22,7 @@ export default async function PublicLayout({
     <>
       <PublicNav />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        {children}
+        <PageTransition>{children}</PageTransition>
       </main>
       <PublicFooter settings={settings} />
     </>

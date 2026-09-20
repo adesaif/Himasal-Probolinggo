@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadingButton } from "@/components/shared/loading-button";
 import {
   Card,
   CardContent,
@@ -132,9 +132,14 @@ export function LoginForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Memproses..." : "Masuk"}
-            </Button>
+            <LoadingButton
+              type="submit"
+              className="w-full"
+              isLoading={isSubmitting}
+              loadingText="Memproses..."
+            >
+              Masuk
+            </LoadingButton>
           </form>
         </Form>
       </CardContent>

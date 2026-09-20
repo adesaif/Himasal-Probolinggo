@@ -35,9 +35,9 @@ export function PublicNav() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2.5 text-sm font-semibold tracking-tight">
-          <HimasalLogo heightClassName="h-9" />
-          <span className="hidden text-base font-extrabold tracking-wide uppercase sm:inline">
+        <Link href="/" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+          <HimasalLogo heightClassName="h-7 sm:h-8" />
+          <span className="text-sm leading-none font-bold tracking-wide whitespace-nowrap text-foreground uppercase sm:text-base">
             HIMASAL PROBOLINGGO
           </span>
         </Link>

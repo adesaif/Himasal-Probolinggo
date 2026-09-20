@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "@/types/database.types";
 import { createPublicClient } from "@/lib/supabase/public";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,26 +16,16 @@ export const metadata: Metadata = {
 
 // Beranda selalu dirender fresh per-request (bukan ISR statis) supaya
 // wallpaper Hero Carousel dari CMS langsung tampil begitu Admin
-// mengaktifkannya, tanpa menunggu revalidasi apa pun.
+// mengaktifkannya, tanpa menunggu revalidasi apa pun. Ini murni directive
+// Next.js di level route - tidak bergantung pada dukungan runtime tertentu
+// terhadap opsi fetch seperti `cache`, yang TIDAK didukung penuh oleh
+// runtime fetch bawaan Cloudflare Workers (beda dari Node/browser) dan
+// sebelumnya sempat dipakai secara keliru di sini, menyebabkan query
+// hero_slides gagal senyap khusus di production Cloudflare.
 export const dynamic = "force-dynamic";
 
 export default async function BerandaPage() {
   const supabase = createPublicClient();
-
-  // Klien khusus untuk hero_slides: fetch dipaksa "no-store" di level HTTP
-  // (bukan hanya lewat konfigurasi revalidate halaman) supaya query ini
-  // tidak pernah terjebak di lapisan cache mana pun. Klien createPublicClient()
-  // di atas TIDAK diubah - dipakai persis seperti sebelumnya untuk
-  // profil/statistik/masayikh.
-  const heroSlidesClient = createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: {
-        fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
-      },
-    },
-  );
 
   const [
     { data: profile },
@@ -53,7 +41,7 @@ export default async function BerandaPage() {
       .eq("is_active", true)
       .order("display_order")
       .limit(3),
-    heroSlidesClient
+    supabase
       .from("hero_slides")
       .select("id, image_url, alt_text")
       .eq("is_active", true)

@@ -6,13 +6,14 @@ import { Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 /**
  * Search header - memakai infrastruktur pencarian /berita?q= yang sudah
  * ada (lihat src/app/(public)/berita/page.tsx dan berita-search-input.tsx),
  * bukan sistem search baru.
  */
-export function HeaderSearch() {
+export function HeaderSearch({ className }: { className?: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
@@ -48,6 +49,7 @@ export function HeaderSearch() {
           type="button"
           variant="ghost"
           size="icon"
+          className={cn(className)}
           onClick={() => {
             setOpen(false);
             setValue("");
@@ -65,6 +67,7 @@ export function HeaderSearch() {
       type="button"
       variant="ghost"
       size="icon"
+      className={cn(className)}
       onClick={() => setOpen(true)}
       aria-label="Cari berita"
     >

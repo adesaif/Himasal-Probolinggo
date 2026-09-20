@@ -28,17 +28,20 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+const ICON_BUTTON_CLASS = "rounded-full border border-border/70 bg-background/60";
+
 export function PublicNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+    <header className="site-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
-          <HimasalLogo heightClassName="h-7 sm:h-8" />
-          <span className="text-sm leading-none font-bold tracking-wide whitespace-nowrap text-foreground uppercase sm:text-base">
-            HIMASAL PROBOLINGGO
+          <HimasalLogo heightClassName="h-8 sm:h-9" />
+          <span className="flex items-baseline whitespace-nowrap text-sm leading-none font-bold tracking-[-0.01em] uppercase sm:text-base">
+            <span className="text-brand-text-himasal">HIMASAL</span>{" "}
+            <span className="text-brand-text-probolinggo">PROBOLINGGO</span>
           </span>
         </Link>
 
@@ -73,20 +76,20 @@ export function PublicNav() {
           })}
         </nav>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <Button asChild size="sm" className="mr-1 hidden lg:inline-flex">
             <Link href="/login">Login</Link>
           </Button>
 
-          <HeaderSearch />
-          <ThemeToggle />
+          <HeaderSearch className={ICON_BUTTON_CLASS} />
+          <ThemeToggle className={ICON_BUTTON_CLASS} />
 
           <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
             <DialogTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden"
+                className={cn(ICON_BUTTON_CLASS, "lg:hidden")}
                 aria-label={mobileOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
               >
                 <span className="relative flex size-4 items-center justify-center">

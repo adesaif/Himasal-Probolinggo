@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "himasal-theme";
 
@@ -30,7 +31,7 @@ function getServerSnapshot() {
  * <html> lewat useSyncExternalStore (bukan state+effect) supaya selaras
  * dengan mutasi DOM yang terjadi di luar React (inline script anti-flash).
  */
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const isDark = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function toggle() {
@@ -49,6 +50,7 @@ export function ThemeToggle() {
       type="button"
       variant="ghost"
       size="icon"
+      className={cn(className)}
       onClick={toggle}
       aria-label={isDark ? "Ganti ke mode terang" : "Ganti ke mode navy"}
     >

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { QrCode } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,25 @@ function ComingSoonCard({ title }: { title: string }) {
         <p className="text-sm text-muted-foreground">
           Modul ini akan dibangun pada fase implementasi berikutnya.
         </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AbsensiCard() {
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-2">
+        <p className="font-medium">Kehadiran</p>
+        <p className="text-sm text-muted-foreground">
+          Pindai QR untuk mencatat kehadiran dan lihat riwayat absensi Anda.
+        </p>
+        <Button asChild size="sm" className="w-fit">
+          <Link href="/dashboard/absensi">
+            <QrCode />
+            Buka Absensi
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   );
@@ -74,7 +94,7 @@ export default async function AlumniDashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <ComingSoonCard title="Agenda" />
         <ComingSoonCard title="Bank Soal" />
-        <ComingSoonCard title="Kehadiran" />
+        <AbsensiCard />
       </div>
     </div>
   );

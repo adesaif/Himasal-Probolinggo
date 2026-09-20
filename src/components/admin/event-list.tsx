@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -163,6 +164,11 @@ export function EventList() {
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
+                  {row.status === "published" ? (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/admin/absensi/${row.id}`}>Absensi</Link>
+                    </Button>
+                  ) : null}
                   <Button
                     variant="outline"
                     size="sm"

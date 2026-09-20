@@ -1,6 +1,3 @@
-// Generated from the Himasal Probolinggo Supabase project (ref lyotnysrptddtbqgttui).
-// Regenerate after schema changes:
-//   npx supabase gen types typescript --project-id lyotnysrptddtbqgttui > src/types/database.types.ts
 export type Json =
   | string
   | number
@@ -71,6 +68,64 @@ export type Database = {
           },
         ]
       }
+      attendance_records: {
+        Row: {
+          alumni_id: string
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          recorded_by: string | null
+          scanned_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          alumni_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          recorded_by?: string | null
+          scanned_at?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          alumni_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          recorded_by?: string | null
+          scanned_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_alumni_id_fkey"
+            columns: ["alumni_id"]
+            isOneToOne: false
+            referencedRelation: "alumni"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -109,8 +164,54 @@ export type Database = {
           },
         ]
       }
+      event_qr_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          expires_at: string
+          id?: string
+          revoked_at?: string | null
+          token: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          expires_at?: string
+          id?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_qr_tokens_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_qr_tokens_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
+          attendance_closed_at: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -124,6 +225,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attendance_closed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -137,6 +239,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attendance_closed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -443,6 +546,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_close_event_attendance: {
+        Args: { p_event_id: string }
+        Returns: number
+      }
+      admin_generate_event_qr: {
+        Args: { p_event_id: string; p_ttl_minutes?: number }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          event_id: string
+          expires_at: string
+          id: string
+          revoked_at: string | null
+          token: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "event_qr_tokens"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_revoke_event_qr: { Args: { p_event_id: string }; Returns: number }
       admin_set_alumni_status: {
         Args: { p_alumni_id: string; p_status: string }
         Returns: {
@@ -544,6 +670,26 @@ export type Database = {
           total_alumni_aktif: number
           total_wilayah: number
         }[]
+      }
+      submit_attendance: {
+        Args: { p_token: string }
+        Returns: {
+          alumni_id: string
+          created_at: string
+          event_id: string
+          id: string
+          notes: string | null
+          recorded_by: string | null
+          scanned_at: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "attendance_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       update_own_alumni_profile: {
         Args: {

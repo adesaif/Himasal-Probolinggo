@@ -1,10 +1,7 @@
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { redirect } from "next/navigation";
 
+// Rute lama Fase 0. Absensi (termasuk riwayat) sekarang dikelompokkan di
+// bawah /dashboard/absensi sejak Fase 5, sesuai struktur yang diminta.
 export default function AlumniRiwayatPage() {
-  return (
-    <PagePlaceholder
-      title="Riwayat Absensi"
-      description="Riwayat kehadiran alumni pada setiap kegiatan."
-    />
-  );
+  redirect("/dashboard/absensi/riwayat");
 }

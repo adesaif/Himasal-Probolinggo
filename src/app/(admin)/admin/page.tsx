@@ -20,9 +20,14 @@ export default async function AdminDashboardPage() {
         <h1 className="text-2xl font-semibold tracking-tight">
           Dashboard Admin
         </h1>
-        <Button asChild>
-          <Link href="/admin/alumni">Kelola Data Alumni</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild>
+            <Link href="/admin/alumni">Kelola Data Alumni</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/admin/absensi">Kelola Absensi</Link>
+          </Button>
+        </div>
       </div>
 
       {statsError ? (

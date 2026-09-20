@@ -1,10 +1,5 @@
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { EventList } from "@/components/admin/event-list";
 
 export default function AdminAgendaPage() {
-  return (
-    <PagePlaceholder
-      title="Manajemen Agenda"
-      description="Buat kegiatan, tentukan status wajib hadir, dan generate QR absensi."
-    />
-  );
+  return <EventList />;
 }

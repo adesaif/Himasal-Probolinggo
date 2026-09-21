@@ -14,6 +14,7 @@ export type SiteTopic = Pick<
   | "is_active"
   | "allow_featured"
   | "supports_featured"
+  | "is_system"
   | "default_label"
   | "default_description"
   | "default_display_order"
@@ -21,17 +22,24 @@ export type SiteTopic = Pick<
   | "default_allow_featured"
 >;
 
-export type TopicKey =
+// Enam topik sistem (dibackup tabel konten khusus). "konten" dan topik
+// custom apa pun yang dibuat Admin BUKAN bagian dari union ini - key-nya
+// bebas (slug hasil input Admin) - lihat `is_system` di SiteTopic untuk
+// membedakan topik sistem vs generik saat runtime.
+export type SystemTopicKey =
   | "berita"
   | "agenda"
   | "galeri"
   | "profil"
   | "struktur"
-  | "masayikh"
-  | "konten";
+  | "masayikh";
+
+// Dipakai di pemanggilan lama yang masih merujuk topik tetap (termasuk
+// "konten", yang sekarang berperilaku seperti topik generik/custom lainnya).
+export type TopicKey = SystemTopicKey | "konten";
 
 export const TOPIC_SELECT_COLUMNS =
-  "id, key, label, description, display_order, is_active, allow_featured, supports_featured, default_label, default_description, default_display_order, default_is_active, default_allow_featured";
+  "id, key, label, description, display_order, is_active, allow_featured, supports_featured, is_system, default_label, default_description, default_display_order, default_is_active, default_allow_featured";
 
 /**
  * Label topik untuk dipakai di nav/heading. Fail-open ke `fallback` kalau
@@ -40,7 +48,7 @@ export const TOPIC_SELECT_COLUMNS =
  */
 export function topicLabel(
   topics: Pick<SiteTopic, "key" | "label">[] | null | undefined,
-  key: TopicKey,
+  key: string,
   fallback: string,
 ): string {
   return topics?.find((t) => t.key === key)?.label ?? fallback;
@@ -61,7 +69,7 @@ export function topicLabel(
  */
 export function isTopicActive(
   topics: Pick<SiteTopic, "key" | "is_active">[] | null | undefined,
-  key: TopicKey,
+  key: string,
 ): boolean {
   if (!topics) return true;
   const topic = topics.find((t) => t.key === key);
@@ -75,8 +83,27 @@ export function isTopicActive(
  */
 export function isTopicFeaturedAllowed(
   topics: Pick<SiteTopic, "key" | "is_active" | "allow_featured">[] | null | undefined,
-  key: TopicKey,
+  key: string,
 ): boolean {
   const topic = topics?.find((t) => t.key === key);
   return Boolean(topic?.is_active && topic.allow_featured);
+}
+
+// Rute publik tetap untuk keenam topik sistem. Topik generik (Konten +
+// topik custom buatan Admin) tidak punya tabel/rute khusus, jadi selalu
+// diarahkan ke halaman listing generik `/topik/[key]`.
+const SYSTEM_TOPIC_HREF: Record<SystemTopicKey, string> = {
+  berita: "/berita",
+  agenda: "/agenda",
+  galeri: "/galeri",
+  profil: "/profil",
+  struktur: "/struktur",
+  masayikh: "/masayikh",
+};
+
+export function topicHref(topic: Pick<SiteTopic, "key" | "is_system">): string {
+  if (topic.is_system && topic.key in SYSTEM_TOPIC_HREF) {
+    return SYSTEM_TOPIC_HREF[topic.key as SystemTopicKey];
+  }
+  return `/topik/${topic.key}`;
 }

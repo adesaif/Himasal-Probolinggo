@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Mail, Phone } from "lucide-react";
 
 import { HimasalLogo } from "@/components/shared/himasal-logo";
-import { isTopicActive, topicLabel, type SiteTopic, type TopicKey } from "@/lib/topics";
+import { topicHref, type SiteTopic } from "@/lib/topics";
 
 type SiteSettings = {
   nama_organisasi: string | null;
@@ -17,20 +17,13 @@ type SiteSettings = {
   tiktok_url: string | null;
 };
 
-// Kontak bukan Topik - selalu tampil. Profil/Struktur/Masayikh mengikuti
-// label + status aktif dari site_topics.
-const TOPIC_FOOTER_LINKS: { href: string; key: TopicKey; fallback: string }[] = [
-  { href: "/profil", key: "profil", fallback: "Profil" },
-  { href: "/struktur", key: "struktur", fallback: "Struktur" },
-  { href: "/masayikh", key: "masayikh", fallback: "Masayikh" },
-];
-
+// Kontak bukan Topik - selalu tampil. Sisanya (SEMUA topik aktif, sistem
+// maupun custom) diambil dari site_topics, diurutkan sesuai display_order.
 function buildFooterLinks(topics: SiteTopic[] | null | undefined) {
-  const links: { href: string; label: string }[] = [];
-  for (const item of TOPIC_FOOTER_LINKS) {
-    if (!isTopicActive(topics, item.key)) continue;
-    links.push({ href: item.href, label: topicLabel(topics, item.key, item.fallback) });
-  }
+  const active = [...(topics ?? [])]
+    .filter((t) => t.is_active)
+    .sort((a, b) => a.display_order - b.display_order);
+  const links = active.map((topic) => ({ href: topicHref(topic), label: topic.label }));
   links.push({ href: "/kontak", label: "Kontak" });
   return links;
 }

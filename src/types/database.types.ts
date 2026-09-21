@@ -628,6 +628,7 @@ export type Database = {
           display_order: number
           id: string
           is_active: boolean
+          is_system: boolean
           key: string
           label: string
           supports_featured: boolean
@@ -645,6 +646,7 @@ export type Database = {
           display_order?: number
           id?: string
           is_active?: boolean
+          is_system?: boolean
           key: string
           label: string
           supports_featured?: boolean
@@ -662,12 +664,63 @@ export type Database = {
           display_order?: number
           id?: string
           is_active?: boolean
+          is_system?: boolean
           key?: string
           label?: string
           supports_featured?: boolean
           updated_at?: string
         }
         Relationships: []
+      }
+      topic_content: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_featured: boolean
+          link_url: string | null
+          title: string
+          topic_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          link_url?: string | null
+          title: string
+          topic_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          link_url?: string | null
+          title?: string
+          topic_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_content_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "site_topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wilayah: {
         Row: {

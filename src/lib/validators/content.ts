@@ -43,6 +43,25 @@ export const topicSchema = z.object({
 });
 export type TopicInput = z.infer<typeof topicSchema>;
 
+export const topicCreateSchema = z.object({
+  label: z.string().trim().min(1, "Nama topik wajib diisi").max(80),
+  description: z.string().trim().max(300).optional().or(z.literal("")),
+  display_order: z.string().trim().optional().or(z.literal("")),
+  is_active: z.boolean(),
+  allow_featured: z.boolean(),
+});
+export type TopicCreateInput = z.infer<typeof topicCreateSchema>;
+
+export const topicContentSchema = z.object({
+  title: z.string().trim().min(1, "Judul wajib diisi").max(150),
+  description: z.string().trim().max(1000).optional().or(z.literal("")),
+  link_url: z.string().trim().url("URL tidak valid").optional().or(z.literal("")),
+  display_order: z.string().trim().optional().or(z.literal("")),
+  is_active: z.boolean(),
+  is_featured: z.boolean(),
+});
+export type TopicContentInput = z.infer<typeof topicContentSchema>;
+
 export const siteSettingsSchema = z.object({
   nama_organisasi: z.string().trim().max(150).optional().or(z.literal("")),
   tagline: z.string().trim().max(200).optional().or(z.literal("")),

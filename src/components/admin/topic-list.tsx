@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, FolderOpen, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,15 +20,16 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { TopicFormDialog } from "@/components/admin/topic-form-dialog";
+import { TopicCreateDialog } from "@/components/admin/topic-create-dialog";
 import { createClient } from "@/lib/supabase/client";
-import type { SiteTopic, TopicKey } from "@/lib/topics";
+import type { SiteTopic } from "@/lib/topics";
 
 export function TopicList({
   rows,
   contentCounts,
 }: {
   rows: SiteTopic[];
-  contentCounts: Partial<Record<TopicKey, number>>;
+  contentCounts: Record<string, number>;
 }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -117,21 +119,32 @@ export function TopicList({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Topik & Navigasi</h1>
-        <p className="text-sm text-muted-foreground">
-          Kelola nama, deskripsi, urutan, status aktif, izin Unggulan, dan
-          hapus untuk setiap topik/bagian website. Mengganti nama di sini
-          otomatis tercermin di menu navigasi publik dan sidebar Admin.
-          Menghapus topik hanya menghapus konfigurasinya dari daftar ini -
-          konten yang sudah ada di topik tersebut (berita, agenda, dsb)
-          TIDAK ikut terhapus.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Topik & Navigasi</h1>
+          <p className="text-sm text-muted-foreground">
+            Kelola nama, deskripsi, urutan, status aktif, izin Unggulan, dan
+            hapus untuk setiap topik/bagian website. Mengganti nama di sini
+            otomatis tercermin di menu navigasi publik, sidebar Admin, dan
+            judul section Beranda. Menghapus topik hanya menghapus
+            konfigurasinya dari daftar ini - konten yang sudah ada di topik
+            tersebut TIDAK ikut terhapus. Topik baru otomatis mendapat
+            navigasi publik dan section Beranda sendiri begitu punya konten.
+          </p>
+        </div>
+        <TopicCreateDialog
+          trigger={
+            <Button>
+              <Plus />
+              Tambah Topik
+            </Button>
+          }
+        />
       </div>
 
       <div className="flex flex-col gap-2">
         {rows.map((topic, index) => {
-          const count = contentCounts[topic.key as TopicKey] ?? 0;
+          const count = contentCounts[topic.id] ?? 0;
           return (
             <Card key={topic.id}>
               <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -163,7 +176,8 @@ export function TopicList({
                     </p>
                   ) : null}
                   <p className="text-xs text-muted-foreground">
-                    Kunci sistem: {topic.key} · Urutan: {topic.display_order} ·{" "}
+                    Kunci: {topic.key} {topic.is_system ? "(sistem)" : "(custom)"} · Urutan:{" "}
+                    {topic.display_order} ·{" "}
                     {count} konten terkait
                   </p>
                 </div>
@@ -195,6 +209,14 @@ export function TopicList({
                       </Button>
                     }
                   />
+                  {!topic.is_system ? (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/admin/konten/topik/${topic.id}/konten`}>
+                        <FolderOpen />
+                        Kelola Konten
+                      </Link>
+                    </Button>
+                  ) : null}
                   <Button
                     variant="outline"
                     size="sm"

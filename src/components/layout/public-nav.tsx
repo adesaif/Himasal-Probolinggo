@@ -11,24 +11,19 @@ import { HimasalLogo } from "@/components/shared/himasal-logo";
 import { HeaderSearch } from "@/components/shared/header-search";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { cn } from "@/lib/utils";
-import { isTopicActive, topicLabel, type SiteTopic, type TopicKey } from "@/lib/topics";
+import { topicHref, type SiteTopic } from "@/lib/topics";
 
 // Beranda dan Kontak bukan Topik (tidak ada di site_topics) - selalu tetap
-// tampil. Sisanya mengikuti label + status aktif dari site_topics.
-const TOPIC_NAV_ITEMS: { href: string; key: TopicKey; fallback: string }[] = [
-  { href: "/profil", key: "profil", fallback: "Profil" },
-  { href: "/struktur", key: "struktur", fallback: "Struktur" },
-  { href: "/berita", key: "berita", fallback: "Berita" },
-  { href: "/agenda", key: "agenda", fallback: "Agenda" },
-  { href: "/masayikh", key: "masayikh", fallback: "Masayikh" },
-  { href: "/galeri", key: "galeri", fallback: "Galeri" },
-];
-
+// tampil. Sisanya (SEMUA topik aktif, sistem maupun custom) diambil dari
+// site_topics, diurutkan sesuai display_order Admin - topik baru otomatis
+// muncul di nav tanpa perubahan kode.
 function buildNavItems(topics: SiteTopic[] | null | undefined) {
   const items: { href: string; label: string }[] = [{ href: "/", label: "Beranda" }];
-  for (const item of TOPIC_NAV_ITEMS) {
-    if (!isTopicActive(topics, item.key)) continue;
-    items.push({ href: item.href, label: topicLabel(topics, item.key, item.fallback) });
+  const active = [...(topics ?? [])]
+    .filter((t) => t.is_active)
+    .sort((a, b) => a.display_order - b.display_order);
+  for (const topic of active) {
+    items.push({ href: topicHref(topic), label: topic.label });
   }
   items.push({ href: "/kontak", label: "Kontak" });
   return items;

@@ -7,7 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/reveal";
 import { HeroCarousel } from "@/components/public/hero-carousel";
 import { TOPIC_SELECT_COLUMNS } from "@/lib/topics";
-import { fetchHomeSections, type HomeCardItem, type HomeSection } from "@/lib/homepage-content";
+import {
+  fetchBeritaSections,
+  fetchHomeSections,
+  finalizeHeroSlides,
+  type HomeCardItem,
+  type HomeSection,
+} from "@/lib/homepage-content";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -82,7 +88,19 @@ export default async function BerandaPage() {
 
   const { data: topics } = await supabase.from("site_topics").select(TOPIC_SELECT_COLUMNS);
 
-  const { sections, heroSlides } = await fetchHomeSections(supabase, topics);
+  // Berita punya 3 section tetap (Terbaru/Satu Minggu Lalu/Satu Bulan
+  // Lalu) - requirement yang berdiri sendiri, BUKAN bagian dari loop topik
+  // generik di bawah. Dilewati sepenuhnya (termasuk hero-nya) kalau topik
+  // Berita dinonaktifkan.
+  const beritaTopic = topics?.find((t) => t.key === "berita" && t.is_active);
+  const [berita, others] = await Promise.all([
+    beritaTopic
+      ? fetchBeritaSections(supabase, beritaTopic)
+      : Promise.resolve({ sections: [] as HomeSection[], heroCandidates: [] }),
+    fetchHomeSections(supabase, topics),
+  ]);
+
+  const heroSlides = finalizeHeroSlides([...berita.heroCandidates, ...others.heroCandidates]);
 
   return (
     <div className="flex flex-col gap-16">
@@ -95,10 +113,13 @@ export default async function BerandaPage() {
         <HeroCarousel slides={heroSlides} />
       </section>
 
-      {/* Satu section per topik aktif, berurutan sesuai display_order.
-          Section yang kosong (topiknya aktif tapi belum ada konten) tidak
-          pernah dirender - lihat fetchHomeSections. */}
-      {sections.map((section) => (
+      {/* Tiga section Berita tetap, lalu satu section per topik AKTIF
+          lainnya berurutan sesuai display_order. Section yang kosong
+          (topiknya aktif tapi belum ada konten) tidak pernah dirender. */}
+      {berita.sections.map((section) => (
+        <HomeSectionBlock key={section.topicKey} section={section} />
+      ))}
+      {others.sections.map((section) => (
         <HomeSectionBlock key={section.topicKey} section={section} />
       ))}
     </div>

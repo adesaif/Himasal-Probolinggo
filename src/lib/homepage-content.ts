@@ -31,7 +31,7 @@ export type HomeSection =
       viewAllHref: string;
     };
 
-type HeroCandidate = HeroSlide & { sortDate: string };
+export type HeroCandidate = HeroSlide & { sortDate: string };
 
 type SectionFetchResult = {
   section: HomeSection | null;
@@ -43,62 +43,150 @@ type SystemFetcher = (supabase: PublicSupabase, topic: SiteTopic) => Promise<Sec
 const CARD_LIMIT = 4;
 const HERO_CANDIDATE_LIMIT = 6;
 
-/**
- * Registry topik sistem (backed tabel konten khusus) -> cara mengambil
- * section homepage + kandidat hero-nya. Topik yang TIDAK ada di sini
- * (Konten dan topik custom apa pun buatan Admin) otomatis jatuh ke
- * `fetchGenericSection` di bawah - supaya topik baru bisa muncul di
- * Beranda tanpa menambah entry baru di sini atau JSX section baru.
- */
-const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
-  berita: async (supabase, topic) => {
-    const [{ data: rows }, { data: featuredRows }] = await Promise.all([
-      supabase
-        .from("news")
-        .select("id, slug, title, thumbnail_url, published_at")
-        .eq("status", "published")
-        .not("published_at", "is", null)
-        .order("published_at", { ascending: false })
-        .limit(CARD_LIMIT),
-      isTopicFeaturedAllowed([topic], topic.key)
-        ? supabase
-            .from("news")
-            .select("id, slug, title, thumbnail_url, published_at")
-            .eq("status", "published")
-            .eq("is_featured", true)
-            .not("thumbnail_url", "is", null)
-            .order("published_at", { ascending: false })
-            .limit(HERO_CANDIDATE_LIMIT)
-        : Promise.resolve({ data: [] as never[] }),
-    ]);
+const NEWS_CARD_COLUMNS = "id, slug, title, thumbnail_url, published_at";
 
-    const items: HomeCardItem[] = (rows ?? []).map((n) => ({
-      id: n.id,
+type NewsCardRow = {
+  id: string;
+  slug: string;
+  title: string;
+  thumbnail_url: string | null;
+  published_at: string | null;
+};
+
+function newsRowToCardItem(n: NewsCardRow): HomeCardItem {
+  return {
+    id: n.id,
+    href: `/berita/${n.slug}`,
+    title: n.title,
+    subtitle: n.published_at ? formatDateID(n.published_at) : null,
+    image_url: n.thumbnail_url,
+  };
+}
+
+function daysAgoIso(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+/**
+ * Berita BUKAN bagian dari loop topik generik - ini requirement tetap:
+ * tiga section (Terbaru / Satu Minggu Lalu / Satu Bulan Lalu), masing-masing
+ * max 4 dan saling eksklusif berdasarkan published_at (bukan index artikel).
+ * Nama section tetap ikut site_topics.label (mis. kalau Admin rename
+ * "Berita" -> "Kabar HIMASAL", judulnya jadi "Kabar HIMASAL Terbaru" dst).
+ * Dipanggil terpisah dari fetchHomeSections dan dirender SEBELUM loop topik
+ * lainnya - lihat Beranda.
+ */
+export async function fetchBeritaSections(
+  supabase: PublicSupabase,
+  topic: SiteTopic,
+): Promise<{ sections: HomeSection[]; heroCandidates: HeroCandidate[] }> {
+  const [
+    { data: terbaruRows },
+    { data: mingguCandidates },
+    { data: bulanCandidates },
+    { data: featuredRows },
+  ] = await Promise.all([
+    supabase
+      .from("news")
+      .select(NEWS_CARD_COLUMNS)
+      .eq("status", "published")
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(CARD_LIMIT),
+    // Kandidat lebih banyak dari limit tampil (4) supaya setelah exclude
+    // duplikat dengan Terbaru masih cukup untuk mengisi 4 slot.
+    supabase
+      .from("news")
+      .select(NEWS_CARD_COLUMNS)
+      .eq("status", "published")
+      .not("published_at", "is", null)
+      .lt("published_at", daysAgoIso(7))
+      .gte("published_at", daysAgoIso(14))
+      .order("published_at", { ascending: false })
+      .limit(8),
+    supabase
+      .from("news")
+      .select(NEWS_CARD_COLUMNS)
+      .eq("status", "published")
+      .not("published_at", "is", null)
+      .lt("published_at", daysAgoIso(30))
+      .gte("published_at", daysAgoIso(60))
+      .order("published_at", { ascending: false })
+      .limit(8),
+    isTopicFeaturedAllowed([topic], topic.key)
+      ? supabase
+          .from("news")
+          .select(NEWS_CARD_COLUMNS)
+          .eq("status", "published")
+          .eq("is_featured", true)
+          .not("thumbnail_url", "is", null)
+          .order("published_at", { ascending: false })
+          .limit(HERO_CANDIDATE_LIMIT)
+      : Promise.resolve({ data: [] as never[] }),
+  ]);
+
+  const terbaru: NewsCardRow[] = terbaruRows ?? [];
+  const terbaruIds = new Set(terbaru.map((n) => n.id));
+  const mingguLalu: NewsCardRow[] = (mingguCandidates ?? [])
+    .filter((n) => !terbaruIds.has(n.id))
+    .slice(0, CARD_LIMIT);
+  const mingguIds = new Set(mingguLalu.map((n) => n.id));
+  const bulanLalu: NewsCardRow[] = (bulanCandidates ?? [])
+    .filter((n) => !terbaruIds.has(n.id) && !mingguIds.has(n.id))
+    .slice(0, CARD_LIMIT);
+
+  const sections: HomeSection[] = [];
+  if (terbaru.length > 0) {
+    sections.push({
+      kind: "cards",
+      topicKey: `${topic.key}-terbaru`,
+      heading: `${topic.label} Terbaru`,
+      viewAllHref: "/berita",
+      items: terbaru.map(newsRowToCardItem),
+    });
+  }
+  if (mingguLalu.length > 0) {
+    sections.push({
+      kind: "cards",
+      topicKey: `${topic.key}-minggu-lalu`,
+      heading: `${topic.label} Satu Minggu Lalu`,
+      viewAllHref: "/berita",
+      items: mingguLalu.map(newsRowToCardItem),
+    });
+  }
+  if (bulanLalu.length > 0) {
+    sections.push({
+      kind: "cards",
+      topicKey: `${topic.key}-bulan-lalu`,
+      heading: `${topic.label} Satu Bulan Lalu`,
+      viewAllHref: "/berita",
+      items: bulanLalu.map(newsRowToCardItem),
+    });
+  }
+
+  const heroCandidates: HeroCandidate[] = (featuredRows ?? [])
+    .filter((n): n is NewsCardRow & { thumbnail_url: string } => Boolean(n.thumbnail_url))
+    .map((n) => ({
+      id: `news-${n.id}`,
       href: `/berita/${n.slug}`,
       title: n.title,
-      subtitle: n.published_at ? formatDateID(n.published_at) : null,
-      image_url: n.thumbnail_url,
+      thumbnail_url: n.thumbnail_url,
+      sortDate: n.published_at ?? "",
     }));
 
-    const heroCandidates: HeroCandidate[] = (featuredRows ?? [])
-      .filter((n): n is typeof n & { thumbnail_url: string } => Boolean(n.thumbnail_url))
-      .map((n) => ({
-        id: `news-${n.id}`,
-        href: `/berita/${n.slug}`,
-        title: n.title,
-        thumbnail_url: n.thumbnail_url,
-        sortDate: n.published_at ?? "",
-      }));
+  return { sections, heroCandidates };
+}
 
-    return {
-      section:
-        items.length > 0
-          ? { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/berita", items }
-          : null,
-      heroCandidates,
-    };
-  },
-
+/**
+ * Registry topik sistem (backed tabel konten khusus) -> cara mengambil
+ * section homepage + kandidat hero-nya. "berita" SENGAJA tidak ada di sini -
+ * lihat fetchBeritaSections di atas, dipanggil terpisah karena punya 3
+ * section tetap (bukan satu section generik). Topik yang tidak ada di
+ * registry ini (Konten dan topik custom apa pun buatan Admin) otomatis
+ * jatuh ke `fetchGenericSection` di bawah - supaya topik baru bisa muncul
+ * di Beranda tanpa menambah entry baru di sini atau JSX section baru.
+ */
+const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
   agenda: async (supabase, topic) => {
     const [{ data: rows }, { data: featuredRows }] = await Promise.all([
       supabase
@@ -375,18 +463,20 @@ async function fetchGenericSection(
 }
 
 /**
- * Satu-satunya tempat yang tahu urutan render Beranda: iterasi topik AKTIF
- * berdasarkan display_order, lalu untuk tiap topik ambil section + kandidat
- * hero-nya lewat registry di atas (atau fallback generik). TIDAK ADA
- * percabangan "if key === ..." di halaman Beranda itu sendiri - topik baru
- * otomatis mendapat section tanpa menambah JSX baru di sana.
+ * Render section untuk semua topik aktif KECUALI Berita (punya 3 section
+ * tetap, ditangani fetchBeritaSections di atas dan dirender terpisah
+ * sebelum loop ini - lihat Beranda). Iterasi berdasarkan display_order,
+ * lalu untuk tiap topik ambil section + kandidat hero-nya lewat registry
+ * di atas (atau fallback generik). TIDAK ADA percabangan "if key === ..."
+ * di halaman Beranda itu sendiri - topik baru otomatis mendapat section
+ * tanpa menambah JSX baru di sana.
  */
 export async function fetchHomeSections(
   supabase: PublicSupabase,
   topics: SiteTopic[] | null | undefined,
-): Promise<{ sections: HomeSection[]; heroSlides: HeroSlide[] }> {
+): Promise<{ sections: HomeSection[]; heroCandidates: HeroCandidate[] }> {
   const activeTopics = (topics ?? [])
-    .filter((t) => t.is_active)
+    .filter((t) => t.is_active && t.key !== "berita")
     .sort((a, b) => a.display_order - b.display_order);
 
   const results = await Promise.all(
@@ -400,11 +490,19 @@ export async function fetchHomeSections(
     .map((r) => r.section)
     .filter((s): s is HomeSection => s !== null);
 
-  const heroSlides: HeroSlide[] = results
-    .flatMap((r) => r.heroCandidates)
+  const heroCandidates = results.flatMap((r) => r.heroCandidates);
+
+  return { sections, heroCandidates };
+}
+
+/**
+ * Gabungkan kandidat hero dari Berita + semua topik lain, urutkan
+ * berdasarkan tanggal terbaru, batasi 6 - dipanggil sekali di Beranda
+ * setelah kedua sumber (fetchBeritaSections + fetchHomeSections) selesai.
+ */
+export function finalizeHeroSlides(candidates: HeroCandidate[]): HeroSlide[] {
+  return candidates
     .sort((a, b) => (a.sortDate < b.sortDate ? 1 : -1))
     .slice(0, 6)
     .map((slide) => ({ id: slide.id, href: slide.href, title: slide.title, thumbnail_url: slide.thumbnail_url }));
-
-  return { sections, heroSlides };
 }

@@ -47,16 +47,25 @@ export function topicLabel(
 }
 
 /**
- * Status aktif topik untuk gating nav/section publik. Fail-open ke `true`
- * kalau baris topik belum ada, supaya fitur existing tidak tiba-tiba hilang
- * akibat data topik yang belum lengkap.
+ * Status aktif topik untuk gating nav/section publik.
+ *
+ * Fail-open ke `true` HANYA kalau `topics` itu sendiri null/undefined
+ * (query site_topics gagal dimuat) - supaya fitur existing tidak hilang
+ * akibat masalah jaringan/query, bukan karena topiknya memang dihapus.
+ *
+ * Kalau `topics` berhasil dimuat (array valid) tapi baris untuk `key` ini
+ * tidak ada di dalamnya, itu berarti Admin benar-benar menghapus topik
+ * tersebut dari site_topics - dianggap TIDAK aktif, supaya topik yang
+ * dihapus langsung hilang dari nav/section publik (bukan tampil lagi
+ * dengan label default).
  */
 export function isTopicActive(
   topics: Pick<SiteTopic, "key" | "is_active">[] | null | undefined,
   key: TopicKey,
 ): boolean {
-  const topic = topics?.find((t) => t.key === key);
-  return topic ? topic.is_active : true;
+  if (!topics) return true;
+  const topic = topics.find((t) => t.key === key);
+  return topic ? topic.is_active : false;
 }
 
 /**

@@ -1,12 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { OrganizationProfileForm } from "@/components/admin/organization-profile-form";
+import { isTopicFeaturedAllowed } from "@/lib/topics";
 
 export default async function AdminKontenProfilPage() {
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("organization_profile")
-    .select("id, sejarah, visi, misi, tujuan, deskripsi")
-    .single();
+  const [{ data: profile }, { data: topics }] = await Promise.all([
+    supabase
+      .from("organization_profile")
+      .select("id, sejarah, visi, misi, tujuan, deskripsi, image_url, is_featured")
+      .single(),
+    supabase.from("site_topics").select("key, is_active, allow_featured"),
+  ]);
 
   if (!profile) {
     return (
@@ -30,6 +34,9 @@ export default async function AdminKontenProfilPage() {
           tujuan: profile.tujuan ?? "",
           deskripsi: profile.deskripsi ?? "",
         }}
+        initialImageUrl={profile.image_url}
+        initialIsFeatured={profile.is_featured}
+        featuredAllowed={isTopicFeaturedAllowed(topics, "profil")}
       />
     </div>
   );

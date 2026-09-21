@@ -311,6 +311,7 @@ export type Database = {
           display_order: number
           id: string
           image_url: string
+          is_featured: boolean
           is_published: boolean
           updated_at: string
         }
@@ -320,6 +321,7 @@ export type Database = {
           display_order?: number
           id?: string
           image_url: string
+          is_featured?: boolean
           is_published?: boolean
           updated_at?: string
         }
@@ -329,6 +331,7 @@ export type Database = {
           display_order?: number
           id?: string
           image_url?: string
+          is_featured?: boolean
           is_published?: boolean
           updated_at?: string
         }
@@ -372,6 +375,7 @@ export type Database = {
           foto_url: string | null
           id: string
           is_active: boolean
+          is_featured: boolean
           nama: string
           updated_at: string
         }
@@ -382,6 +386,7 @@ export type Database = {
           foto_url?: string | null
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           nama: string
           updated_at?: string
         }
@@ -392,6 +397,7 @@ export type Database = {
           foto_url?: string | null
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           nama?: string
           updated_at?: string
         }
@@ -460,6 +466,8 @@ export type Database = {
         Row: {
           deskripsi: string | null
           id: string
+          image_url: string | null
+          is_featured: boolean
           misi: string | null
           sejarah: string | null
           tujuan: string | null
@@ -469,6 +477,8 @@ export type Database = {
         Insert: {
           deskripsi?: string | null
           id?: string
+          image_url?: string | null
+          is_featured?: boolean
           misi?: string | null
           sejarah?: string | null
           tujuan?: string | null
@@ -478,6 +488,8 @@ export type Database = {
         Update: {
           deskripsi?: string | null
           id?: string
+          image_url?: string | null
+          is_featured?: boolean
           misi?: string | null
           sejarah?: string | null
           tujuan?: string | null
@@ -493,6 +505,7 @@ export type Database = {
           foto_url: string | null
           id: string
           is_active: boolean
+          is_featured: boolean
           jabatan: string
           nama: string
           updated_at: string
@@ -503,6 +516,7 @@ export type Database = {
           foto_url?: string | null
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           jabatan: string
           nama: string
           updated_at?: string
@@ -513,6 +527,7 @@ export type Database = {
           foto_url?: string | null
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           jabatan?: string
           nama?: string
           updated_at?: string

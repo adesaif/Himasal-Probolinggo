@@ -28,9 +28,10 @@ type GalleryRow = {
   caption: string | null;
   display_order: number;
   is_published: boolean;
+  is_featured: boolean;
 };
 
-export function GalleryList() {
+export function GalleryList({ featuredAllowed }: { featuredAllowed: boolean }) {
   const [rows, setRows] = useState<GalleryRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +48,7 @@ export function GalleryList() {
 
       const { data, error } = await supabase
         .from("gallery_items")
-        .select("id, image_url, caption, display_order, is_published")
+        .select("id, image_url, caption, display_order, is_published, is_featured")
         .order("display_order")
         .order("created_at", { ascending: false });
 
@@ -114,6 +115,7 @@ export function GalleryList() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Galeri</h1>
         <GalleryFormDialog
+          featuredAllowed={featuredAllowed}
           trigger={
             <Button>
               <Plus />
@@ -157,6 +159,11 @@ export function GalleryList() {
                     Tersembunyi
                   </span>
                 ) : null}
+                {row.is_featured ? (
+                  <span className="absolute top-2 right-2 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground">
+                    Unggulan
+                  </span>
+                ) : null}
               </div>
               <CardContent className="flex flex-col gap-2 p-3">
                 {row.caption ? (
@@ -165,6 +172,7 @@ export function GalleryList() {
                 <div className="flex flex-wrap gap-1.5">
                   <GalleryFormDialog
                     editing={row}
+                    featuredAllowed={featuredAllowed}
                     trigger={
                       <Button variant="outline" size="sm" disabled={busyId === row.id}>
                         <Pencil />

@@ -35,13 +35,16 @@ type Editing = {
   caption: string | null;
   display_order: number;
   is_published: boolean;
+  is_featured: boolean;
 };
 
 export function GalleryFormDialog({
   editing,
+  featuredAllowed,
   trigger,
 }: {
   editing?: Editing;
+  featuredAllowed: boolean;
   trigger: ReactNode;
 }) {
   const router = useRouter();
@@ -55,6 +58,7 @@ export function GalleryFormDialog({
       caption: editing?.caption ?? "",
       display_order: editing?.display_order?.toString() ?? "0",
       is_published: editing?.is_published ?? true,
+      is_featured: editing?.is_featured ?? false,
     },
   });
 
@@ -71,6 +75,7 @@ export function GalleryFormDialog({
       caption: values.caption || null,
       display_order: values.display_order ? Number(values.display_order) : 0,
       is_published: values.is_published,
+      is_featured: featuredAllowed ? values.is_featured : false,
     };
 
     const { error } = editing
@@ -153,6 +158,30 @@ export function GalleryFormDialog({
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="is_featured"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unggulan</FormLabel>
+                  <FormControl>
+                    <div className="flex h-9 items-center gap-2">
+                      <Switch
+                        checked={featuredAllowed && field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isSubmitting || !featuredAllowed}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {featuredAllowed
+                          ? "Tampilkan di Hero Carousel"
+                          : "Topik Galeri belum mengizinkan Unggulan"}
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Menyimpan..." : "Simpan"}

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -34,19 +35,23 @@ type Editing = {
   jabatan: string;
   foto_url: string | null;
   display_order: number;
+  is_featured: boolean;
 };
 
 export function StructureFormDialog({
   editing,
+  featuredAllowed,
   trigger,
 }: {
   editing?: Editing;
+  featuredAllowed: boolean;
   trigger: ReactNode;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fotoUrl, setFotoUrl] = useState<string | null>(editing?.foto_url ?? null);
+  const [isFeatured, setIsFeatured] = useState(editing?.is_featured ?? false);
 
   const form = useForm<StructureInput>({
     resolver: zodResolver(structureSchema),
@@ -65,6 +70,7 @@ export function StructureFormDialog({
       jabatan: values.jabatan,
       display_order: values.display_order ? Number(values.display_order) : 0,
       foto_url: fotoUrl,
+      is_featured: featuredAllowed ? isFeatured : false,
     };
 
     const { error } = editing
@@ -132,6 +138,21 @@ export function StructureFormDialog({
                 </FormItem>
               )}
             />
+            <div>
+              <p className="mb-1 text-sm font-medium">Unggulan</p>
+              <div className="flex flex-col gap-1">
+                <div className="flex h-9 items-center gap-2">
+                  <Switch
+                    checked={featuredAllowed && isFeatured}
+                    onCheckedChange={setIsFeatured}
+                    disabled={isSubmitting || !featuredAllowed}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {featuredAllowed ? "Tampilkan di Hero Carousel" : "Topik Struktur belum mengizinkan Unggulan"}
+                  </span>
+                </div>
+              </div>
+            </div>
             <DialogFooter>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Menyimpan..." : "Simpan"}

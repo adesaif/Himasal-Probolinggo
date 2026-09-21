@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormControl,
@@ -16,6 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { createClient } from "@/lib/supabase/client";
 import {
   organizationProfileSchema,
@@ -25,12 +27,20 @@ import {
 export function OrganizationProfileForm({
   id,
   initialValues,
+  initialImageUrl,
+  initialIsFeatured,
+  featuredAllowed,
 }: {
   id: string;
   initialValues: OrganizationProfileInput;
+  initialImageUrl: string | null;
+  initialIsFeatured: boolean;
+  featuredAllowed: boolean;
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl);
+  const [isFeatured, setIsFeatured] = useState(initialIsFeatured);
 
   const form = useForm<OrganizationProfileInput>({
     resolver: zodResolver(organizationProfileSchema),
@@ -49,6 +59,8 @@ export function OrganizationProfileForm({
         misi: values.misi || null,
         tujuan: values.tujuan || null,
         deskripsi: values.deskripsi || null,
+        image_url: imageUrl,
+        is_featured: featuredAllowed ? isFeatured : false,
       })
       .eq("id", id);
 
@@ -135,6 +147,32 @@ export function OrganizationProfileForm({
             </FormItem>
           )}
         />
+        <div>
+          <p className="mb-1 text-sm font-medium">Foto Profil (untuk Hero, opsional)</p>
+          <ImageUploadField folder="profil" value={imageUrl} onChange={setImageUrl} />
+        </div>
+        <div>
+          <p className="mb-1 text-sm font-medium">Profil Unggulan</p>
+          <div className="flex flex-col gap-1">
+            <div className="flex h-9 items-center gap-2">
+              <Switch
+                checked={featuredAllowed && isFeatured}
+                onCheckedChange={setIsFeatured}
+                disabled={isSubmitting || !featuredAllowed}
+              />
+              <span className="text-sm text-muted-foreground">
+                {featuredAllowed
+                  ? "Tampilkan halaman Profil sebagai slide di Hero Carousel (butuh foto di atas)"
+                  : "Topik Profil belum mengizinkan Unggulan"}
+              </span>
+            </div>
+            {!featuredAllowed ? (
+              <p className="text-xs text-muted-foreground">
+                Aktifkan dulu di Admin → Konten → Topik &amp; Navigasi.
+              </p>
+            ) : null}
+          </div>
+        </div>
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}

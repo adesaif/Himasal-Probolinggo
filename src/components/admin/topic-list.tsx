@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Pencil, RotateCcw } from "lucide-react";
+import { ArrowDown, ArrowUp, Pencil, RotateCcw, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,9 +20,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TopicFormDialog } from "@/components/admin/topic-form-dialog";
 import { createClient } from "@/lib/supabase/client";
-import type { SiteTopic } from "@/lib/topics";
+import type { SiteTopic, TopicKey } from "@/lib/topics";
 
-export function TopicList({ rows }: { rows: SiteTopic[] }) {
+export function TopicList({
+  rows,
+  contentCounts,
+}: {
+  rows: SiteTopic[];
+  contentCounts: Partial<Record<TopicKey, number>>;
+}) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -66,6 +72,20 @@ export function TopicList({ rows }: { rows: SiteTopic[] }) {
     router.refresh();
   }
 
+  async function handleDelete(topic: SiteTopic) {
+    setBusyId(topic.id);
+    const supabase = createClient();
+    const { error } = await supabase.from("site_topics").delete().eq("id", topic.id);
+    setBusyId(null);
+
+    if (error) {
+      toast.error("Gagal menghapus topik", { description: error.message });
+      return;
+    }
+    toast.success("Topik berhasil dihapus permanen");
+    router.refresh();
+  }
+
   async function move(topic: SiteTopic, direction: "up" | "down") {
     const index = rows.findIndex((r) => r.id === topic.id);
     const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -100,31 +120,33 @@ export function TopicList({ rows }: { rows: SiteTopic[] }) {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Topik & Navigasi</h1>
         <p className="text-sm text-muted-foreground">
-          Kelola nama, deskripsi, urutan, status aktif, dan izin Unggulan
-          untuk setiap topik/bagian website. Mengganti nama di sini otomatis
-          tercermin di menu navigasi publik dan sidebar Admin. Topik ini
-          adalah bagian tetap dari sistem — tidak bisa ditambah atau dihapus
-          permanen, hanya diubah pengaturannya atau dikembalikan ke default.
+          Kelola nama, deskripsi, urutan, status aktif, izin Unggulan, dan
+          hapus untuk setiap topik/bagian website. Mengganti nama di sini
+          otomatis tercermin di menu navigasi publik dan sidebar Admin.
+          Menghapus topik hanya menghapus konfigurasinya dari daftar ini -
+          konten yang sudah ada di topik tersebut (berita, agenda, dsb)
+          TIDAK ikut terhapus.
         </p>
       </div>
 
       <div className="flex flex-col gap-2">
-        {rows.map((topic, index) => (
-          <Card key={topic.id}>
-            <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium">{topic.label}</p>
-                  <span
-                    className={
-                      topic.is_active
-                        ? "rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                        : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                    }
-                  >
-                    {topic.is_active ? "Aktif" : "Nonaktif"}
-                  </span>
-                  {topic.supports_featured ? (
+        {rows.map((topic, index) => {
+          const count = contentCounts[topic.key as TopicKey] ?? 0;
+          return (
+            <Card key={topic.id}>
+              <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium">{topic.label}</p>
+                    <span
+                      className={
+                        topic.is_active
+                          ? "rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                          : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                      }
+                    >
+                      {topic.is_active ? "Aktif" : "Nonaktif"}
+                    </span>
                     <span
                       className={
                         topic.allow_featured
@@ -134,88 +156,123 @@ export function TopicList({ rows }: { rows: SiteTopic[] }) {
                     >
                       Unggulan {topic.allow_featured ? "ON" : "OFF"}
                     </span>
-                  ) : (
-                    <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                      Unggulan: Belum tersedia
-                    </span>
-                  )}
-                </div>
-                {topic.description ? (
-                  <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
-                    {topic.description}
+                  </div>
+                  {topic.description ? (
+                    <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+                      {topic.description}
+                    </p>
+                  ) : null}
+                  <p className="text-xs text-muted-foreground">
+                    Kunci sistem: {topic.key} · Urutan: {topic.display_order} ·{" "}
+                    {count} konten terkait
                   </p>
-                ) : null}
-                <p className="text-xs text-muted-foreground">
-                  Kunci sistem: {topic.key} · Urutan: {topic.display_order}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={busyId === topic.id || index === 0}
-                  onClick={() => move(topic, "up")}
-                  aria-label="Naikkan urutan"
-                >
-                  <ArrowUp />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={busyId === topic.id || index === rows.length - 1}
-                  onClick={() => move(topic, "down")}
-                  aria-label="Turunkan urutan"
-                >
-                  <ArrowDown />
-                </Button>
-                <TopicFormDialog
-                  topic={topic}
-                  trigger={
-                    <Button variant="outline" size="sm" disabled={busyId === topic.id}>
-                      <Pencil />
-                      Edit
-                    </Button>
-                  }
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={busyId === topic.id}
-                  onClick={() => toggleActive(topic)}
-                >
-                  {topic.is_active ? "Nonaktifkan" : "Aktifkan"}
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" disabled={busyId === topic.id}>
-                      <RotateCcw />
-                      Reset ke Default
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Kembalikan topik ini ke default?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Nama, deskripsi, urutan, status aktif, dan izin
-                        Unggulan topik &quot;{topic.label}&quot; akan
-                        dikembalikan ke pengaturan bawaan sistem. Ini{" "}
-                        <strong>tidak menghapus</strong> konten atau data apa
-                        pun di topik ini — hanya mengembalikan label dan
-                        pengaturannya.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => resetToDefault(topic)}>
-                        Ya, kembalikan ke default
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busyId === topic.id || index === 0}
+                    onClick={() => move(topic, "up")}
+                    aria-label="Naikkan urutan"
+                  >
+                    <ArrowUp />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busyId === topic.id || index === rows.length - 1}
+                    onClick={() => move(topic, "down")}
+                    aria-label="Turunkan urutan"
+                  >
+                    <ArrowDown />
+                  </Button>
+                  <TopicFormDialog
+                    topic={topic}
+                    trigger={
+                      <Button variant="outline" size="sm" disabled={busyId === topic.id}>
+                        <Pencil />
+                        Edit
+                      </Button>
+                    }
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busyId === topic.id}
+                    onClick={() => toggleActive(topic)}
+                  >
+                    {topic.is_active ? "Nonaktifkan" : "Aktifkan"}
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" disabled={busyId === topic.id}>
+                        <RotateCcw />
+                        Reset ke Default
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Kembalikan topik ini ke default?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Nama, deskripsi, urutan, status aktif, dan izin
+                          Unggulan topik &quot;{topic.label}&quot; akan
+                          dikembalikan ke pengaturan bawaan sistem. Ini{" "}
+                          <strong>tidak menghapus</strong> konten atau data apa
+                          pun di topik ini — hanya mengembalikan label dan
+                          pengaturannya.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => resetToDefault(topic)}>
+                          Ya, kembalikan ke default
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm" disabled={busyId === topic.id}>
+                        <Trash2 />
+                        Hapus
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Topik &quot;{topic.label}&quot;?</AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                          <div className="flex flex-col gap-2">
+                            <p>
+                              Tindakan ini akan menghapus topik dari konfigurasi
+                              website (site_topics). Konten yang sudah ada{" "}
+                              <strong>TIDAK otomatis dihapus</strong>.
+                            </p>
+                            {count > 0 ? (
+                              <p className="font-medium text-destructive">
+                                Topik &quot;{topic.label}&quot; masih memiliki{" "}
+                                {count} konten. Menghapus topik tidak akan
+                                menghapus konten tersebut, tapi topik ini akan
+                                hilang dari navigasi publik, Beranda, dan tidak
+                                lagi bisa menjadi sumber Featured.
+                              </p>
+                            ) : null}
+                            <p>Tindakan ini tidak dapat dibatalkan.</p>
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(topic)}>
+                          Hapus Permanen
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

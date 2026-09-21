@@ -92,12 +92,18 @@ export default async function BerandaPage() {
     { data: masayikhList },
     { data: heroNews, error: heroNewsError },
     { data: heroEvents, error: heroEventsError },
+    { data: heroGaleri, error: heroGaleriError },
+    { data: heroStruktur, error: heroStrukturError },
+    { data: heroMasayikh, error: heroMasayikhError },
     { data: terbaruRows, error: terbaruError },
     { data: mingguCandidates, error: mingguError },
     { data: bulanCandidates, error: bulanError },
     { data: topics },
   ] = await Promise.all([
-    supabase.from("organization_profile").select("deskripsi").single(),
+    supabase
+      .from("organization_profile")
+      .select("deskripsi, image_url, is_featured, updated_at")
+      .single(),
     supabase
       .from("masayikh")
       .select("id, nama, foto_url, deskripsi")
@@ -125,6 +131,34 @@ export default async function BerandaPage() {
       .eq("is_featured", true)
       .not("thumbnail_url", "is", null)
       .order("start_at", { ascending: false })
+      .limit(6),
+    // Kandidat hero dari Galeri Unggulan.
+    supabase
+      .from("gallery_items")
+      .select("id, image_url, caption, created_at")
+      .eq("is_published", true)
+      .eq("is_featured", true)
+      .order("created_at", { ascending: false })
+      .limit(6),
+    // Kandidat hero dari Struktur (pengurus) Unggulan.
+    supabase
+      .from("organization_structure")
+      .select("id, nama, jabatan, foto_url, created_at")
+      .eq("is_active", true)
+      .eq("is_featured", true)
+      .not("foto_url", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(6),
+    // Kandidat hero dari Masayikh Unggulan (independen dari daftar
+    // preview 3 di atas - masayikh Unggulan tetap ikut hero walau bukan
+    // 3 teratas berdasarkan display_order).
+    supabase
+      .from("masayikh")
+      .select("id, nama, foto_url, created_at")
+      .eq("is_active", true)
+      .eq("is_featured", true)
+      .not("foto_url", "is", null)
+      .order("created_at", { ascending: false })
       .limit(6),
     // Berita Terbaru: published, published_at not null, DESC, max 4.
     // Tidak butuh kategori, tidak butuh "tampilkan di beranda" - publish
@@ -172,6 +206,15 @@ export default async function BerandaPage() {
   if (heroEventsError) {
     console.error("[beranda] gagal memuat agenda unggulan untuk hero:", heroEventsError.message);
   }
+  if (heroGaleriError) {
+    console.error("[beranda] gagal memuat galeri unggulan untuk hero:", heroGaleriError.message);
+  }
+  if (heroStrukturError) {
+    console.error("[beranda] gagal memuat struktur unggulan untuk hero:", heroStrukturError.message);
+  }
+  if (heroMasayikhError) {
+    console.error("[beranda] gagal memuat masayikh unggulan untuk hero:", heroMasayikhError.message);
+  }
   if (terbaruError) {
     console.error("[beranda] gagal memuat berita terbaru:", terbaruError.message);
   }
@@ -201,11 +244,14 @@ export default async function BerandaPage() {
     .filter((n) => !terbaruIds.has(n.id) && !mingguIds.has(n.id))
     .slice(0, 4);
 
-  // Hero Carousel menggabungkan kandidat Berita + Agenda, tapi HANYA yang
-  // topiknya aktif dan mengizinkan Unggulan (site_topics.allow_featured).
-  // "Unggulan ON" di topik tidak berarti semua kontennya otomatis tampil -
-  // konten itu sendiri tetap harus is_featured=true (sudah difilter di
-  // query di atas). Diurutkan gabungan berdasarkan tanggal, dibatasi 6.
+  // Hero Carousel menggabungkan kandidat dari SEMUA topik yang punya
+  // konten Unggulan nyata (Berita, Agenda, Galeri, Struktur, Masayikh,
+  // Profil), tapi HANYA yang topiknya aktif DAN mengizinkan Unggulan
+  // (site_topics.allow_featured). "Unggulan ON" di topik tidak berarti
+  // semua kontennya otomatis tampil - konten itu sendiri tetap harus
+  // is_featured=true (sudah difilter di query di atas). Diurutkan
+  // gabungan berdasarkan tanggal, dibatasi 6. Tidak pernah dummy slide -
+  // kalau semua kosong, HeroCarousel return null.
   const heroFromNews: (HeroSlide & { sortDate: string })[] = isTopicFeaturedAllowed(
     topics,
     "berita",
@@ -236,7 +282,70 @@ export default async function BerandaPage() {
         }))
     : [];
 
-  const heroSlides = [...heroFromNews, ...heroFromEvents]
+  const heroFromGaleri: (HeroSlide & { sortDate: string })[] = isTopicFeaturedAllowed(
+    topics,
+    "galeri",
+  )
+    ? (heroGaleri ?? []).map((g) => ({
+        id: `galeri-${g.id}`,
+        href: "/galeri",
+        title: g.caption || `${topicLabel(topics, "galeri", "Galeri")} HIMASAL Probolinggo`,
+        thumbnail_url: g.image_url,
+        sortDate: g.created_at,
+      }))
+    : [];
+
+  const heroFromStruktur: (HeroSlide & { sortDate: string })[] = isTopicFeaturedAllowed(
+    topics,
+    "struktur",
+  )
+    ? (heroStruktur ?? [])
+        .filter((s): s is typeof s & { foto_url: string } => Boolean(s.foto_url))
+        .map((s) => ({
+          id: `struktur-${s.id}`,
+          href: "/struktur",
+          title: `${s.nama} - ${s.jabatan}`,
+          thumbnail_url: s.foto_url,
+          sortDate: s.created_at,
+        }))
+    : [];
+
+  const heroFromMasayikh: (HeroSlide & { sortDate: string })[] = isTopicFeaturedAllowed(
+    topics,
+    "masayikh",
+  )
+    ? (heroMasayikh ?? [])
+        .filter((m): m is typeof m & { foto_url: string } => Boolean(m.foto_url))
+        .map((m) => ({
+          id: `masayikh-${m.id}`,
+          href: "/masayikh",
+          title: m.nama,
+          thumbnail_url: m.foto_url,
+          sortDate: m.created_at,
+        }))
+    : [];
+
+  const heroFromProfil: (HeroSlide & { sortDate: string })[] =
+    isTopicFeaturedAllowed(topics, "profil") && profile?.is_featured && profile.image_url
+      ? [
+          {
+            id: "profil",
+            href: "/profil",
+            title: `${topicLabel(topics, "profil", "Profil")} HIMASAL Probolinggo`,
+            thumbnail_url: profile.image_url,
+            sortDate: profile.updated_at,
+          },
+        ]
+      : [];
+
+  const heroSlides = [
+    ...heroFromNews,
+    ...heroFromEvents,
+    ...heroFromGaleri,
+    ...heroFromStruktur,
+    ...heroFromMasayikh,
+    ...heroFromProfil,
+  ]
     .sort((a, b) => (a.sortDate < b.sortDate ? 1 : -1))
     .slice(0, 6);
 

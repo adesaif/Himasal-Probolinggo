@@ -29,9 +29,16 @@ type MasayikhRow = {
   foto_url: string | null;
   display_order: number;
   is_active: boolean;
+  is_featured: boolean;
 };
 
-export function MasayikhList({ rows }: { rows: MasayikhRow[] }) {
+export function MasayikhList({
+  rows,
+  featuredAllowed,
+}: {
+  rows: MasayikhRow[];
+  featuredAllowed: boolean;
+}) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -81,6 +88,7 @@ export function MasayikhList({ rows }: { rows: MasayikhRow[] }) {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Masayikh</h1>
         <MasayikhFormDialog
+          featuredAllowed={featuredAllowed}
           trigger={
             <Button>
               <Plus />
@@ -131,10 +139,16 @@ export function MasayikhList({ rows }: { rows: MasayikhRow[] }) {
                   >
                     {row.is_active ? "Aktif" : "Nonaktif"}
                   </span>
+                  {row.is_featured ? (
+                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      Unggulan
+                    </span>
+                  ) : null}
                 </div>
                 <div className="flex gap-2">
                   <MasayikhFormDialog
                     editing={row}
+                    featuredAllowed={featuredAllowed}
                     trigger={
                       <Button variant="outline" size="sm" disabled={busyId === row.id}>
                         <Pencil />

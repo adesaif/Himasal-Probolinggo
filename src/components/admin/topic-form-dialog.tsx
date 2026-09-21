@@ -57,10 +57,7 @@ export function TopicFormDialog({
     const payload = {
       label: values.label,
       description: values.description || null,
-      // Kalau topik ini belum punya mekanisme Featured di kontennya
-      // (supports_featured=false), toggle di form ini tidak dirender -
-      // allow_featured live-nya tetap dikunci false, tidak ikut disimpan.
-      ...(topic.supports_featured ? { allow_featured: values.allow_featured } : {}),
+      allow_featured: values.allow_featured,
     };
 
     const { error } = await supabase.from("site_topics").update(payload).eq("id", topic.id);
@@ -110,40 +107,37 @@ export function TopicFormDialog({
                 </FormItem>
               )}
             />
-            {topic.supports_featured ? (
-              <FormField
-                control={form.control}
-                name="allow_featured"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Izinkan Unggulan / Featured</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isSubmitting}
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          {field.value
-                            ? "Konten topik ini boleh ditandai Featured dan masuk Hero Carousel"
-                            : "Konten topik ini tidak bisa masuk Hero Carousel"}
-                        </span>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ) : (
-              <div>
-                <p className="text-sm font-medium">Izinkan Unggulan / Featured</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Belum tersedia — konten pada topik ini belum punya mekanisme
-                  Featured.
-                </p>
-              </div>
-            )}
+            <FormField
+              control={form.control}
+              name="allow_featured"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Izinkan Unggulan / Featured</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isSubmitting}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {field.value
+                          ? "Konten topik ini boleh ditandai Featured dan masuk Hero Carousel"
+                          : "Konten topik ini tidak bisa masuk Hero Carousel"}
+                      </span>
+                    </div>
+                  </FormControl>
+                  {!topic.supports_featured ? (
+                    <p className="text-xs text-muted-foreground">
+                      Catatan: topik ini belum punya konten publik untuk
+                      di-Featured, jadi pengaturan ini belum berpengaruh ke
+                      Hero Carousel.
+                    </p>
+                  ) : null}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Menyimpan..." : "Simpan"}

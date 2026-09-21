@@ -5,6 +5,7 @@ import { CalendarDays, MapPin } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatEventRange } from "@/lib/format-date";
+import { topicLabel } from "@/lib/topics";
 
 export const metadata: Metadata = {
   title: "Agenda",
@@ -15,18 +16,22 @@ export const revalidate = 300;
 
 export default async function AgendaPage() {
   const supabase = createPublicClient();
-  const { data: events, error } = await supabase
-    .from("events")
-    .select("id, title, location, start_at, end_at, is_mandatory")
-    .eq("status", "published")
-    .order("start_at", { ascending: false });
+  const [{ data: events, error }, { data: topic }] = await Promise.all([
+    supabase
+      .from("events")
+      .select("id, title, location, start_at, end_at, is_mandatory")
+      .eq("status", "published")
+      .order("start_at", { ascending: false }),
+    supabase.from("site_topics").select("key, label").eq("key", "agenda").maybeSingle(),
+  ]);
 
   const now = new Date().getTime();
+  const agendaLabel = topicLabel(topic ? [topic] : null, "agenda", "Agenda");
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Agenda</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{agendaLabel}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Jadwal kegiatan HIMASAL Probolinggo.
         </p>

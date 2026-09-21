@@ -5,6 +5,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GalleryGrid } from "@/components/public/gallery-grid";
+import { topicLabel } from "@/lib/topics";
 
 export const metadata: Metadata = {
   title: "Galeri",
@@ -27,20 +28,25 @@ export default async function GaleriPage({
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  const { data: items, error, count } = await supabase
-    .from("gallery_items")
-    .select("id, image_url, caption, created_at", { count: "exact" })
-    .eq("is_published", true)
-    .order("display_order")
-    .order("created_at", { ascending: false })
-    .range(from, to);
+  const [{ data: items, error, count }, { data: topic }] = await Promise.all([
+    supabase
+      .from("gallery_items")
+      .select("id, image_url, caption, created_at", { count: "exact" })
+      .eq("is_published", true)
+      .order("display_order")
+      .order("created_at", { ascending: false })
+      .range(from, to),
+    supabase.from("site_topics").select("key, label").eq("key", "galeri").maybeSingle(),
+  ]);
 
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Galeri</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {topicLabel(topic ? [topic] : null, "galeri", "Galeri")}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Dokumentasi foto kegiatan HIMASAL Probolinggo.
         </p>

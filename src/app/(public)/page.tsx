@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/reveal";
 import { HeroCarousel, type HeroSlide } from "@/components/public/hero-carousel";
 import { formatDateID } from "@/lib/format-date";
-import { TOPIC_SELECT_COLUMNS, isTopicActive, isTopicFeaturedAllowed } from "@/lib/topics";
+import { TOPIC_SELECT_COLUMNS, isTopicActive, isTopicFeaturedAllowed, topicLabel } from "@/lib/topics";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -16,22 +16,73 @@ export const metadata: Metadata = {
 };
 
 // Beranda selalu dirender fresh per-request (bukan ISR statis) supaya
-// berita/kategori dari CMS Admin langsung tampil tanpa menunggu revalidasi.
+// berita/konten dari CMS Admin langsung tampil tanpa menunggu revalidasi.
 export const dynamic = "force-dynamic";
 
-type CategorySection = {
+const NEWS_CARD_COLUMNS = "id, slug, title, thumbnail_url, published_at";
+
+type NewsCard = {
   id: string;
-  name: string;
   slug: string;
-  tagline: string | null;
-  items: {
-    id: string;
-    slug: string;
-    title: string;
-    thumbnail_url: string | null;
-    published_at: string | null;
-  }[];
+  title: string;
+  thumbnail_url: string | null;
+  published_at: string | null;
 };
+
+function daysAgoIso(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function NewsGrid({ items }: { items: NewsCard[] }) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {items.map((item) => (
+        <Link key={item.id} href={`/berita/${item.slug}`}>
+          <Card className="card-hover h-full overflow-hidden">
+            {item.thumbnail_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={item.thumbnail_url}
+                alt={item.title}
+                loading="lazy"
+                className="aspect-video w-full object-cover"
+              />
+            ) : (
+              <div className="flex aspect-video w-full items-center justify-center bg-muted text-sm text-muted-foreground">
+                Tidak ada gambar
+              </div>
+            )}
+            <CardContent className="flex flex-col gap-1">
+              <p className="line-clamp-2 font-medium">{item.title}</p>
+              {item.published_at ? (
+                <p className="text-xs text-muted-foreground">
+                  {formatDateID(item.published_at)}
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function NewsSection({ heading, items }: { heading: string; items: NewsCard[] }) {
+  if (items.length === 0) return null;
+  return (
+    <Reveal>
+      <section>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <h2 className="text-2xl font-semibold tracking-tight">{heading}</h2>
+          <Button asChild variant="link" className="shrink-0">
+            <Link href="/berita">Lihat semua →</Link>
+          </Button>
+        </div>
+        <NewsGrid items={items} />
+      </section>
+    </Reveal>
+  );
+}
 
 export default async function BerandaPage() {
   const supabase = createPublicClient();
@@ -41,7 +92,9 @@ export default async function BerandaPage() {
     { data: masayikhList },
     { data: heroNews, error: heroNewsError },
     { data: heroEvents, error: heroEventsError },
-    { data: categoryNewsRows, error: categoryNewsError },
+    { data: terbaruRows, error: terbaruError },
+    { data: mingguCandidates, error: mingguError },
+    { data: bulanCandidates, error: bulanError },
     { data: topics },
   ] = await Promise.all([
     supabase.from("organization_profile").select("deskripsi").single(),
@@ -73,14 +126,43 @@ export default async function BerandaPage() {
       .not("thumbnail_url", "is", null)
       .order("start_at", { ascending: false })
       .limit(6),
-    // Kategori dinamis: RPC mengembalikan N berita terbaru per kategori
-    // aktif+tampil-di-beranda, dikelola penuh oleh Admin lewat
-    // /admin/konten/kategori - tidak ada kategori yang di-hardcode.
-    supabase.rpc("public_homepage_news_by_category", {
-      p_limit_per_category: 4,
-    }),
+    // Berita Terbaru: published, published_at not null, DESC, max 4.
+    // Tidak butuh kategori, tidak butuh "tampilkan di beranda" - publish
+    // saja otomatis masuk sini sesuai tanggal.
+    supabase
+      .from("news")
+      .select(NEWS_CARD_COLUMNS)
+      .eq("status", "published")
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(4),
+    // Berita Satu Minggu Lalu: published_at 7-14 hari lalu (bukan
+    // berdasarkan nomor/index artikel). Ambil kandidat lebih banyak dari
+    // limit tampil (4) supaya setelah exclude duplikat dgn Terbaru masih
+    // cukup untuk mengisi 4 slot.
+    supabase
+      .from("news")
+      .select(NEWS_CARD_COLUMNS)
+      .eq("status", "published")
+      .not("published_at", "is", null)
+      .lt("published_at", daysAgoIso(7))
+      .gte("published_at", daysAgoIso(14))
+      .order("published_at", { ascending: false })
+      .limit(8),
+    // Berita Satu Bulan Lalu: published_at 30-60 hari lalu.
+    supabase
+      .from("news")
+      .select(NEWS_CARD_COLUMNS)
+      .eq("status", "published")
+      .not("published_at", "is", null)
+      .lt("published_at", daysAgoIso(30))
+      .gte("published_at", daysAgoIso(60))
+      .order("published_at", { ascending: false })
+      .limit(8),
     // Topik: nama, status aktif, dan izin Unggulan tiap bagian website,
-    // dikelola Admin lewat /admin/konten/topik.
+    // dikelola Admin lewat /admin/konten/topik. Satu source of truth
+    // untuk label yang dipakai di nav, footer, sidebar Admin, dan heading
+    // section homepage di bawah.
     supabase.from("site_topics").select(TOPIC_SELECT_COLUMNS),
   ]);
 
@@ -90,37 +172,34 @@ export default async function BerandaPage() {
   if (heroEventsError) {
     console.error("[beranda] gagal memuat agenda unggulan untuk hero:", heroEventsError.message);
   }
-  if (categoryNewsError) {
-    console.error("[beranda] gagal memuat kategori:", categoryNewsError.message);
+  if (terbaruError) {
+    console.error("[beranda] gagal memuat berita terbaru:", terbaruError.message);
+  }
+  if (mingguError) {
+    console.error("[beranda] gagal memuat berita satu minggu lalu:", mingguError.message);
+  }
+  if (bulanError) {
+    console.error("[beranda] gagal memuat berita satu bulan lalu:", bulanError.message);
   }
 
   const beritaActive = isTopicActive(topics, "berita");
   const profilActive = isTopicActive(topics, "profil");
   const masayikhActive = isTopicActive(topics, "masayikh");
+  const beritaLabel = topicLabel(topics, "berita", "Berita");
+  const masayikhLabel = topicLabel(topics, "masayikh", "Masayikh");
 
-  const categorySections: CategorySection[] = [];
-  const sectionByCategoryId = new Map<string, CategorySection>();
-  for (const row of categoryNewsRows ?? []) {
-    let section = sectionByCategoryId.get(row.category_id);
-    if (!section) {
-      section = {
-        id: row.category_id,
-        name: row.category_name,
-        slug: row.category_slug,
-        tagline: row.category_tagline,
-        items: [],
-      };
-      sectionByCategoryId.set(row.category_id, section);
-      categorySections.push(section);
-    }
-    section.items.push({
-      id: row.news_id,
-      slug: row.news_slug,
-      title: row.news_title,
-      thumbnail_url: row.news_thumbnail_url,
-      published_at: row.news_published_at,
-    });
-  }
+  // Tiga section berita berbasis published_at, saling eksklusif (id yang
+  // sudah dipakai section sebelumnya di-exclude), bukan berbasis
+  // index/nomor artikel - lihat query di atas.
+  const terbaru: NewsCard[] = terbaruRows ?? [];
+  const terbaruIds = new Set(terbaru.map((n) => n.id));
+  const mingguLalu: NewsCard[] = (mingguCandidates ?? [])
+    .filter((n) => !terbaruIds.has(n.id))
+    .slice(0, 4);
+  const mingguIds = new Set(mingguLalu.map((n) => n.id));
+  const bulanLalu: NewsCard[] = (bulanCandidates ?? [])
+    .filter((n) => !terbaruIds.has(n.id) && !mingguIds.has(n.id))
+    .slice(0, 4);
 
   // Hero Carousel menggabungkan kandidat Berita + Agenda, tapi HANYA yang
   // topiknya aktif dan mengizinkan Unggulan (site_topics.allow_featured).
@@ -163,98 +242,58 @@ export default async function BerandaPage() {
 
   return (
     <div className="flex flex-col gap-16">
-      {/* Hero: portal berita - foto + judul asli berita Unggulan */}
-      <section className="hero-premium-bg relative z-0 h-[380px] overflow-hidden rounded-2xl sm:h-[460px] lg:h-[520px]">
+      {/* Hero: portal konten - foto + judul asli dari Berita/Agenda
+          Unggulan. Kalau tidak ada konten unggulan, HeroCarousel return
+          null dan section ini jatuh ke background gradient premium saja -
+          tidak pernah menampilkan dummy slide. */}
+      <section className="hero-premium-bg relative z-0 h-[340px] overflow-hidden rounded-2xl sm:h-[400px] lg:h-[440px]">
         <HeroCarousel slides={heroSlides} />
       </section>
 
-      {/* Kategori Berita - dinamis, dikelola penuh oleh Admin lewat
-          /admin/konten/kategori. Tidak ada kategori yang di-hardcode.
-          Seluruh section ini juga ikut disembunyikan kalau topik Berita
-          dinonaktifkan lewat /admin/konten/topik. */}
-      {beritaActive && categorySections.map((cat) => (
-        <Reveal key={cat.id}>
-          <section>
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-tight">{cat.name}</h2>
-                {cat.tagline ? (
-                  <p className="mt-1 text-sm text-muted-foreground">{cat.tagline}</p>
-                ) : null}
-              </div>
-              <Button asChild variant="link" className="shrink-0">
-                <Link href={`/berita?category=${cat.slug}`}>Lihat semua →</Link>
+      {/* Tiga section Berita berbasis tanggal publish - published =
+          otomatis masuk sesuai aturan tanggal, Admin tidak perlu memilih
+          "tampilkan di beranda". Kategori bukan syarat tampil. Seluruh
+          section ini disembunyikan kalau topik Berita dinonaktifkan, dan
+          tiap section individual disembunyikan kalau kosong. */}
+      {beritaActive ? (
+        <>
+          <NewsSection heading={`${beritaLabel} Terbaru`} items={terbaru} />
+          <NewsSection heading={`${beritaLabel} Satu Minggu Lalu`} items={mingguLalu} />
+          <NewsSection heading={`${beritaLabel} Satu Bulan Lalu`} items={bulanLalu} />
+        </>
+      ) : null}
+
+      {/* Tentang HIMASAL - hanya tampil kalau topik Profil aktif DAN
+          organization_profile.deskripsi benar-benar berisi konten nyata.
+          Tidak ada placeholder/fallback publik. */}
+      {profilActive && profile?.deskripsi ? (
+        <Reveal>
+          <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:items-center">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Tentang HIMASAL
+              </h2>
+              <p className="mt-3 text-muted-foreground">{profile.deskripsi}</p>
+              <Button asChild variant="link" className="mt-2 px-0">
+                <Link href="/profil">Selengkapnya →</Link>
               </Button>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {cat.items.map((item) => (
-                <Link key={item.id} href={`/berita/${item.slug}`}>
-                  <Card className="card-hover h-full overflow-hidden">
-                    {item.thumbnail_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.thumbnail_url}
-                        alt={item.title}
-                        loading="lazy"
-                        className="aspect-video w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex aspect-video w-full items-center justify-center bg-muted text-sm text-muted-foreground">
-                        Tidak ada gambar
-                      </div>
-                    )}
-                    <CardContent className="flex flex-col gap-1">
-                      <p className="line-clamp-2 font-medium">{item.title}</p>
-                      {item.published_at ? (
-                        <p className="text-xs text-muted-foreground">
-                          {formatDateID(item.published_at)}
-                        </p>
-                      ) : null}
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
             </div>
           </section>
         </Reveal>
-      ))}
-
-      {/* Tentang - ikut disembunyikan kalau topik Profil dinonaktifkan. */}
-      {profilActive ? (
-      <Reveal>
-        <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:items-center">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Tentang HIMASAL
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              {profile?.deskripsi ||
-                "Konten ringkasan organisasi sedang disiapkan oleh Admin."}
-            </p>
-            <Button asChild variant="link" className="mt-2 px-0">
-              <Link href="/profil">Selengkapnya →</Link>
-            </Button>
-          </div>
-        </section>
-      </Reveal>
       ) : null}
 
-      {/* Preview Masayikh - ikut disembunyikan kalau topik Masayikh
-          dinonaktifkan. */}
-      {masayikhActive ? (
-      <Reveal>
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold tracking-tight">Masayikh</h2>
-            <Button asChild variant="link">
-              <Link href="/masayikh">Lihat semua →</Link>
-            </Button>
-          </div>
-          {!masayikhList || masayikhList.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Data masayikh belum tersedia.
-            </p>
-          ) : (
+      {/* Preview Masayikh - hanya tampil kalau topik aktif DAN ada
+          minimal satu data masayikh aktif. Tidak ada pesan placeholder -
+          section disembunyikan total kalau kosong. */}
+      {masayikhActive && masayikhList && masayikhList.length > 0 ? (
+        <Reveal>
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-2xl font-semibold tracking-tight">{masayikhLabel}</h2>
+              <Button asChild variant="link">
+                <Link href="/masayikh">Lihat semua →</Link>
+              </Button>
+            </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {masayikhList.map((m) => (
                 <Card key={m.id} className="card-hover">
@@ -281,9 +320,8 @@ export default async function BerandaPage() {
                 </Card>
               ))}
             </div>
-          )}
-        </section>
-      </Reveal>
+          </section>
+        </Reveal>
       ) : null}
     </div>
   );

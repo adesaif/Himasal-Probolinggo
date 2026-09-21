@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { HeroSlideFormDialog } from "@/components/admin/hero-slide-form-dialog";
 import { createClient } from "@/lib/supabase/client";
+import { cleanupStorageFileIfUnused } from "@/lib/storage-cleanup";
 
 type HeroSlideRow = {
   id: string;
@@ -50,17 +51,27 @@ export function HeroSlideList({ rows }: { rows: HeroSlideRow[] }) {
     router.refresh();
   }
 
-  async function handleDelete(id: string) {
-    setBusyId(id);
+  async function handleDelete(row: HeroSlideRow) {
+    setBusyId(row.id);
     const supabase = createClient();
-    const { error } = await supabase.from("hero_slides").delete().eq("id", id);
-    setBusyId(null);
+    const { error } = await supabase.from("hero_slides").delete().eq("id", row.id);
 
     if (error) {
+      setBusyId(null);
       toast.error("Gagal menghapus", { description: error.message });
       return;
     }
-    toast.success("Wallpaper berhasil dihapus");
+
+    await cleanupStorageFileIfUnused(supabase, row.image_url, async () => {
+      const { count } = await supabase
+        .from("hero_slides")
+        .select("id", { count: "exact", head: true })
+        .eq("image_url", row.image_url);
+      return (count ?? 0) > 0;
+    });
+
+    setBusyId(null);
+    toast.success("Wallpaper berhasil dihapus permanen");
     router.refresh();
   }
 
@@ -95,12 +106,28 @@ export function HeroSlideList({ rows }: { rows: HeroSlideRow[] }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <Card className="border-warning/40 bg-warning/5">
+        <CardContent className="text-sm">
+          <p className="font-medium text-warning-foreground">
+            Fitur ini sudah digantikan oleh Featured Content
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            Hero Carousel di Beranda sekarang otomatis mengambil dari Berita
+            atau Agenda yang ditandai <strong>Unggulan</strong> (lihat{" "}
+            <code>/admin/berita</code> atau <code>/admin/agenda</code>), bukan
+            dari wallpaper manual di halaman ini. Data di bawah dipertahankan
+            sebagai arsip/kompatibilitas dan tidak lagi tampil di halaman
+            publik mana pun.
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Hero Wallpaper</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Hero Wallpaper (Legacy)</h1>
           <p className="text-sm text-muted-foreground">
-            Kelola foto/wallpaper carousel hero beranda. Jika belum ada wallpaper
-            aktif, beranda menampilkan background gradient premium.
+            Kelola foto/wallpaper carousel hero beranda versi lama. Tidak lagi
+            dipakai oleh halaman publik - lihat catatan di atas.
           </p>
         </div>
         <HeroSlideFormDialog
@@ -188,20 +215,23 @@ export function HeroSlideList({ rows }: { rows: HeroSlideRow[] }) {
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm" disabled={busyId === row.id}>
                         <Trash2 />
+                        Hapus Permanen
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus wallpaper ini?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Hapus permanen &quot;{row.alt_text}&quot;?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Wallpaper &quot;{row.alt_text}&quot; akan dihapus permanen
-                          dan tidak bisa dikembalikan.
+                          Apakah Anda yakin ingin menghapus permanen wallpaper
+                          ini? Tindakan ini tidak dapat dibatalkan.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(row.id)}>
-                          Ya, hapus
+                        <AlertDialogAction onClick={() => handleDelete(row)}>
+                          Ya, Hapus Permanen
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

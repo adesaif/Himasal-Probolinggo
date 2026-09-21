@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
+import { topicLabel } from "@/lib/topics";
 
 export const metadata: Metadata = {
   title: "Masayikh",
@@ -12,15 +13,20 @@ export const revalidate = 300;
 
 export default async function MasayikhPage() {
   const supabase = createPublicClient();
-  const { data: masayikhList } = await supabase
-    .from("masayikh")
-    .select("id, nama, foto_url, deskripsi")
-    .eq("is_active", true)
-    .order("display_order");
+  const [{ data: masayikhList }, { data: topic }] = await Promise.all([
+    supabase
+      .from("masayikh")
+      .select("id, nama, foto_url, deskripsi")
+      .eq("is_active", true)
+      .order("display_order"),
+    supabase.from("site_topics").select("key, label").eq("key", "masayikh").maybeSingle(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-bold tracking-tight">Masayikh</h1>
+      <h1 className="text-3xl font-bold tracking-tight">
+        {topicLabel(topic ? [topic] : null, "masayikh", "Masayikh")}
+      </h1>
 
       {!masayikhList || masayikhList.length === 0 ? (
         <p className="text-sm text-muted-foreground">

@@ -5,6 +5,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BeritaSearchInput } from "@/components/public/berita-search-input";
+import { topicLabel } from "@/lib/topics";
 
 export const metadata: Metadata = {
   title: "Berita",
@@ -32,6 +33,13 @@ export default async function BeritaPage({
       .maybeSingle();
     activeCategory = data;
   }
+
+  const { data: topic } = await supabase
+    .from("site_topics")
+    .select("key, label")
+    .eq("key", "berita")
+    .maybeSingle();
+  const beritaLabel = topicLabel(topic ? [topic] : null, "berita", "Berita");
 
   let query = supabase
     .from("news")
@@ -68,7 +76,7 @@ export default async function BeritaPage({
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          {activeCategory ? activeCategory.name : "Berita"}
+          {activeCategory ? activeCategory.name : beritaLabel}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Kabar dan informasi terbaru seputar HIMASAL Probolinggo.

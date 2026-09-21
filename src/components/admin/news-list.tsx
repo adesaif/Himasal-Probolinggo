@@ -31,6 +31,7 @@ import { NewsFormDialog } from "@/components/admin/news-form-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatDateID } from "@/lib/format-date";
+import { cleanupStorageFileIfUnused } from "@/lib/storage-cleanup";
 
 type NewsRow = {
   id: string;
@@ -140,17 +141,27 @@ export function NewsList({
 
   const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
 
-  async function handleDelete(id: string) {
-    setBusyId(id);
+  async function handleDelete(row: NewsRow) {
+    setBusyId(row.id);
     const supabase = createClient();
-    const { error } = await supabase.from("news").delete().eq("id", id);
-    setBusyId(null);
+    const { error } = await supabase.from("news").delete().eq("id", row.id);
 
     if (error) {
+      setBusyId(null);
       toast.error("Gagal menghapus berita", { description: error.message });
       return;
     }
-    toast.success("Berita berhasil dihapus");
+
+    await cleanupStorageFileIfUnused(supabase, row.thumbnail_url, async () => {
+      const { count } = await supabase
+        .from("news")
+        .select("id", { count: "exact", head: true })
+        .eq("thumbnail_url", row.thumbnail_url as string);
+      return (count ?? 0) > 0;
+    });
+
+    setBusyId(null);
+    toast.success("Berita berhasil dihapus permanen");
     setReloadKey((k) => k + 1);
   }
 
@@ -308,20 +319,25 @@ export function NewsList({
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm" disabled={busyId === row.id}>
                         <Trash2 />
+                        Hapus Permanen
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus berita ini?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Hapus permanen &quot;{row.title}&quot;?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          &quot;{row.title}&quot; akan dihapus permanen dan tidak bisa
-                          dikembalikan.
+                          Apakah Anda yakin ingin menghapus permanen berita ini?
+                          Tindakan ini tidak dapat dibatalkan - berita akan
+                          hilang dari Admin, halaman publik, dan Hero Carousel
+                          (jika sedang Unggulan).
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(row.id)}>
-                          Ya, hapus
+                        <AlertDialogAction onClick={() => handleDelete(row)}>
+                          Ya, Hapus Permanen
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

@@ -39,7 +39,11 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-const ICON_BUTTON_CLASS = "rounded-full border border-border/70 bg-background/60";
+// size-8 (bukan size-9 bawaan Button) di breakpoint terkecil supaya logo +
+// brand lockup + 3 tombol ikon tidak overflow horizontal di layar 320px
+// (lihat verifikasi visual QA) - kembali ke size-9 mulai sm: seperti semula.
+const ICON_BUTTON_CLASS =
+  "size-8 rounded-full border border-border/70 bg-background/60 sm:size-9";
 
 export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -49,8 +53,8 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
   return (
     <header className="site-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
-          <HimasalLogo heightClassName="h-8 sm:h-9" />
+        <Link href="/" className="flex min-w-0 shrink items-center gap-1.5 sm:shrink-0 sm:gap-2.5">
+          <HimasalLogo heightClassName="h-7 sm:h-9" className="shrink-0" />
           <span className="flex items-baseline whitespace-nowrap text-sm leading-none font-bold tracking-[-0.01em] uppercase sm:text-base">
             <span className="text-brand-text-himasal">HIMASAL</span>{" "}
             <span className="text-brand-text-probolinggo">PROBOLINGGO</span>
@@ -88,7 +92,7 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
           })}
         </nav>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <Button asChild size="sm" className="mr-1 hidden lg:inline-flex">
             <Link href="/login">Login</Link>
           </Button>

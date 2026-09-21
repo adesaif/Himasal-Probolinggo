@@ -22,6 +22,7 @@ import {
 import { EventFormDialog } from "@/components/admin/event-form-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { formatEventRange } from "@/lib/format-date";
+import { cleanupStorageFileIfUnused } from "@/lib/storage-cleanup";
 
 type EventRow = {
   id: string;
@@ -75,17 +76,44 @@ export function EventList({ featuredAllowed }: { featuredAllowed: boolean }) {
     };
   }, [reloadKey]);
 
-  async function handleDelete(id: string) {
-    setBusyId(id);
+  async function handleDelete(row: EventRow) {
+    setBusyId(row.id);
     const supabase = createClient();
-    const { error } = await supabase.from("events").delete().eq("id", id);
-    setBusyId(null);
+
+    // Safety check: jangan cascade-delete data absensi/QR nyata secara
+    // membabi buta. Kalau agenda ini masih punya rekaman kehadiran, blok
+    // delete dan jelaskan ke Admin - jangan silent-cascade lewat FK.
+    const { count: attendanceCount } = await supabase
+      .from("attendance_records")
+      .select("id", { count: "exact", head: true })
+      .eq("event_id", row.id);
+
+    if ((attendanceCount ?? 0) > 0) {
+      setBusyId(null);
+      toast.error("Tidak bisa menghapus permanen", {
+        description: `Agenda ini masih punya ${attendanceCount} data absensi tercatat. Hapus/pindahkan data absensi terlebih dahulu sebelum menghapus agenda ini secara permanen.`,
+      });
+      return;
+    }
+
+    const { error } = await supabase.from("events").delete().eq("id", row.id);
 
     if (error) {
+      setBusyId(null);
       toast.error("Gagal menghapus agenda", { description: error.message });
       return;
     }
-    toast.success("Agenda berhasil dihapus");
+
+    await cleanupStorageFileIfUnused(supabase, row.thumbnail_url, async () => {
+      const { count } = await supabase
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("thumbnail_url", row.thumbnail_url as string);
+      return (count ?? 0) > 0;
+    });
+
+    setBusyId(null);
+    toast.success("Agenda berhasil dihapus permanen");
     setReloadKey((k) => k + 1);
   }
 
@@ -201,20 +229,26 @@ export function EventList({ featuredAllowed }: { featuredAllowed: boolean }) {
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm" disabled={busyId === row.id}>
                         <Trash2 />
+                        Hapus Permanen
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus agenda ini?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Hapus permanen &quot;{row.title}&quot;?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          &quot;{row.title}&quot; akan dihapus permanen dan tidak bisa
-                          dikembalikan.
+                          Apakah Anda yakin ingin menghapus permanen agenda ini?
+                          Tindakan ini tidak dapat dibatalkan - agenda akan
+                          hilang dari Admin, halaman publik, dan Hero Carousel
+                          (jika sedang Unggulan). Jika agenda ini masih punya
+                          data absensi tercatat, penghapusan akan diblok.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(row.id)}>
-                          Ya, hapus
+                        <AlertDialogAction onClick={() => handleDelete(row)}>
+                          Ya, Hapus Permanen
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

@@ -213,21 +213,25 @@ export function CategoryList({ rows }: { rows: CategoryRow[] }) {
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm" disabled={busyId === row.id}>
                         <Trash2 />
+                        Hapus Permanen
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus kategori ini?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Hapus permanen &quot;{row.name}&quot;?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          &quot;{row.name}&quot; akan dihapus permanen. Berita yang
+                          Apakah Anda yakin ingin menghapus permanen kategori
+                          ini? Tindakan ini tidak dapat dibatalkan. Berita yang
                           memakai kategori ini akan menjadi tanpa kategori
-                          (tidak ikut terhapus).
+                          (berita itu sendiri TIDAK ikut terhapus).
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDelete(row.id)}>
-                          Ya, hapus
+                          Ya, Hapus Permanen
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

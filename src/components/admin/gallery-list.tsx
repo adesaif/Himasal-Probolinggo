@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { GalleryFormDialog } from "@/components/admin/gallery-form-dialog";
 import { createClient } from "@/lib/supabase/client";
+import { cleanupStorageFileIfUnused } from "@/lib/storage-cleanup";
 
 type GalleryRow = {
   id: string;
@@ -67,17 +68,27 @@ export function GalleryList() {
     };
   }, [reloadKey]);
 
-  async function handleDelete(id: string) {
-    setBusyId(id);
+  async function handleDelete(row: GalleryRow) {
+    setBusyId(row.id);
     const supabase = createClient();
-    const { error } = await supabase.from("gallery_items").delete().eq("id", id);
-    setBusyId(null);
+    const { error } = await supabase.from("gallery_items").delete().eq("id", row.id);
 
     if (error) {
+      setBusyId(null);
       toast.error("Gagal menghapus foto", { description: error.message });
       return;
     }
-    toast.success("Foto berhasil dihapus");
+
+    await cleanupStorageFileIfUnused(supabase, row.image_url, async () => {
+      const { count } = await supabase
+        .from("gallery_items")
+        .select("id", { count: "exact", head: true })
+        .eq("image_url", row.image_url);
+      return (count ?? 0) > 0;
+    });
+
+    setBusyId(null);
+    toast.success("Foto berhasil dihapus permanen");
     setReloadKey((k) => k + 1);
   }
 
@@ -170,21 +181,29 @@ export function GalleryList() {
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm" disabled={busyId === row.id}>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={busyId === row.id}
+                        aria-label="Hapus Permanen"
+                      >
                         <Trash2 />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus foto ini?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Hapus permanen foto {row.caption ? `"${row.caption}"` : "ini"}?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Foto akan dihapus permanen dan tidak bisa dikembalikan.
+                          Apakah Anda yakin ingin menghapus permanen foto ini?
+                          Tindakan ini tidak dapat dibatalkan.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(row.id)}>
-                          Ya, hapus
+                        <AlertDialogAction onClick={() => handleDelete(row)}>
+                          Ya, Hapus Permanen
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

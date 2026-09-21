@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MasayikhFormDialog } from "@/components/admin/masayikh-form-dialog";
 import { createClient } from "@/lib/supabase/client";
+import { cleanupStorageFileIfUnused } from "@/lib/storage-cleanup";
 
 type MasayikhRow = {
   id: string;
@@ -51,17 +52,27 @@ export function MasayikhList({ rows }: { rows: MasayikhRow[] }) {
     router.refresh();
   }
 
-  async function handleDelete(id: string) {
-    setBusyId(id);
+  async function handleDelete(row: MasayikhRow) {
+    setBusyId(row.id);
     const supabase = createClient();
-    const { error } = await supabase.from("masayikh").delete().eq("id", id);
-    setBusyId(null);
+    const { error } = await supabase.from("masayikh").delete().eq("id", row.id);
 
     if (error) {
+      setBusyId(null);
       toast.error("Gagal menghapus", { description: error.message });
       return;
     }
-    toast.success("Data berhasil dihapus");
+
+    await cleanupStorageFileIfUnused(supabase, row.foto_url, async () => {
+      const { count } = await supabase
+        .from("masayikh")
+        .select("id", { count: "exact", head: true })
+        .eq("foto_url", row.foto_url as string);
+      return (count ?? 0) > 0;
+    });
+
+    setBusyId(null);
+    toast.success("Data berhasil dihapus permanen");
     router.refresh();
   }
 
@@ -143,20 +154,23 @@ export function MasayikhList({ rows }: { rows: MasayikhRow[] }) {
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm" disabled={busyId === row.id}>
                         <Trash2 />
+                        Hapus Permanen
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus data ini?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Hapus permanen &quot;{row.nama}&quot;?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Data &quot;{row.nama}&quot; akan dihapus permanen dan tidak bisa
-                          dikembalikan.
+                          Apakah Anda yakin ingin menghapus permanen data ini?
+                          Tindakan ini tidak dapat dibatalkan.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(row.id)}>
-                          Ya, hapus
+                        <AlertDialogAction onClick={() => handleDelete(row)}>
+                          Ya, Hapus Permanen
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

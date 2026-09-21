@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
+import { topicLabel } from "@/lib/topics";
 
 export const metadata: Metadata = {
   title: "Struktur Organisasi",
@@ -12,16 +13,19 @@ export const revalidate = 300;
 
 export default async function StrukturPage() {
   const supabase = createPublicClient();
-  const { data: structure } = await supabase
-    .from("organization_structure")
-    .select("id, nama, jabatan, foto_url")
-    .eq("is_active", true)
-    .order("display_order");
+  const [{ data: structure }, { data: topic }] = await Promise.all([
+    supabase
+      .from("organization_structure")
+      .select("id, nama, jabatan, foto_url")
+      .eq("is_active", true)
+      .order("display_order"),
+    supabase.from("site_topics").select("key, label").eq("key", "struktur").maybeSingle(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold tracking-tight">
-        Struktur Organisasi
+        {topicLabel(topic ? [topic] : null, "struktur", "Struktur")} Organisasi
       </h1>
 
       {!structure || structure.length === 0 ? (

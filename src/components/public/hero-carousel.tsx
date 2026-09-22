@@ -65,17 +65,33 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       onMouseLeave={() => setIsPaused(false)}
     >
       {slides.map((slide, i) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <div
           key={slide.id}
-          src={slide.thumbnail_url}
-          alt={slide.title}
           className={cn(
-            "absolute inset-0 size-full object-cover transition-opacity ease-in-out",
+            "absolute inset-0 transition-opacity ease-in-out",
             i === index ? "opacity-100" : "opacity-0",
           )}
           style={{ transitionDuration: `${TRANSITION_MS}ms` }}
-        />
+        >
+          {/* Backdrop halus dari foto yang sama (di-blur + digelapkan) supaya
+              tidak ada area kosong di sisi foto - object-cover di sini AMAN
+              dipotong karena cuma backdrop, bukan subjek utama. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={slide.thumbnail_url}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 size-full scale-110 object-cover blur-2xl brightness-50"
+          />
+          {/* Foto utama: object-contain supaya subjek/wajah selalu tampil
+              utuh, apa pun rasio aslinya - tidak pernah terpotong. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={slide.thumbnail_url}
+            alt={slide.title}
+            className="absolute inset-0 size-full object-contain"
+          />
+        </div>
       ))}
       <div className="hero-slide-overlay absolute inset-0" aria-hidden="true" />
 

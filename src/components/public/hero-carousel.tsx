@@ -75,21 +75,28 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         >
           {/* Backdrop halus dari foto yang sama (di-blur + digelapkan) supaya
               tidak ada area kosong di sisi foto - object-cover di sini AMAN
-              dipotong karena cuma backdrop, bukan subjek utama. */}
+              dipotong karena cuma backdrop, bukan subjek utama. Blur lebih
+              lembut + saturasi dinaikkan supaya backdrop terasa menyatu
+              seperti glow ambient, bukan kotak gelap kosong di sekitar foto
+              utama (foto portrait di Hero yang sangat wide). */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={slide.thumbnail_url}
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 size-full scale-110 object-cover blur-2xl brightness-50"
+            className="absolute inset-0 size-full scale-110 object-cover blur-3xl brightness-75 saturate-150"
           />
           {/* Foto utama: object-contain supaya subjek/wajah selalu tampil
-              utuh, apa pun rasio aslinya - tidak pernah terpotong. */}
+              utuh, apa pun rasio aslinya - tidak pernah terpotong. Diberi
+              jarak (inset) dari tepi Hero + bingkai (rounded, shadow, ring)
+              supaya foto portrait yang jadi "pita sempit" di Hero yang
+              sangat wide terbaca sebagai kartu foto yang sengaja ditata,
+              bukan letterbox yang terlihat seperti kesalahan render. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={slide.thumbnail_url}
             alt={slide.title}
-            className="absolute inset-0 size-full object-contain"
+            className="absolute inset-3 rounded-2xl object-contain shadow-2xl ring-1 ring-white/10 sm:inset-6 lg:inset-8"
           />
         </div>
       ))}

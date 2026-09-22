@@ -32,6 +32,15 @@ export const dynamic = "force-dynamic";
 // terlihat kosong. Default "cover" mempertahankan tampilan lama persis
 // seperti sebelumnya untuk semua section lain (Agenda/Galeri/Struktur/
 // Masayikh/Konten/topik custom) - tidak disentuh oleh perubahan ini.
+//
+// Catatan: sempat dicoba membatasi jumlah kolom mengikuti jumlah item
+// (supaya section dengan 1 kartu tidak menyisakan 3 kolom kosong), tapi
+// verifikasi visual nyata menunjukkan itu regresi lebih buruk - grid-
+// cols-1 membuat SATU kartu meregang penuh ke lebar container (aspect-
+// video jadi raksasa ~650px tinggi). Ruang kosong di sisa kolom untuk
+// section yang baru punya sedikit konten adalah pola yang wajar dan
+// tidak rusak, jadi grid tetap - kolom (1/2/4) TIDAK bergantung jumlah
+// item.
 function CardGrid({
   items,
   thumbnailFit = "cover",
@@ -154,8 +163,13 @@ export default async function BerandaPage() {
           mana pun yang aktif & mengizinkan Unggulan. Kalau tidak ada
           konten unggulan, HeroCarousel return null dan section ini jatuh
           ke background gradient premium saja - tidak pernah menampilkan
-          dummy slide. */}
-      <section className="hero-premium-bg relative z-0 h-[340px] overflow-hidden rounded-2xl sm:h-[400px] lg:h-[440px]">
+          dummy slide. Tinggi dinaikkan sedikit (+~12%) dari revisi
+          sebelumnya - foto utama TIDAK PERNAH di-crop (object-contain),
+          jadi foto potret (rasio tinggi) di kotak yang sangat lebar selalu
+          tampil sebagai pita foto yang agak sempit; menambah tinggi secara
+          moderat memberi foto ruang lebih tanpa membuat Hero terasa
+          sangat tinggi. */}
+      <section className="hero-premium-bg relative z-0 h-[380px] overflow-hidden rounded-2xl sm:h-[440px] lg:h-[500px]">
         <HeroCarousel slides={heroSlides} />
       </section>
 

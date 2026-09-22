@@ -3,6 +3,7 @@ import { Mail, Phone } from "lucide-react";
 
 import { HimasalLogo } from "@/components/shared/himasal-logo";
 import { topicHref, type SiteTopic } from "@/lib/topics";
+import { cn } from "@/lib/utils";
 
 type SiteSettings = {
   nama_organisasi: string | null;
@@ -42,10 +43,20 @@ export function PublicFooter({
     settings?.facebook_url && { href: settings.facebook_url, label: "Facebook" },
     settings?.youtube_url && { href: settings.youtube_url, label: "YouTube" },
   ].filter((v): v is { href: string; label: string } => Boolean(v));
+  // Kolom kontak disembunyikan total (bukan dirender kosong) kalau belum
+  // ada satu pun info kontak/sosial yang diisi Admin - ditemukan lewat
+  // review visual nyata: dengan site_settings kosong, kolom ketiga tampil
+  // sebagai ruang kosong yang timpang di grid 3 kolom.
+  const hasContact = Boolean(settings?.email || settings?.telepon || socialLinks.length > 0);
 
   return (
     <footer className="border-t bg-secondary/40">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-8 sm:grid-cols-3">
+      <div
+        className={cn(
+          "mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-8",
+          hasContact ? "sm:grid-cols-3" : "sm:grid-cols-2",
+        )}
+      >
         <div>
           <div className="flex items-center gap-2">
             <HimasalLogo heightClassName="h-10" />
@@ -68,41 +79,43 @@ export function PublicFooter({
           ))}
         </nav>
 
-        <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-          {settings?.email ? (
-            <a
-              href={`mailto:${settings.email}`}
-              className="flex items-center gap-2 hover:text-foreground"
-            >
-              <Mail className="size-4" aria-hidden="true" />
-              {settings.email}
-            </a>
-          ) : null}
-          {settings?.telepon ? (
-            <a
-              href={`tel:${settings.telepon}`}
-              className="flex items-center gap-2 hover:text-foreground"
-            >
-              <Phone className="size-4" aria-hidden="true" />
-              {settings.telepon}
-            </a>
-          ) : null}
-          {socialLinks.length > 0 ? (
-            <div className="mt-1 flex items-center gap-3">
-              {socialLinks.map(({ href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium hover:text-foreground hover:underline"
-                >
-                  {label}
-                </a>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        {hasContact ? (
+          <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+            {settings?.email ? (
+              <a
+                href={`mailto:${settings.email}`}
+                className="flex items-center gap-2 hover:text-foreground"
+              >
+                <Mail className="size-4" aria-hidden="true" />
+                {settings.email}
+              </a>
+            ) : null}
+            {settings?.telepon ? (
+              <a
+                href={`tel:${settings.telepon}`}
+                className="flex items-center gap-2 hover:text-foreground"
+              >
+                <Phone className="size-4" aria-hidden="true" />
+                {settings.telepon}
+              </a>
+            ) : null}
+            {socialLinks.length > 0 ? (
+              <div className="mt-1 flex items-center gap-3">
+                {socialLinks.map(({ href, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium hover:text-foreground hover:underline"
+                  >
+                    {label}
+                  </a>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       <div className="border-t px-4 py-4 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} {namaOrganisasi}

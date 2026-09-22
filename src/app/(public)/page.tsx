@@ -58,11 +58,21 @@ function CardGrid({ items }: { items: HomeCardItem[] }) {
   );
 }
 
+function EmptySectionState() {
+  return (
+    <p className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+      Belum ada konten di bagian ini.
+    </p>
+  );
+}
+
 // Satu-satunya renderer section Beranda - dipanggil untuk SETIAP topik
-// aktif (sistem maupun custom) berdasarkan `section.kind` yang dihasilkan
+// AKTIF (sistem maupun custom) berdasarkan `section.kind` yang dihasilkan
 // registry di lib/homepage-content.ts. TIDAK ADA "if key === 'berita' ..."
-// di sini - topik baru otomatis dapat section begitu punya konten, tanpa
-// menambah JSX baru.
+// di sini - topik baru otomatis dapat section tanpa menambah JSX baru.
+// Section topik aktif SELALU dirender walau kontennya kosong - lihat
+// EmptySectionState di atas - bukan disembunyikan dan bukan diisi data
+// dummy.
 function HomeSectionBlock({ section }: { section: HomeSection }) {
   return (
     <Reveal>
@@ -74,9 +84,15 @@ function HomeSectionBlock({ section }: { section: HomeSection }) {
           </Button>
         </div>
         {section.kind === "cards" ? (
-          <CardGrid items={section.items} />
-        ) : (
+          section.items.length > 0 ? (
+            <CardGrid items={section.items} />
+          ) : (
+            <EmptySectionState />
+          )
+        ) : section.body ? (
           <p className="max-w-2xl text-muted-foreground">{section.body}</p>
+        ) : (
+          <EmptySectionState />
         )}
       </section>
     </Reveal>
@@ -113,9 +129,11 @@ export default async function BerandaPage() {
         <HeroCarousel slides={heroSlides} />
       </section>
 
-      {/* Tiga section Berita tetap, lalu satu section per topik AKTIF
-          lainnya berurutan sesuai display_order. Section yang kosong
-          (topiknya aktif tapi belum ada konten) tidak pernah dirender. */}
+      {/* Tiga section Berita tetap (disembunyikan per bucket kalau bucket
+          itu kosong - lihat fetchBeritaSections), lalu satu section per
+          topik AKTIF lainnya berurutan sesuai display_order. Topik aktif
+          lain SELALU mendapat section walau kontennya masih kosong - lihat
+          EmptySectionState di HomeSectionBlock. */}
       {berita.sections.map((section) => (
         <HomeSectionBlock key={section.topicKey} section={section} />
       ))}

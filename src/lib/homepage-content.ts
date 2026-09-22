@@ -27,14 +27,14 @@ export type HomeSection =
       kind: "text";
       topicKey: string;
       heading: string;
-      body: string;
+      body: string | null;
       viewAllHref: string;
     };
 
 export type HeroCandidate = HeroSlide & { sortDate: string };
 
 type SectionFetchResult = {
-  section: HomeSection | null;
+  section: HomeSection;
   heroCandidates: HeroCandidate[];
 };
 
@@ -226,10 +226,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       }));
 
     return {
-      section:
-        items.length > 0
-          ? { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/agenda", items }
-          : null,
+      section: { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/agenda", items },
       heroCandidates,
     };
   },
@@ -270,10 +267,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
     }));
 
     return {
-      section:
-        items.length > 0
-          ? { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/galeri", items }
-          : null,
+      section: { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/galeri", items },
       heroCandidates,
     };
   },
@@ -317,10 +311,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       }));
 
     return {
-      section:
-        items.length > 0
-          ? { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/struktur", items }
-          : null,
+      section: { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/struktur", items },
       heroCandidates,
     };
   },
@@ -364,10 +355,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       }));
 
     return {
-      section:
-        items.length > 0
-          ? { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/masayikh", items }
-          : null,
+      section: { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/masayikh", items },
       heroCandidates,
     };
   },
@@ -392,9 +380,13 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
         : [];
 
     return {
-      section: profile?.deskripsi
-        ? { kind: "text", topicKey: topic.key, heading: topic.label, body: profile.deskripsi, viewAllHref: "/profil" }
-        : null,
+      section: {
+        kind: "text",
+        topicKey: topic.key,
+        heading: topic.label,
+        body: profile?.deskripsi ?? null,
+        viewAllHref: "/profil",
+      },
       heroCandidates,
     };
   },
@@ -454,10 +446,7 @@ async function fetchGenericSection(
     }));
 
   return {
-    section:
-      items.length > 0
-        ? { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref, items }
-        : null,
+    section: { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref, items },
     heroCandidates,
   };
 }
@@ -470,6 +459,12 @@ async function fetchGenericSection(
  * di atas (atau fallback generik). TIDAK ADA percabangan "if key === ..."
  * di halaman Beranda itu sendiri - topik baru otomatis mendapat section
  * tanpa menambah JSX baru di sana.
+ *
+ * Setiap topik AKTIF SELALU menghasilkan satu section, walau kontennya
+ * kosong (items: [] / body: null) - Beranda merender section itu dengan
+ * empty state sederhana, bukan menyembunyikannya. Ini supaya Admin selalu
+ * bisa melihat bahwa topik tersebut sudah "siap" di Beranda begitu topik
+ * dibuat/diaktifkan, walau kontennya belum diisi.
  */
 export async function fetchHomeSections(
   supabase: PublicSupabase,
@@ -486,10 +481,7 @@ export async function fetchHomeSections(
     }),
   );
 
-  const sections = results
-    .map((r) => r.section)
-    .filter((s): s is HomeSection => s !== null);
-
+  const sections = results.map((r) => r.section);
   const heroCandidates = results.flatMap((r) => r.heroCandidates);
 
   return { sections, heroCandidates };

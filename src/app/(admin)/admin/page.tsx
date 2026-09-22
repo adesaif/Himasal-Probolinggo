@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { StatCard } from "@/components/shared/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { RecentEventsTable } from "@/components/monitoring/recent-events-table";
 import { formatEventRange } from "@/lib/format-date";
 
@@ -103,11 +104,7 @@ export default async function AdminDashboardPage() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-medium">{nextEvent.title}</p>
-                      {nextEvent.is_mandatory ? (
-                        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                          Wajib Hadir
-                        </span>
-                      ) : null}
+                      {nextEvent.is_mandatory ? <Badge variant="warning">Wajib Hadir</Badge> : null}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {formatEventRange(nextEvent.start_at, nextEvent.end_at)}

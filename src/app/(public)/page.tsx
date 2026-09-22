@@ -82,11 +82,17 @@ function CardGrid({
   );
 }
 
+// Sama persis dengan pola empty state di seluruh situs (Berita/Agenda/
+// Galeri/admin lists): Card + CardContent, py-8, text-center, text-sm
+// text-muted-foreground - bukan gaya lain supaya Beranda terasa satu
+// desain dengan halaman lainnya.
 function EmptySectionState() {
   return (
-    <p className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
-      Belum ada konten di bagian ini.
-    </p>
+    <Card>
+      <CardContent className="py-8 text-center text-sm text-muted-foreground">
+        Belum ada konten di bagian ini.
+      </CardContent>
+    </Card>
   );
 }
 

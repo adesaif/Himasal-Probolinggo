@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -126,20 +127,10 @@ export function StructureList({
                     <p className="font-medium">{row.nama}</p>
                     <p className="text-sm text-muted-foreground">{row.jabatan}</p>
                   </div>
-                  <span
-                    className={
-                      row.is_active
-                        ? "rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                        : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                    }
-                  >
+                  <Badge variant={row.is_active ? "success" : "neutral"}>
                     {row.is_active ? "Aktif" : "Nonaktif"}
-                  </span>
-                  {row.is_featured ? (
-                    <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                      Unggulan
-                    </span>
-                  ) : null}
+                  </Badge>
+                  {row.is_featured ? <Badge variant="primary">Unggulan</Badge> : null}
                 </div>
                 <div className="flex gap-2">
                   <StructureFormDialog

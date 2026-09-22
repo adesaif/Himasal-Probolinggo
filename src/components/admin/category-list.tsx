@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, Newspaper } from "lucide-reac
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -133,24 +134,12 @@ export function CategoryList({ rows }: { rows: CategoryRow[] }) {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">{row.name}</p>
-                    <span
-                      className={
-                        row.is_active
-                          ? "rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                          : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                      }
-                    >
+                    <Badge variant={row.is_active ? "success" : "neutral"}>
                       {row.is_active ? "Aktif" : "Nonaktif"}
-                    </span>
-                    <span
-                      className={
-                        row.show_on_homepage
-                          ? "rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
-                          : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                      }
-                    >
+                    </Badge>
+                    <Badge variant={row.show_on_homepage ? "primary" : "neutral"}>
                       {row.show_on_homepage ? "Tampil di Beranda" : "Disembunyikan"}
-                    </span>
+                    </Badge>
                   </div>
                   {row.tagline ? (
                     <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">

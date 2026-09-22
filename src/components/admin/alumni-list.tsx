@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { CreateAlumniDialog } from "@/components/admin/create-alumni-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -199,15 +200,9 @@ export function AlumniList({ wilayahList }: { wilayahList: Wilayah[] }) {
                       {row.angkatan ? ` · Angkatan ${row.angkatan}` : ""}
                     </p>
                   </div>
-                  <span
-                    className={
-                      row.status_keanggotaan === "aktif"
-                        ? "w-fit rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                        : "w-fit rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                    }
-                  >
+                  <Badge variant={row.status_keanggotaan === "aktif" ? "success" : "neutral"}>
                     {row.status_keanggotaan === "aktif" ? "Aktif" : "Nonaktif"}
-                  </span>
+                  </Badge>
                 </CardContent>
               </Card>
             </Link>

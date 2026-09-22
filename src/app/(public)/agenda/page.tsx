@@ -4,6 +4,7 @@ import { CalendarDays, MapPin } from "lucide-react";
 
 import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { formatEventRange } from "@/lib/format-date";
 import { topicLabel } from "@/lib/topics";
 
@@ -31,7 +32,7 @@ export default async function AgendaPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">{agendaLabel}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{agendaLabel}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Jadwal kegiatan HIMASAL Probolinggo.
         </p>
@@ -58,19 +59,11 @@ export default async function AgendaPage() {
                 <Card className="card-hover">
                   <CardContent className="flex flex-col gap-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={
-                          isUpcoming
-                            ? "rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                            : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                        }
-                      >
+                      <Badge variant={isUpcoming ? "success" : "neutral"}>
                         {isUpcoming ? "Akan Datang" : "Selesai"}
-                      </span>
+                      </Badge>
                       {event.is_mandatory ? (
-                        <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                          Wajib Hadir
-                        </span>
+                        <Badge variant="warning">Wajib Hadir</Badge>
                       ) : null}
                     </div>
                     <p className="font-medium">{event.title}</p>

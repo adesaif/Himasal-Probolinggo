@@ -8,6 +8,7 @@ import { ArrowDown, ArrowUp, FolderOpen, Pencil, Plus, RotateCcw, Trash2 } from 
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -151,24 +152,12 @@ export function TopicList({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">{topic.label}</p>
-                    <span
-                      className={
-                        topic.is_active
-                          ? "rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                          : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                      }
-                    >
+                    <Badge variant={topic.is_active ? "success" : "neutral"}>
                       {topic.is_active ? "Aktif" : "Nonaktif"}
-                    </span>
-                    <span
-                      className={
-                        topic.allow_featured
-                          ? "rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
-                          : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                      }
-                    >
+                    </Badge>
+                    <Badge variant={topic.allow_featured ? "primary" : "neutral"}>
                       Unggulan {topic.allow_featured ? "ON" : "OFF"}
-                    </span>
+                    </Badge>
                   </div>
                   {topic.description ? (
                     <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">

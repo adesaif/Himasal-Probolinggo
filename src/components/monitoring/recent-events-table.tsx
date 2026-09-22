@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { formatDateID } from "@/lib/format-date";
 
 export type RecentEventRow = {
@@ -52,9 +53,7 @@ export function RecentEventsTable({
               <td className="px-3 py-2 text-muted-foreground">{formatDateID(event.start_at)}</td>
               <td className="px-3 py-2">
                 {event.is_mandatory ? (
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                    Wajib
-                  </span>
+                  <Badge variant="warning">Wajib</Badge>
                 ) : (
                   <span className="text-xs text-muted-foreground">Opsional</span>
                 )}

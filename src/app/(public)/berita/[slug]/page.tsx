@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { createPublicClient } from "@/lib/supabase/public";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export const revalidate = 300;
 
@@ -73,12 +74,8 @@ export default async function BeritaDetailPage({
       ) : null}
 
       <div>
-        {news.category ? (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            {news.category}
-          </span>
-        ) : null}
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">{news.title}</h1>
+        {news.category ? <Badge variant="primary">{news.category}</Badge> : null}
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{news.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {news.author_name ? `${news.author_name} · ` : ""}
           {news.published_at

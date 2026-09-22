@@ -40,7 +40,7 @@ export default async function ProfilPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-3xl font-semibold tracking-tight">
           {topicLabel(topic ? [topic] : null, "profil", "Profil")} HIMASAL Probolinggo
         </h1>
       </div>

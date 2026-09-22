@@ -6,6 +6,7 @@ import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { formatEventRange } from "@/lib/format-date";
 
 export const revalidate = 300;
@@ -54,12 +55,8 @@ export default async function AgendaDetailPage({
       </Button>
 
       <div>
-        {event.is_mandatory ? (
-          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-            Wajib Hadir
-          </span>
-        ) : null}
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">{event.title}</h1>
+        {event.is_mandatory ? <Badge variant="warning">Wajib Hadir</Badge> : null}
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{event.title}</h1>
       </div>
 
       <Card>

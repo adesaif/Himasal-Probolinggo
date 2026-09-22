@@ -4,6 +4,7 @@ import { QrCode } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { AttendanceParticipantList } from "@/components/admin/attendance-participant-list";
 import { CloseAttendanceButton } from "@/components/admin/close-attendance-button";
 import { formatEventRange } from "@/lib/format-date";
@@ -34,20 +35,10 @@ export default async function AdminAbsensiEventDetailPage({
             {event.location ? ` · ${event.location}` : ""}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {event.is_mandatory ? (
-              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                Wajib Hadir
-              </span>
-            ) : null}
-            <span
-              className={
-                event.status === "published"
-                  ? "rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                  : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-              }
-            >
+            {event.is_mandatory ? <Badge variant="warning">Wajib Hadir</Badge> : null}
+            <Badge variant={event.status === "published" ? "success" : "neutral"}>
               {event.status === "published" ? "Published" : "Draft"}
-            </span>
+            </Badge>
             {event.attendance_closed_at ? (
               <span className="rounded-full bg-neutral-800 px-2.5 py-0.5 text-xs font-medium text-white dark:bg-neutral-200 dark:text-neutral-900">
                 Absensi Ditutup

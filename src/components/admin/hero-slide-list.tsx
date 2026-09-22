@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -165,15 +166,9 @@ export function HeroSlideList({ rows }: { rows: HeroSlideRow[] }) {
                       Urutan: {row.display_order}
                     </p>
                   </div>
-                  <span
-                    className={
-                      row.is_active
-                        ? "rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                        : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                    }
-                  >
+                  <Badge variant={row.is_active ? "success" : "neutral"}>
                     {row.is_active ? "Aktif" : "Nonaktif"}
-                  </span>
+                  </Badge>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button

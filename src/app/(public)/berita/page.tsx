@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { BeritaSearchInput } from "@/components/public/berita-search-input";
 import { topicLabel } from "@/lib/topics";
 
@@ -75,7 +76,7 @@ export default async function BeritaPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-3xl font-semibold tracking-tight">
           {activeCategory ? activeCategory.name : beritaLabel}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -125,11 +126,7 @@ export default async function BeritaPage({
                   </div>
                 )}
                 <CardContent className="flex flex-col gap-1">
-                  {item.is_featured ? (
-                    <span className="w-fit rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      Unggulan
-                    </span>
-                  ) : null}
+                  {item.is_featured ? <Badge variant="primary">Unggulan</Badge> : null}
                   <p className="font-medium">{item.title}</p>
                   {item.excerpt ? (
                     <p className="line-clamp-2 text-sm text-muted-foreground">

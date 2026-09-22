@@ -73,7 +73,7 @@ export default async function GenericTopicPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">{topic.label}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{topic.label}</h1>
         {topic.description ? (
           <p className="mt-1 text-sm text-muted-foreground">{topic.description}</p>
         ) : null}

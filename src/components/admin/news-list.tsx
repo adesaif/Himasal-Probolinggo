@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -262,20 +263,10 @@ export function NewsList({
               <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={
-                        row.status === "published"
-                          ? "rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                          : "rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
-                      }
-                    >
+                    <Badge variant={row.status === "published" ? "success" : "neutral"}>
                       {row.status === "published" ? "Published" : "Draft"}
-                    </span>
-                    {row.is_featured ? (
-                      <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                        Unggulan
-                      </span>
-                    ) : null}
+                    </Badge>
+                    {row.is_featured ? <Badge variant="primary">Unggulan</Badge> : null}
                   </div>
                   <p className="mt-1 truncate font-medium">{row.title}</p>
                   <p className="text-sm text-muted-foreground">

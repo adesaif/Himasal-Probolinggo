@@ -26,20 +26,44 @@ export const metadata: Metadata = {
 // revalidasi.
 export const dynamic = "force-dynamic";
 
-function CardGrid({ items }: { items: HomeCardItem[] }) {
+// "contain" (dipakai khusus section Berita) menampilkan foto asli utuh -
+// tidak pernah memotong wajah/subjek - dengan latar gelap rapi mengisi
+// ruang kosong akibat rasio foto yang berbeda-beda, bukan dibiarkan
+// terlihat kosong. Default "cover" mempertahankan tampilan lama persis
+// seperti sebelumnya untuk semua section lain (Agenda/Galeri/Struktur/
+// Masayikh/Konten/topik custom) - tidak disentuh oleh perubahan ini.
+function CardGrid({
+  items,
+  thumbnailFit = "cover",
+}: {
+  items: HomeCardItem[];
+  thumbnailFit?: "cover" | "contain";
+}) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
         <Link key={item.id} href={item.href}>
           <Card className="card-hover h-full overflow-hidden">
             {item.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={item.image_url}
-                alt={item.title}
-                loading="lazy"
-                className="aspect-video w-full object-cover"
-              />
+              thumbnailFit === "contain" ? (
+                <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.image_url}
+                    alt={item.title}
+                    loading="lazy"
+                    className="absolute inset-0 size-full object-contain"
+                  />
+                </div>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.image_url}
+                  alt={item.title}
+                  loading="lazy"
+                  className="aspect-video w-full object-cover"
+                />
+              )
             ) : (
               <div className="flex aspect-video w-full items-center justify-center bg-muted text-sm text-muted-foreground">
                 Tidak ada gambar
@@ -85,7 +109,7 @@ function HomeSectionBlock({ section }: { section: HomeSection }) {
         </div>
         {section.kind === "cards" ? (
           section.items.length > 0 ? (
-            <CardGrid items={section.items} />
+            <CardGrid items={section.items} thumbnailFit={section.thumbnailFit} />
           ) : (
             <EmptySectionState />
           )

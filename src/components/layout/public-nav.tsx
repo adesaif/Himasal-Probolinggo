@@ -48,8 +48,8 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
 
   return (
     <header className="site-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4">
-        <Link href="/" className="flex min-w-0 shrink items-center gap-1.5 sm:shrink-0 sm:gap-2.5">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:px-4">
+        <Link href="/" className="flex min-w-0 shrink items-center gap-1 sm:shrink-0 sm:gap-2.5">
           <HimasalLogo heightClassName="h-7 sm:h-9" className="shrink-0" />
           <span className="flex items-baseline whitespace-nowrap text-sm leading-none font-bold tracking-[-0.01em] uppercase sm:text-base">
             <span className="text-brand-text-himasal">HIMASAL</span>{" "}
@@ -88,7 +88,7 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
           })}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-0 sm:gap-2">
           <Button asChild size="sm" className="mr-1 hidden lg:inline-flex">
             <Link href="/login">Login</Link>
           </Button>

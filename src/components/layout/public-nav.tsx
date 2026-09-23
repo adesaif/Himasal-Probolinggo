@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
 
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -126,18 +127,46 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
               </Button>
             </DialogTrigger>
             <DialogPrimitive.Portal>
-              <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+              <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+              {/* Drawer ditampilkan sebagai surface mengambang (inset dari
+                  tepi layar, rounded penuh) - bukan panel yang ditempel rata
+                  ke sisi layar - supaya terasa muncul DI ATAS halaman. */}
               <DialogPrimitive.Content
-                className="fixed inset-y-0 right-0 z-50 flex h-full w-[80vw] max-w-[280px] flex-col overflow-y-auto border-l bg-background shadow-xl outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right duration-300"
+                className="fixed inset-y-3 right-3 z-50 flex w-[85vw] max-w-[320px] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[0_20px_50px_-12px_rgba(15,23,42,0.25)] outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right duration-300"
               >
                 <DialogPrimitive.Title className="sr-only">Menu Navigasi</DialogPrimitive.Title>
-                <div className="flex items-center gap-2 px-4 pt-5 pb-2">
-                  <HimasalLogo heightClassName="h-10" />
-                  <span className="font-semibold tracking-tight">HIMASAL Probolinggo</span>
+
+                <div className="flex items-center justify-between gap-2 border-b border-border/70 px-3 pt-4 pb-3">
+                  <Link
+                    href="/"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex min-w-0 items-center gap-1.5"
+                  >
+                    <HimasalLogo heightClassName="h-7" className="shrink-0" />
+                    <span className="flex items-baseline whitespace-nowrap text-[13px] leading-none font-bold tracking-[-0.01em] uppercase">
+                      <span className="text-brand-text-himasal">HIMASAL</span>{" "}
+                      <span className="text-brand-text-probolinggo">PROBOLINGGO</span>
+                    </span>
+                  </Link>
+                  <DialogPrimitive.Close asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Tutup menu navigasi"
+                      className="size-11 shrink-0 rounded-full border border-border/70 bg-background/60"
+                    >
+                      <X className="size-[18px]" />
+                    </Button>
+                  </DialogPrimitive.Close>
                 </div>
+
+                {/* Setiap item jadi row bergaya editorial premium: bar
+                    aksen tipis + warna primary saat aktif (bukan kotak
+                    biru besar), muted saat tidak aktif - bahasa desain
+                    yang sama dengan underline aktif di nav desktop. */}
                 <nav
                   aria-label="Navigasi mobile"
-                  className="flex flex-col gap-1 px-3 pt-2 pb-4"
+                  className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-3"
                 >
                   {navItems.map((item) => {
                     const active = isActivePath(pathname, item.href);
@@ -148,20 +177,35 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
                         onClick={() => setMobileOpen(false)}
                         aria-current={active ? "page" : undefined}
                         className={cn(
-                          "rounded-md px-3 py-3 text-base font-medium transition-colors",
+                          "relative flex items-center rounded-lg py-2.5 pr-3 pl-4 text-[15px] font-medium transition-colors",
                           active
-                            ? "bg-accent text-primary"
-                            : "text-foreground hover:bg-accent",
+                            ? "bg-accent font-semibold text-primary"
+                            : "text-foreground/80 hover:bg-accent/60 hover:text-foreground",
                         )}
                       >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-primary transition-transform duration-200",
+                            active ? "scale-y-100" : "scale-y-0",
+                          )}
+                        />
                         {item.label}
                       </Link>
                     );
                   })}
-                  <Button asChild className="mt-2" onClick={() => setMobileOpen(false)}>
+                </nav>
+
+                <div className="border-t border-border/70 px-4 pt-3 pb-4">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="h-11 w-full text-base"
+                    onClick={() => setMobileOpen(false)}
+                  >
                     <Link href="/login">Login</Link>
                   </Button>
-                </nav>
+                </div>
               </DialogPrimitive.Content>
             </DialogPrimitive.Portal>
           </Dialog>

@@ -86,18 +86,28 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             aria-hidden="true"
             className="absolute inset-0 size-full scale-110 object-cover blur-3xl brightness-75 saturate-150"
           />
-          {/* Foto utama: object-contain supaya subjek/wajah selalu tampil
-              utuh, apa pun rasio aslinya - tidak pernah terpotong. Diberi
-              jarak (inset) dari tepi Hero + bingkai (rounded, shadow, ring)
-              supaya foto portrait yang jadi "pita sempit" di Hero yang
-              sangat wide terbaca sebagai kartu foto yang sengaja ditata,
-              bukan letterbox yang terlihat seperti kesalahan render. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={slide.thumbnail_url}
-            alt={slide.title}
-            className="absolute inset-3 rounded-2xl object-contain shadow-2xl ring-1 ring-white/10 sm:inset-6 lg:inset-8"
-          />
+          {/* Foto utama: dibungkus flex-center supaya KOTAK gambar
+              persis sebesar foto yang tampil (mengikuti rasio asli),
+              bukan kotak selebar Hero dengan object-contain "melayang"
+              di tengahnya - pendekatan lama ini rapuh: untuk foto
+              produksi yang framing aslinya sudah landscape/lebar dengan
+              subjek tidak persis di tengah bingkai, kotak selebar Hero
+              membuat foto terlihat "nempel" ke satu sisi dengan area
+              kosong besar di sisi lain. Dengan flex items-center
+              justify-center + max-h-full max-w-full, browser menghitung
+              ukuran render foto dari rasio aslinya lalu memusatkannya -
+              bingkai (rounded, shadow, ring) menempel langsung ke tepi
+              foto yang benar-benar terlihat, jadi presisi center apa pun
+              rasio & komposisi foto sumbernya. Tidak pernah crop
+              (object-contain + max-h/max-w, tanpa fixed width/height). */}
+          <div className="absolute inset-3 flex items-center justify-center sm:inset-6 lg:inset-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={slide.thumbnail_url}
+              alt={slide.title}
+              className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl ring-1 ring-white/10"
+            />
+          </div>
         </div>
       ))}
       <div className="hero-slide-overlay absolute inset-0" aria-hidden="true" />

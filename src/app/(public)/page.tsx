@@ -163,15 +163,13 @@ export default async function BerandaPage() {
           mana pun yang aktif & mengizinkan Unggulan. Kalau tidak ada
           konten unggulan, HeroCarousel return null dan section ini jatuh
           ke background gradient premium saja - tidak pernah menampilkan
-          dummy slide.
-
-          Full-bleed (lepas dari max-w-6xl + px-4 <main>) dan -mt-16 supaya
-          Hero naik menutupi 64px pertama yang biasanya jadi ruang header -
-          PublicNav sendiri yang mengatur transparansinya di atas Hero
-          (lihat public-nav.tsx). Tidak lagi rounded - section penuh dari
-          tepi ke tepi terasa sebagai satu kanvas dengan header, bukan kartu
-          yang ditempel di halaman. */}
-      <section className="hero-premium-bg relative left-1/2 z-0 -mt-16 h-[380px] w-screen -translate-x-1/2 overflow-hidden sm:h-[440px] lg:h-[500px]">
+          dummy slide. Tinggi dinaikkan sedikit (+~12%) dari revisi
+          sebelumnya - foto utama TIDAK PERNAH di-crop (object-contain),
+          jadi foto potret (rasio tinggi) di kotak yang sangat lebar selalu
+          tampil sebagai pita foto yang agak sempit; menambah tinggi secara
+          moderat memberi foto ruang lebih tanpa membuat Hero terasa
+          sangat tinggi. */}
+      <section className="hero-premium-bg relative z-0 h-[380px] overflow-hidden rounded-2xl sm:h-[440px] lg:h-[500px]">
         <HeroCarousel slides={heroSlides} />
       </section>
 

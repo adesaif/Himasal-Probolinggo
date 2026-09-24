@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -38,66 +38,22 @@ function isActivePath(pathname: string, href: string) {
 // size-8 (bukan size-9 bawaan Button) di breakpoint terkecil supaya logo +
 // brand lockup + 3 tombol ikon tidak overflow horizontal di layar 320px
 // (lihat verifikasi visual QA) - kembali ke size-9 mulai sm: seperti semula.
-// Dua varian: normal (semua halaman, dan Beranda setelah scroll) memakai
-// token tema seperti biasa; overlay (Beranda, sebelum scroll) SELALU
-// terang - Hero selalu gelap/cinematic apa pun tema situs (lihat
-// .hero-premium-bg), jadi kontras header di atasnya tidak boleh ikut
-// tema, harus selalu terang.
 const ICON_BUTTON_CLASS =
   "size-8 rounded-full border border-border/70 bg-background/60 sm:size-9";
-const ICON_BUTTON_OVERLAY_CLASS =
-  "size-8 rounded-full border border-white/25 bg-white/10 text-white hover:bg-white/20 hover:text-white sm:size-9";
-
-// Scroll threshold rendah supaya transisi overlay -> solid terasa cepat,
-// bukan menunggu user scroll jauh - header tetap "sticky" di kedua state
-// (tidak pernah "position: absolute") supaya tidak ada lompatan posisi
-// saat state berganti.
-const SCROLL_SOLID_THRESHOLD = 32;
 
 export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const navItems = buildNavItems(topics);
 
-  // Header transparent/overlay HANYA di Beranda (satu-satunya halaman
-  // dengan Hero) dan hanya sebelum discroll - begitu discroll (atau di
-  // halaman lain yang tidak punya Hero), header kembali solid seperti
-  // semula. Ini satu-satunya perubahan behavior; markup/route/logic
-  // navigasi lain tidak disentuh.
-  const isHomepage = pathname === "/";
-  const overlay = isHomepage && !scrolled;
-
-  useEffect(() => {
-    // `overlay` sudah digerbang oleh isHomepage, jadi state `scrolled` tidak
-    // relevan di luar Beranda - tidak perlu direset, listener cukup tidak
-    // dipasang sama sekali di halaman lain.
-    if (!isHomepage) return;
-    function onScroll() {
-      setScrolled(window.scrollY > SCROLL_SOLID_THRESHOLD);
-    }
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [isHomepage]);
-
   return (
-    <header
-      className={cn(
-        "site-header sticky top-0 z-40 transition-[background-color,border-color,backdrop-filter] duration-300",
-        overlay
-          ? "border-b border-transparent bg-gradient-to-b from-black/45 via-black/15 to-transparent"
-          : "border-b bg-background/95 backdrop-blur",
-      )}
-    >
+    <header className="site-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:px-4">
         <Link href="/" className="flex min-w-0 shrink items-center gap-1 sm:shrink-0 sm:gap-2.5">
           <HimasalLogo heightClassName="h-7 sm:h-9" className="shrink-0" />
           <span className="flex items-baseline whitespace-nowrap text-sm leading-none font-bold tracking-[-0.01em] uppercase sm:text-base">
-            <span className={overlay ? "text-white" : "text-brand-text-himasal"}>HIMASAL</span>{" "}
-            <span className={overlay ? "text-[#8fc3ef]" : "text-brand-text-probolinggo"}>
-              PROBOLINGGO
-            </span>
+            <span className="text-brand-text-himasal">HIMASAL</span>{" "}
+            <span className="text-brand-text-probolinggo">PROBOLINGGO</span>
           </span>
         </Link>
 
@@ -114,20 +70,15 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative rounded-md px-3 py-1.5 transition-colors",
-                  overlay
-                    ? active
-                      ? "text-white font-medium"
-                      : "text-white/70 hover:bg-white/10 hover:text-white"
-                    : active
-                      ? "text-primary font-medium"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  active
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
                 {item.label}
                 <span
                   className={cn(
-                    "absolute inset-x-3 -bottom-[1px] h-0.5 scale-x-0 rounded-full transition-transform duration-200",
-                    overlay ? "bg-[#8fc3ef]" : "bg-primary",
+                    "absolute inset-x-3 -bottom-[1px] h-0.5 scale-x-0 rounded-full bg-primary transition-transform duration-200",
                     active && "scale-x-100",
                   )}
                   aria-hidden="true"
@@ -138,26 +89,19 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-0 sm:gap-2">
-          <Button
-            asChild
-            size="sm"
-            className={cn(
-              "mr-1 hidden lg:inline-flex",
-              overlay && "bg-white text-[#0b1730] shadow-none hover:bg-white/90",
-            )}
-          >
+          <Button asChild size="sm" className="mr-1 hidden lg:inline-flex">
             <Link href="/login">Login</Link>
           </Button>
 
-          <HeaderSearch className={overlay ? ICON_BUTTON_OVERLAY_CLASS : ICON_BUTTON_CLASS} />
-          <ThemeToggle className={overlay ? ICON_BUTTON_OVERLAY_CLASS : ICON_BUTTON_CLASS} />
+          <HeaderSearch className={ICON_BUTTON_CLASS} />
+          <ThemeToggle className={ICON_BUTTON_CLASS} />
 
           <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
             <DialogTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(overlay ? ICON_BUTTON_OVERLAY_CLASS : ICON_BUTTON_CLASS, "lg:hidden")}
+                className={cn(ICON_BUTTON_CLASS, "lg:hidden")}
                 aria-label={mobileOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
               >
                 <span className="relative flex size-4 items-center justify-center">

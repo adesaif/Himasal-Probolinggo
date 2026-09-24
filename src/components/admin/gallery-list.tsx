@@ -148,8 +148,12 @@ export function GalleryList({ featuredAllowed }: { featuredAllowed: boolean }) {
         </Card>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {/* Card bawaan punya py-6 + gap-6 (ui/card.tsx) - dinolkan di
+              sini supaya foto benar-benar rapat ke tepi Card, bukan
+              ke-inset oleh padding default (CardContent di bawah sudah
+              punya padding sendiri lewat p-3). */}
           {rows.map((row) => (
-            <Card key={row.id} className="overflow-hidden">
+            <Card key={row.id} className="gap-0 overflow-hidden py-0">
               <div className="relative aspect-square">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img

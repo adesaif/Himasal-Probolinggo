@@ -144,7 +144,10 @@ export default async function GenericTopicPage({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => {
             const content = (
-              <Card className="card-hover h-full overflow-hidden">
+              // Card bawaan punya py-6 + gap-6 (ui/card.tsx) - dinolkan di
+              // sini supaya foto benar-benar rapat ke tepi Card, bukan
+              // ke-inset oleh padding default.
+              <Card className="card-hover h-full gap-0 overflow-hidden py-0">
                 {item.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -154,7 +157,7 @@ export default async function GenericTopicPage({
                     className="aspect-video w-full object-cover"
                   />
                 ) : null}
-                <CardContent className="flex flex-col gap-1">
+                <CardContent className="flex flex-col gap-1 p-4">
                   <p className="font-medium">{item.title}</p>
                   {item.description ? (
                     <p className="line-clamp-3 text-sm text-muted-foreground">

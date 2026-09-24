@@ -39,7 +39,13 @@ function CardGrid({ items }: { items: HomeCardItem[] }) {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
         <Link key={item.id} href={item.href}>
-          <Card className="card-hover h-full overflow-hidden">
+          {/* Card bawaan punya py-6 + gap-6 (lihat ui/card.tsx) - kalau
+              tidak di-nol-kan, foto (walau sudah object-cover) tetap
+              keinset ~24px dari tepi atas/bawah Card oleh padding itu,
+              jadi foto terlihat "tidak memenuhi" walau CSS object-fit-nya
+              sudah benar. gap-0 py-0 di sini + padding manual di
+              CardContent supaya foto benar-benar rapat ke tepi Card. */}
+          <Card className="card-hover h-full gap-0 overflow-hidden py-0">
             {item.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -53,7 +59,7 @@ function CardGrid({ items }: { items: HomeCardItem[] }) {
                 Tidak ada gambar
               </div>
             )}
-            <CardContent className="flex flex-col gap-1">
+            <CardContent className="flex flex-col gap-1 p-4">
               <p className="line-clamp-2 font-medium">{item.title}</p>
               {item.subtitle ? (
                 <p className="line-clamp-1 text-xs text-muted-foreground">{item.subtitle}</p>

@@ -111,7 +111,10 @@ export default async function BeritaPage({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {newsList.map((item) => (
             <Link key={item.id} href={`/berita/${item.slug}`}>
-              <Card className="card-hover h-full overflow-hidden">
+              {/* Card bawaan punya py-6 + gap-6 (ui/card.tsx) - dinolkan
+                  di sini supaya foto benar-benar rapat ke tepi Card,
+                  bukan ke-inset oleh padding default. */}
+              <Card className="card-hover h-full gap-0 overflow-hidden py-0">
                 {item.thumbnail_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -125,7 +128,7 @@ export default async function BeritaPage({
                     Tidak ada gambar
                   </div>
                 )}
-                <CardContent className="flex flex-col gap-1">
+                <CardContent className="flex flex-col gap-1 p-4">
                   {item.is_featured ? <Badge variant="primary">Unggulan</Badge> : null}
                   <p className="font-medium">{item.title}</p>
                   {item.excerpt ? (

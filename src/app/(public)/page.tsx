@@ -26,13 +26,6 @@ export const metadata: Metadata = {
 // revalidasi.
 export const dynamic = "force-dynamic";
 
-// "contain" (dipakai khusus section Berita) menampilkan foto asli utuh -
-// tidak pernah memotong wajah/subjek - dengan latar gelap rapi mengisi
-// ruang kosong akibat rasio foto yang berbeda-beda, bukan dibiarkan
-// terlihat kosong. Default "cover" mempertahankan tampilan lama persis
-// seperti sebelumnya untuk semua section lain (Agenda/Galeri/Struktur/
-// Masayikh/Konten/topik custom) - tidak disentuh oleh perubahan ini.
-//
 // Catatan: sempat dicoba membatasi jumlah kolom mengikuti jumlah item
 // (supaya section dengan 1 kartu tidak menyisakan 3 kolom kosong), tapi
 // verifikasi visual nyata menunjukkan itu regresi lebih buruk - grid-
@@ -41,38 +34,20 @@ export const dynamic = "force-dynamic";
 // section yang baru punya sedikit konten adalah pola yang wajar dan
 // tidak rusak, jadi grid tetap - kolom (1/2/4) TIDAK bergantung jumlah
 // item.
-function CardGrid({
-  items,
-  thumbnailFit = "cover",
-}: {
-  items: HomeCardItem[];
-  thumbnailFit?: "cover" | "contain";
-}) {
+function CardGrid({ items }: { items: HomeCardItem[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
         <Link key={item.id} href={item.href}>
           <Card className="card-hover h-full overflow-hidden">
             {item.image_url ? (
-              thumbnailFit === "contain" ? (
-                <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    loading="lazy"
-                    className="absolute inset-0 size-full object-contain"
-                  />
-                </div>
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.image_url}
-                  alt={item.title}
-                  loading="lazy"
-                  className="aspect-video w-full object-cover"
-                />
-              )
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={item.image_url}
+                alt={item.title}
+                loading="lazy"
+                className="aspect-video w-full object-cover"
+              />
             ) : (
               <div className="flex aspect-video w-full items-center justify-center bg-muted text-sm text-muted-foreground">
                 Tidak ada gambar
@@ -124,7 +99,7 @@ function HomeSectionBlock({ section }: { section: HomeSection }) {
         </div>
         {section.kind === "cards" ? (
           section.items.length > 0 ? (
-            <CardGrid items={section.items} thumbnailFit={section.thumbnailFit} />
+            <CardGrid items={section.items} />
           ) : (
             <EmptySectionState />
           )
@@ -163,12 +138,10 @@ export default async function BerandaPage() {
           mana pun yang aktif & mengizinkan Unggulan. Kalau tidak ada
           konten unggulan, HeroCarousel return null dan section ini jatuh
           ke background gradient premium saja - tidak pernah menampilkan
-          dummy slide. Tinggi dinaikkan lagi dari revisi sebelumnya - foto
-          utama TIDAK PERNAH di-crop (object-contain), jadi foto potret
-          (rasio tinggi) di kotak yang lebar selalu tampil sebagai pita
-          foto yang agak sempit; menambah tinggi memberi foto ruang untuk
-          jadi focal point yang lebih besar tanpa membuat Hero terasa
-          berlebihan tinggi. */}
+          dummy slide. Foto memenuhi seluruh kotak (object-cover di
+          HeroCarousel) - Hero yang lebih tinggi jadi terasa lebih
+          immersive/premium, bukan sekadar memberi ruang untuk foto kecil
+          seperti sebelumnya. */}
       <section className="hero-premium-bg relative z-0 h-[420px] overflow-hidden rounded-2xl sm:h-[480px] lg:h-[560px]">
         <HeroCarousel slides={heroSlides} />
       </section>

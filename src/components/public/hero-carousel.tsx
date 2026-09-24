@@ -124,49 +124,22 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             transition={prefersReducedMotion ? { duration: 0 } : SLIDE_SPRING}
             style={{ pointerEvents: isActive ? "auto" : "none" }}
           >
-            {/* Backdrop dari foto yang sama, di-blur+digelapkan sampai jadi
-                ambient glow (bukan foto kedua yang bisa dikenali) - mengisi
-                seluruh Hero jadi satu canvas atmospheric yang membungkus
-                foto utama. Scale + blur besar supaya tidak ada tepi tajam
-                yang terlihat seperti panel terpisah. Backdrop TIDAK ikut
-                parallax - hanya foto utama yang bergerak, supaya tidak
-                terasa goyang. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            {/* Foto utama: full-bleed mengisi seluruh kotak Hero (object-
+                cover, bukan object-contain) - ini yang bikin Hero terasa
+                clean/premium seperti hero editorial pada umumnya, alih-alih
+                foto kecil "melayang" di tengah dengan ruang kosong di
+                sekitarnya. scale-105 memberi sedikit overscan supaya
+                translate parallax tidak pernah menyingkap tepi foto.
+                Rounded corner Hero sudah ditangani oleh section pembungkus
+                (overflow-hidden rounded-2xl di page.tsx), jadi foto ini
+                tidak perlu rounded/shadow/ring sendiri - dia MEMENUHI
+                Hero, bukan kartu terpisah di dalamnya. */}
+            <motion.img
               src={slide.thumbnail_url}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 size-full scale-125 object-cover blur-3xl brightness-[0.62] saturate-150"
+              alt={slide.title}
+              style={isActive ? { x: springParallaxX, y: springParallaxY } : undefined}
+              className="absolute inset-0 size-full scale-105 object-cover"
             />
-            {/* Foto utama: dibungkus flex-center supaya kotak gambar persis
-                sebesar foto yang tampil (mengikuti rasio asli), bukan kotak
-                selebar Hero dengan object-contain "melayang" di tengahnya.
-                Di layar >= lg (hero sudah cukup lebar, ~1120px+), kotak
-                digeser rapat ke tepi kanan (right diset, left dibiarkan
-                auto - BUKAN inset penuh di kedua sisi) dan dibatasi max-w
-                agar tidak pernah menjorok ke zona teks di kiri-bawah; foto
-                & teks bertemu dengan jarak wajar, terasa satu composition,
-                bukan dua blok terpisah dengan ruang kosong besar di kanan
-                (sudah diuji dengan judul/ringkasan realistis maupun judul
-                sangat panjang - tidak overlap). (Catatan teknis: sengaja
-                TIDAK memakai `inset` di kedua sisi bersamaan dengan max-w -
-                kalau left & right sama-sama diset, browser mengabaikan
-                sisi kanan begitu max-w aktif sehingga kotak diam-diam
-                balik nempel ke kiri.) Di bawah lg (termasuk tablet) hero
-                belum cukup lebar untuk pemisahan kanan-kiri tanpa
-                menabrak teks, jadi tetap pakai layout asli: center, foto
-                penuh selebar Hero, teks overlay di atasnya seperti biasa.
-                Tidak pernah crop (object-contain + max-h/max-w, tanpa
-                fixed width) - parallax cuma translate beberapa px, tidak
-                menyentuh ukuran kotak ini sama sekali. */}
-            <div className="absolute inset-2 flex items-center justify-center sm:inset-4 lg:inset-y-6 lg:right-6 lg:left-auto lg:max-w-[46%] lg:justify-end">
-              <motion.img
-                src={slide.thumbnail_url}
-                alt={slide.title}
-                style={isActive ? { x: springParallaxX, y: springParallaxY } : undefined}
-                className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl ring-1 ring-white/10"
-              />
-            </div>
           </motion.div>
         );
       })}

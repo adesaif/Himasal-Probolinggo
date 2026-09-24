@@ -22,12 +22,6 @@ export type HomeSection =
       heading: string;
       viewAllHref: string;
       items: HomeCardItem[];
-      // "contain" menampilkan foto asli utuh (letterbox), dipakai khusus
-      // section Berita - default (undefined/"cover") mempertahankan
-      // tampilan cover yang sudah ada untuk semua section lain, supaya
-      // perbaikan ini tidak menyentuh thumbnail Agenda/Galeri/Struktur/
-      // Masayikh/Konten/topik custom.
-      thumbnailFit?: "cover" | "contain";
     }
   | {
       kind: "text";
@@ -157,7 +151,6 @@ export async function fetchBeritaSections(
       heading: `${topic.label} Terbaru`,
       viewAllHref: "/berita",
       items: terbaru.map(newsRowToCardItem),
-      thumbnailFit: "contain",
     });
   }
   if (mingguLalu.length > 0) {
@@ -167,7 +160,6 @@ export async function fetchBeritaSections(
       heading: `${topic.label} Satu Minggu Lalu`,
       viewAllHref: "/berita",
       items: mingguLalu.map(newsRowToCardItem),
-      thumbnailFit: "contain",
     });
   }
   if (bulanLalu.length > 0) {
@@ -177,7 +169,6 @@ export async function fetchBeritaSections(
       heading: `${topic.label} Satu Bulan Lalu`,
       viewAllHref: "/berita",
       items: bulanLalu.map(newsRowToCardItem),
-      thumbnailFit: "contain",
     });
   }
 

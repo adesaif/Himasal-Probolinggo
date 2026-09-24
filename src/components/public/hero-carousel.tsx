@@ -3,6 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+} from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
@@ -20,7 +27,18 @@ export type HeroSlide = {
 };
 
 const AUTOPLAY_MS = 3000;
-const TRANSITION_MS = 700;
+
+// Spring dipakai untuk crossfade+morph antar slide (bahasa motion diambil
+// dari referensi scroll-morph: pergerakan spring yang halus, bukan linear
+// ease) - redup/lembut karena ini Hero utama, bukan elemen dekoratif.
+const SLIDE_SPRING = { type: "spring" as const, stiffness: 120, damping: 22, mass: 1 };
+const TEXT_SPRING = { type: "spring" as const, stiffness: 160, damping: 20 };
+
+// Parallax sangat halus mengikuti kursor - hanya elemen foto utama yang
+// bergerak (backdrop tetap diam supaya tidak terasa "goyang"), dan cuma
+// aktif di desktop (mousemove tidak pernah terpicu di touch, jadi mobile
+// otomatis diam tanpa perlu deteksi device terpisah).
+const PARALLAX_RANGE = 14;
 
 /**
  * Hero portal konten: setiap slide adalah konten Unggulan (is_featured,
@@ -34,6 +52,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   const [index, setIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const goTo = useCallback(
     (next: number) => {
@@ -58,6 +77,26 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     };
   }, [isPaused, slides.length]);
 
+  // Parallax kursor - offset kecil untuk foto utama saja.
+  const parallaxX = useMotionValue(0);
+  const parallaxY = useMotionValue(0);
+  const springParallaxX = useSpring(parallaxX, { stiffness: 60, damping: 20 });
+  const springParallaxY = useSpring(parallaxY, { stiffness: 60, damping: 20 });
+
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (prefersReducedMotion) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width - 0.5;
+    const relY = (e.clientY - rect.top) / rect.height - 0.5;
+    parallaxX.set(relX * PARALLAX_RANGE);
+    parallaxY.set(relY * PARALLAX_RANGE);
+  }
+
+  function resetParallax() {
+    parallaxX.set(0);
+    parallaxY.set(0);
+  }
+
   if (slides.length === 0) {
     return null;
   }
@@ -68,53 +107,64 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     <div
       className="absolute inset-0 overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      onMouseLeave={() => {
+        setIsPaused(false);
+        resetParallax();
+      }}
+      onMouseMove={handleMouseMove}
     >
-      {slides.map((slide, i) => (
-        <div
-          key={slide.id}
-          className={cn(
-            "absolute inset-0 transition-opacity ease-in-out",
-            i === index ? "opacity-100" : "opacity-0",
-          )}
-          style={{ transitionDuration: `${TRANSITION_MS}ms` }}
-        >
-          {/* Backdrop dari foto yang sama, di-blur+digelapkan sampai jadi
-              ambient glow (bukan foto kedua yang bisa dikenali) - mengisi
-              seluruh Hero jadi satu canvas atmospheric yang membungkus
-              foto utama. Scale + blur besar supaya tidak ada tepi tajam
-              yang terlihat seperti panel terpisah. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={slide.thumbnail_url}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 size-full scale-125 object-cover blur-3xl brightness-[0.55] saturate-125"
-          />
-          {/* Foto utama: dibungkus flex-center supaya kotak gambar persis
-              sebesar foto yang tampil (mengikuti rasio asli), bukan kotak
-              selebar Hero dengan object-contain "melayang" di tengahnya -
-              pendekatan lama itu rapuh: untuk foto produksi yang framing
-              aslinya sudah landscape/lebar dengan subjek tidak persis di
-              tengah bingkai, kotak selebar Hero membuat foto terlihat
-              nempel ke satu sisi dengan ambient glow di sisi lain terasa
-              seperti blok kedua yang terpisah - bukan satu composition.
-              Dengan flex items-center justify-center + max-h-full
-              max-w-full, foto (dan bingkainya: rounded, shadow, ring)
-              selalu presisi di tengah Hero apa pun rasio & komposisi foto
-              sumbernya, jadi ambient glow di kedua sisi simetris dan
-              terasa membungkus foto, bukan kosong sebelah. Tidak pernah
-              crop (object-contain + max-h/max-w, tanpa fixed width). */}
-          <div className="absolute inset-3 flex items-center justify-center sm:inset-6 lg:inset-8">
+      {slides.map((slide, i) => {
+        const isActive = i === index;
+        return (
+          <motion.div
+            key={slide.id}
+            className="absolute inset-0"
+            initial={false}
+            animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 1.04 }}
+            transition={prefersReducedMotion ? { duration: 0 } : SLIDE_SPRING}
+            style={{ pointerEvents: isActive ? "auto" : "none" }}
+          >
+            {/* Backdrop dari foto yang sama, di-blur+digelapkan sampai jadi
+                ambient glow (bukan foto kedua yang bisa dikenali) - mengisi
+                seluruh Hero jadi satu canvas atmospheric yang membungkus
+                foto utama. Scale + blur besar supaya tidak ada tepi tajam
+                yang terlihat seperti panel terpisah. Backdrop TIDAK ikut
+                parallax - hanya foto utama yang bergerak, supaya tidak
+                terasa goyang. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={slide.thumbnail_url}
-              alt={slide.title}
-              className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl ring-1 ring-white/10"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 size-full scale-125 object-cover blur-3xl brightness-[0.55] saturate-125"
             />
-          </div>
-        </div>
-      ))}
+            {/* Foto utama: dibungkus flex-center supaya kotak gambar persis
+                sebesar foto yang tampil (mengikuti rasio asli), bukan kotak
+                selebar Hero dengan object-contain "melayang" di tengahnya -
+                pendekatan lama itu rapuh: untuk foto produksi yang framing
+                aslinya sudah landscape/lebar dengan subjek tidak persis di
+                tengah bingkai, kotak selebar Hero membuat foto terlihat
+                nempel ke satu sisi dengan ambient glow di sisi lain terasa
+                seperti blok kedua yang terpisah - bukan satu composition.
+                Dengan flex items-center justify-center + max-h-full
+                max-w-full, foto (dan bingkainya: rounded, shadow, ring)
+                selalu presisi di tengah Hero apa pun rasio & komposisi foto
+                sumbernya, jadi ambient glow di kedua sisi simetris dan
+                terasa membungkus foto, bukan kosong sebelah. Tidak pernah
+                crop (object-contain + max-h/max-w, tanpa fixed width) -
+                parallax cuma translate beberapa px, tidak menyentuh ukuran
+                kotak ini sama sekali. */}
+            <div className="absolute inset-3 flex items-center justify-center sm:inset-6 lg:inset-8">
+              <motion.img
+                src={slide.thumbnail_url}
+                alt={slide.title}
+                style={isActive ? { x: springParallaxX, y: springParallaxY } : undefined}
+                className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl ring-1 ring-white/10"
+              />
+            </div>
+          </motion.div>
+        );
+      })}
       {/* Overlay gradient dibuat bias ke kiri-bawah (lihat globals.css) -
           menyatu dengan posisi blok teks editorial di bawah supaya area
           teks selalu cukup gelap untuk dibaca, sementara foto tetap
@@ -125,29 +175,40 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           rata kiri (bukan center) supaya terasa seperti featured news
           hero, bukan caption foto. Selalu dari data CMS existing - field
           yang tidak tersedia (category/summary/date) disembunyikan begitu
-          saja, tidak pernah diisi teks buatan. */}
-      <div className="absolute inset-x-0 bottom-0 z-10 px-4 pt-16 pb-5 sm:px-8 sm:pb-7 lg:px-10 lg:pb-8">
-        <div className="max-w-xl sm:max-w-2xl">
-          {active.category ? (
-            <span className="mb-2 inline-flex w-fit items-center rounded-full bg-[#1d5fa8] px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white uppercase sm:mb-3 sm:text-xs">
-              {active.category}
-            </span>
-          ) : null}
-          <Link
-            href={active.href}
-            className="block text-xl leading-tight font-bold text-balance text-white transition-opacity hover:opacity-90 sm:text-3xl lg:text-4xl"
+          saja, tidak pernah diisi teks buatan. AnimatePresence supaya teks
+          ikut morph halus (fade + naik sedikit) setiap slide berganti,
+          bukan berganti instan. */}
+      <div className="absolute inset-x-0 bottom-0 z-10">
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={active.id}
+            className="absolute inset-x-0 bottom-0 max-w-xl px-4 pt-16 pb-5 sm:max-w-2xl sm:px-8 sm:pb-7 lg:px-10 lg:pb-8"
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={prefersReducedMotion ? undefined : { opacity: 0, y: -10 }}
+            transition={prefersReducedMotion ? { duration: 0 } : TEXT_SPRING}
           >
-            <span className="line-clamp-2">{active.title}</span>
-          </Link>
-          {active.summary ? (
-            <p className="mt-2 line-clamp-2 text-sm text-white/80 sm:mt-3 sm:text-base">
-              {active.summary}
-            </p>
-          ) : null}
-          {active.date ? (
-            <p className="mt-2 text-xs text-white/60 sm:mt-3 sm:text-sm">{active.date}</p>
-          ) : null}
-        </div>
+            {active.category ? (
+              <span className="mb-2 inline-flex w-fit items-center rounded-full bg-[#1d5fa8] px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white uppercase sm:mb-3 sm:text-xs">
+                {active.category}
+              </span>
+            ) : null}
+            <Link
+              href={active.href}
+              className="block text-xl leading-tight font-bold text-balance text-white transition-opacity hover:opacity-90 sm:text-3xl lg:text-4xl"
+            >
+              <span className="line-clamp-2">{active.title}</span>
+            </Link>
+            {active.summary ? (
+              <p className="mt-2 line-clamp-2 text-sm text-white/80 sm:mt-3 sm:text-base">
+                {active.summary}
+              </p>
+            ) : null}
+            {active.date ? (
+              <p className="mt-2 text-xs text-white/60 sm:mt-3 sm:text-sm">{active.date}</p>
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {slides.length > 1 ? (

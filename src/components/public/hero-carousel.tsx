@@ -11,6 +11,12 @@ export type HeroSlide = {
   href: string;
   title: string;
   thumbnail_url: string;
+  // Ketiganya opsional dan HANYA tampil kalau datanya memang ada di CMS -
+  // tidak pernah di-fallback ke teks buatan. category: label topik sumber
+  // konten (atau news.category kalau ada) - lihat homepage-content.ts.
+  category?: string | null;
+  summary?: string | null;
+  date?: string | null;
 };
 
 const AUTOPLAY_MS = 3000;
@@ -109,15 +115,39 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           </div>
         </div>
       ))}
+      {/* Overlay gradient dibuat bias ke kiri-bawah (lihat globals.css) -
+          menyatu dengan posisi blok teks editorial di bawah supaya area
+          teks selalu cukup gelap untuk dibaca, sementara foto tetap
+          terang/terlihat di sisi lain Hero. */}
       <div className="hero-slide-overlay absolute inset-0" aria-hidden="true" />
 
-      <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-14 sm:px-12 sm:pb-16">
-        <Link
-          href={active.href}
-          className="mx-auto block max-w-3xl text-center text-xl leading-tight font-bold text-balance text-white transition-opacity hover:opacity-90 sm:text-3xl"
-        >
-          {active.title}
-        </Link>
+      {/* Blok teks editorial: category / judul / ringkasan / tanggal,
+          rata kiri (bukan center) supaya terasa seperti featured news
+          hero, bukan caption foto. Selalu dari data CMS existing - field
+          yang tidak tersedia (category/summary/date) disembunyikan begitu
+          saja, tidak pernah diisi teks buatan. */}
+      <div className="absolute inset-x-0 bottom-0 z-10 px-4 pt-16 pb-5 sm:px-8 sm:pb-7 lg:px-10 lg:pb-8">
+        <div className="max-w-xl sm:max-w-2xl">
+          {active.category ? (
+            <span className="mb-2 inline-flex w-fit items-center rounded-full bg-[#1d5fa8] px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white uppercase sm:mb-3 sm:text-xs">
+              {active.category}
+            </span>
+          ) : null}
+          <Link
+            href={active.href}
+            className="block text-xl leading-tight font-bold text-balance text-white transition-opacity hover:opacity-90 sm:text-3xl lg:text-4xl"
+          >
+            <span className="line-clamp-2">{active.title}</span>
+          </Link>
+          {active.summary ? (
+            <p className="mt-2 line-clamp-2 text-sm text-white/80 sm:mt-3 sm:text-base">
+              {active.summary}
+            </p>
+          ) : null}
+          {active.date ? (
+            <p className="mt-2 text-xs text-white/60 sm:mt-3 sm:text-sm">{active.date}</p>
+          ) : null}
+        </div>
       </div>
 
       {slides.length > 1 ? (
@@ -144,7 +174,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           >
             <ChevronRight className="size-5" />
           </button>
-          <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
+          <div className="absolute right-4 bottom-4 z-10 flex gap-2 sm:right-8 lg:right-10">
             {slides.map((slide, i) => (
               <button
                 key={slide.id}

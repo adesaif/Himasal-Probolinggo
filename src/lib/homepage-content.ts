@@ -59,6 +59,11 @@ type NewsCardRow = {
   published_at: string | null;
 };
 
+type NewsHeroRow = NewsCardRow & {
+  category: string | null;
+  excerpt: string | null;
+};
+
 function newsRowToCardItem(n: NewsCardRow): HomeCardItem {
   return {
     id: n.id,
@@ -122,7 +127,7 @@ export async function fetchBeritaSections(
     isTopicFeaturedAllowed([topic], topic.key)
       ? supabase
           .from("news")
-          .select(NEWS_CARD_COLUMNS)
+          .select("id, slug, title, thumbnail_url, published_at, category, excerpt")
           .eq("status", "published")
           .eq("is_featured", true)
           .not("thumbnail_url", "is", null)
@@ -174,12 +179,17 @@ export async function fetchBeritaSections(
   }
 
   const heroCandidates: HeroCandidate[] = (featuredRows ?? [])
-    .filter((n): n is NewsCardRow & { thumbnail_url: string } => Boolean(n.thumbnail_url))
+    .filter((n): n is NewsHeroRow & { thumbnail_url: string } => Boolean(n.thumbnail_url))
     .map((n) => ({
       id: `news-${n.id}`,
       href: `/berita/${n.slug}`,
       title: n.title,
       thumbnail_url: n.thumbnail_url,
+      // category asli dari berita (mis. "Politik") kalau ada, jatuh ke
+      // label topik ("Berita") kalau berita ini tidak dikategorikan -
+      // sama seperti pola Badge di halaman detail berita.
+      category: n.category || topic.label,
+      summary: n.excerpt,
       sortDate: n.published_at ?? "",
     }));
 
@@ -207,7 +217,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       isTopicFeaturedAllowed([topic], topic.key)
         ? supabase
             .from("events")
-            .select("id, title, thumbnail_url, start_at")
+            .select("id, title, thumbnail_url, start_at, description")
             .eq("status", "published")
             .eq("is_featured", true)
             .not("thumbnail_url", "is", null)
@@ -231,6 +241,8 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
         href: `/agenda/${e.id}`,
         title: e.title,
         thumbnail_url: e.thumbnail_url,
+        category: topic.label,
+        summary: e.description,
         sortDate: e.start_at ?? "",
       }));
 
@@ -272,6 +284,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       href: "/galeri",
       title: g.caption || `${topic.label} HIMASAL Probolinggo`,
       thumbnail_url: g.image_url,
+      category: topic.label,
       sortDate: g.created_at,
     }));
 
@@ -316,6 +329,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
         href: "/struktur",
         title: `${s.nama} - ${s.jabatan}`,
         thumbnail_url: s.foto_url,
+        category: topic.label,
         sortDate: s.created_at,
       }));
 
@@ -336,7 +350,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       isTopicFeaturedAllowed([topic], topic.key)
         ? supabase
             .from("masayikh")
-            .select("id, nama, foto_url, created_at")
+            .select("id, nama, deskripsi, foto_url, created_at")
             .eq("is_active", true)
             .eq("is_featured", true)
             .not("foto_url", "is", null)
@@ -360,6 +374,8 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
         href: "/masayikh",
         title: m.nama,
         thumbnail_url: m.foto_url,
+        category: topic.label,
+        summary: m.deskripsi,
         sortDate: m.created_at,
       }));
 
@@ -383,6 +399,8 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
               href: "/profil",
               title: `${topic.label} HIMASAL Probolinggo`,
               thumbnail_url: profile.image_url,
+              category: topic.label,
+              summary: profile.deskripsi,
               sortDate: profile.updated_at,
             },
           ]
@@ -424,7 +442,7 @@ async function fetchGenericSection(
     isTopicFeaturedAllowed([topic], topic.key)
       ? supabase
           .from("topic_content")
-          .select("id, title, image_url, link_url, created_at")
+          .select("id, title, description, image_url, link_url, created_at")
           .eq("topic_id", topic.id)
           .eq("is_active", true)
           .eq("is_featured", true)
@@ -451,6 +469,8 @@ async function fetchGenericSection(
       href: c.link_url || viewAllHref,
       title: c.title,
       thumbnail_url: c.image_url,
+      category: topic.label,
+      summary: c.description,
       sortDate: c.created_at,
     }));
 
@@ -505,5 +525,13 @@ export function finalizeHeroSlides(candidates: HeroCandidate[]): HeroSlide[] {
   return candidates
     .sort((a, b) => (a.sortDate < b.sortDate ? 1 : -1))
     .slice(0, 6)
-    .map((slide) => ({ id: slide.id, href: slide.href, title: slide.title, thumbnail_url: slide.thumbnail_url }));
+    .map((slide) => ({
+      id: slide.id,
+      href: slide.href,
+      title: slide.title,
+      thumbnail_url: slide.thumbnail_url,
+      category: slide.category,
+      summary: slide.summary,
+      date: slide.sortDate ? formatDateID(slide.sortDate) : null,
+    }));
 }

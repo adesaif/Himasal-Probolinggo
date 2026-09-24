@@ -203,11 +203,16 @@
       linear-gradient(160deg, #050b16 0%, #0a1730 45%, #0d2142 100%);
   }
 
-  /* Overlay gelap di atas foto carousel hero agar teks tetap terbaca. */
+  /* Overlay gelap di atas foto carousel hero agar teks tetap terbaca.
+     Blok teks editorial (category/judul/ringkasan/tanggal) ada di
+     kiri-bawah, jadi gradient dibuat bias ke sana: bagian atas nyaris
+     bersih (foto tetap terlihat terang), radial burst di kiri-bawah
+     menggelapkan khusus area di belakang teks tanpa menggelapkan foto
+     di sisi lain Hero secara merata. */
   .hero-slide-overlay {
     background:
-      linear-gradient(180deg, rgba(5, 11, 22, 0.55) 0%, rgba(5, 11, 22, 0.75) 100%),
-      radial-gradient(120% 90% at 50% 100%, rgba(5, 11, 22, 0.6) 0%, rgba(5, 11, 22, 0) 60%);
+      linear-gradient(180deg, rgba(5, 11, 22, 0.1) 0%, rgba(5, 11, 22, 0.32) 60%, rgba(5, 11, 22, 0.8) 100%),
+      radial-gradient(85% 75% at 10% 100%, rgba(5, 11, 22, 0.78) 0%, rgba(5, 11, 22, 0) 65%);
   }
 
   /*

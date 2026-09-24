@@ -1,16 +1,13 @@
 import { AttendanceEventList } from "@/components/admin/attendance-event-list";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 
 export default function AdminAbsensiPage() {
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Manajemen Absensi
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Kelola dan pantau data kehadiran per kegiatan.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Manajemen Absensi"
+        description="Kelola dan pantau data kehadiran per kegiatan."
+      />
       <AttendanceEventList />
     </div>
   );

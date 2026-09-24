@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -112,18 +113,20 @@ export function GalleryList({ featuredAllowed }: { featuredAllowed: boolean }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Galeri</h1>
-        <GalleryFormDialog
-          featuredAllowed={featuredAllowed}
-          trigger={
-            <Button>
-              <Plus />
-              Tambah Foto
-            </Button>
-          }
-        />
-      </div>
+      <AdminPageHeader
+        title="Galeri"
+        actions={
+          <GalleryFormDialog
+            featuredAllowed={featuredAllowed}
+            trigger={
+              <Button>
+                <Plus />
+                Tambah Foto
+              </Button>
+            }
+          />
+        }
+      />
 
       {isLoading ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

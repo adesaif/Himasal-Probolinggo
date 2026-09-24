@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -123,23 +124,20 @@ export function HeroSlideList({ rows }: { rows: HeroSlideRow[] }) {
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Hero Wallpaper (Legacy)</h1>
-          <p className="text-sm text-muted-foreground">
-            Kelola foto/wallpaper carousel hero beranda versi lama. Tidak lagi
-            dipakai oleh halaman publik - lihat catatan di atas.
-          </p>
-        </div>
-        <HeroSlideFormDialog
-          trigger={
-            <Button>
-              <Plus />
-              Tambah Wallpaper
-            </Button>
-          }
-        />
-      </div>
+      <AdminPageHeader
+        title="Hero Wallpaper (Legacy)"
+        description="Kelola foto/wallpaper carousel hero beranda versi lama. Tidak lagi dipakai oleh halaman publik - lihat catatan di atas."
+        actions={
+          <HeroSlideFormDialog
+            trigger={
+              <Button>
+                <Plus />
+                Tambah Wallpaper
+              </Button>
+            }
+          />
+        }
+      />
 
       {rows.length === 0 ? (
         <Card>

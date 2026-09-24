@@ -9,6 +9,7 @@ import { ArrowDown, ArrowUp, FolderOpen, Pencil, Plus, RotateCcw, Trash2 } from 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -120,28 +121,20 @@ export function TopicList({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Topik & Navigasi</h1>
-          <p className="text-sm text-muted-foreground">
-            Kelola nama, deskripsi, urutan, status aktif, izin Unggulan, dan
-            hapus untuk setiap topik/bagian website. Mengganti nama di sini
-            otomatis tercermin di menu navigasi publik, sidebar Admin, dan
-            judul section Beranda. Menghapus topik hanya menghapus
-            konfigurasinya dari daftar ini - konten yang sudah ada di topik
-            tersebut TIDAK ikut terhapus. Topik baru otomatis mendapat
-            navigasi publik dan section Beranda sendiri begitu punya konten.
-          </p>
-        </div>
-        <TopicCreateDialog
-          trigger={
-            <Button>
-              <Plus />
-              Tambah Topik
-            </Button>
-          }
-        />
-      </div>
+      <AdminPageHeader
+        title="Topik & Navigasi"
+        description="Kelola nama, deskripsi, urutan, status aktif, izin Unggulan, dan hapus untuk setiap topik/bagian website. Mengganti nama di sini otomatis tercermin di menu navigasi publik, sidebar Admin, dan judul section Beranda. Menghapus topik hanya menghapus konfigurasinya dari daftar ini - konten yang sudah ada di topik tersebut TIDAK ikut terhapus. Topik baru otomatis mendapat navigasi publik dan section Beranda sendiri begitu punya konten."
+        actions={
+          <TopicCreateDialog
+            trigger={
+              <Button>
+                <Plus />
+                Tambah Topik
+              </Button>
+            }
+          />
+        }
+      />
 
       <div className="flex flex-col gap-2">
         {rows.map((topic, index) => {

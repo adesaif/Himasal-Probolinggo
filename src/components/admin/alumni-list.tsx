@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CreateAlumniDialog } from "@/components/admin/create-alumni-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -120,10 +121,10 @@ export function AlumniList({ wilayahList }: { wilayahList: Wilayah[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Data Alumni</h1>
-        <CreateAlumniDialog wilayahList={wilayahList} />
-      </div>
+      <AdminPageHeader
+        title="Data Alumni"
+        actions={<CreateAlumniDialog wilayahList={wilayahList} />}
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative">

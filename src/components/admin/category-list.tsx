@@ -9,6 +9,7 @@ import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, Newspaper } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -100,24 +101,20 @@ export function CategoryList({ rows }: { rows: CategoryRow[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Kategori Berita</h1>
-          <p className="text-sm text-muted-foreground">
-            Kategori aktif dan tampil di Beranda akan otomatis muncul sebagai
-            section di halaman utama, berisi berita published dengan
-            kategori tersebut.
-          </p>
-        </div>
-        <CategoryFormDialog
-          trigger={
-            <Button>
-              <Plus />
-              Tambah Kategori
-            </Button>
-          }
-        />
-      </div>
+      <AdminPageHeader
+        title="Kategori Berita"
+        description="Kategori aktif dan tampil di Beranda akan otomatis muncul sebagai section di halaman utama, berisi berita published dengan kategori tersebut."
+        actions={
+          <CategoryFormDialog
+            trigger={
+              <Button>
+                <Plus />
+                Tambah Kategori
+              </Button>
+            }
+          />
+        }
+      />
 
       {rows.length === 0 ? (
         <Card>

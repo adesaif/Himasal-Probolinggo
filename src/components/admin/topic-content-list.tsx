@@ -8,6 +8,7 @@ import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -133,25 +134,22 @@ export function TopicContentList({
             Kembali ke Topik & Navigasi
           </Link>
         </Button>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Kelola Konten: {topicLabel}</h1>
-            <p className="text-sm text-muted-foreground">
-              Konten yang Aktif otomatis tampil di section &quot;{topicLabel}&quot; di
-              Beranda dan halaman publik topik ini.
-            </p>
-          </div>
-          <TopicContentFormDialog
-            topicId={topicId}
-            featuredAllowed={featuredAllowed}
-            trigger={
-              <Button>
-                <Plus />
-                Tambah Konten
-              </Button>
-            }
-          />
-        </div>
+        <AdminPageHeader
+          title={`Kelola Konten: ${topicLabel}`}
+          description={`Konten yang Aktif otomatis tampil di section "${topicLabel}" di Beranda dan halaman publik topik ini.`}
+          actions={
+            <TopicContentFormDialog
+              topicId={topicId}
+              featuredAllowed={featuredAllowed}
+              trigger={
+                <Button>
+                  <Plus />
+                  Tambah Konten
+                </Button>
+              }
+            />
+          }
+        />
       </div>
 
       {isLoading ? (

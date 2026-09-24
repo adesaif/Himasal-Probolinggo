@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -138,18 +139,20 @@ export function EventList({ featuredAllowed }: { featuredAllowed: boolean }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Agenda</h1>
-        <EventFormDialog
-          featuredAllowed={featuredAllowed}
-          trigger={
-            <Button>
-              <Plus />
-              Tambah Agenda
-            </Button>
-          }
-        />
-      </div>
+      <AdminPageHeader
+        title="Agenda"
+        actions={
+          <EventFormDialog
+            featuredAllowed={featuredAllowed}
+            trigger={
+              <Button>
+                <Plus />
+                Tambah Agenda
+              </Button>
+            }
+          />
+        }
+      />
 
       {isLoading ? (
         <div className="flex flex-col gap-2">

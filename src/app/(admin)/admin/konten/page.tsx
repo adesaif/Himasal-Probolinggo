@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { TOPIC_SELECT_COLUMNS, topicLabel, type SiteTopic } from "@/lib/topics";
 
 function buildSections(topics: SiteTopic[] | null) {
@@ -49,15 +50,10 @@ export default async function AdminKontenPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Manajemen Konten
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Kelola konten yang tampil di website publik. Berita, Agenda, dan
-          Galeri dikelola dari menu sidebar masing-masing.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Manajemen Konten"
+        description="Kelola konten yang tampil di website publik. Berita, Agenda, dan Galeri dikelola dari menu sidebar masing-masing."
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {sections.map((section) => (

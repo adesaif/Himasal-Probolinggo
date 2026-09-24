@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import {
   Select,
   SelectContent,
@@ -189,19 +190,21 @@ export function NewsList({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Berita</h1>
-        <NewsFormDialog
-          categories={categories}
-          featuredAllowed={featuredAllowed}
-          trigger={
-            <Button>
-              <Plus />
-              Tambah Berita
-            </Button>
-          }
-        />
-      </div>
+      <AdminPageHeader
+        title="Berita"
+        actions={
+          <NewsFormDialog
+            categories={categories}
+            featuredAllowed={featuredAllowed}
+            trigger={
+              <Button>
+                <Plus />
+                Tambah Berita
+              </Button>
+            }
+          />
+        }
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
         <div className="relative sm:col-span-2">

@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,18 +87,20 @@ export function MasayikhList({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Masayikh</h1>
-        <MasayikhFormDialog
-          featuredAllowed={featuredAllowed}
-          trigger={
-            <Button>
-              <Plus />
-              Tambah Masayikh
-            </Button>
-          }
-        />
-      </div>
+      <AdminPageHeader
+        title="Masayikh"
+        actions={
+          <MasayikhFormDialog
+            featuredAllowed={featuredAllowed}
+            trigger={
+              <Button>
+                <Plus />
+                Tambah Masayikh
+              </Button>
+            }
+          />
+        }
+      />
 
       {rows.length === 0 ? (
         <Card>

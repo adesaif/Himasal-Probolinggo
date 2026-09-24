@@ -73,31 +73,40 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
           )}
           style={{ transitionDuration: `${TRANSITION_MS}ms` }}
         >
-          {/* Backdrop halus dari foto yang sama (di-blur + digelapkan) supaya
-              tidak ada area kosong di sisi foto - object-cover di sini AMAN
-              dipotong karena cuma backdrop, bukan subjek utama. Blur lebih
-              lembut + saturasi dinaikkan supaya backdrop terasa menyatu
-              seperti glow ambient, bukan kotak gelap kosong di sekitar foto
-              utama (foto portrait di Hero yang sangat wide). */}
+          {/* Backdrop dari foto yang sama, di-blur+digelapkan sampai jadi
+              ambient glow (bukan foto kedua yang bisa dikenali) - mengisi
+              seluruh Hero jadi satu canvas atmospheric yang membungkus
+              foto utama. Scale + blur besar supaya tidak ada tepi tajam
+              yang terlihat seperti panel terpisah. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={slide.thumbnail_url}
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 size-full scale-110 object-cover blur-3xl brightness-75 saturate-150"
+            className="absolute inset-0 size-full scale-125 object-cover blur-3xl brightness-[0.55] saturate-125"
           />
-          {/* Foto utama: object-contain supaya subjek/wajah selalu tampil
-              utuh, apa pun rasio aslinya - tidak pernah terpotong. Diberi
-              jarak (inset) dari tepi Hero + bingkai (rounded, shadow, ring)
-              supaya foto portrait yang jadi "pita sempit" di Hero yang
-              sangat wide terbaca sebagai kartu foto yang sengaja ditata,
-              bukan letterbox yang terlihat seperti kesalahan render. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={slide.thumbnail_url}
-            alt={slide.title}
-            className="absolute inset-3 rounded-2xl object-contain shadow-2xl ring-1 ring-white/10 sm:inset-6 lg:inset-8"
-          />
+          {/* Foto utama: dibungkus flex-center supaya kotak gambar persis
+              sebesar foto yang tampil (mengikuti rasio asli), bukan kotak
+              selebar Hero dengan object-contain "melayang" di tengahnya -
+              pendekatan lama itu rapuh: untuk foto produksi yang framing
+              aslinya sudah landscape/lebar dengan subjek tidak persis di
+              tengah bingkai, kotak selebar Hero membuat foto terlihat
+              nempel ke satu sisi dengan ambient glow di sisi lain terasa
+              seperti blok kedua yang terpisah - bukan satu composition.
+              Dengan flex items-center justify-center + max-h-full
+              max-w-full, foto (dan bingkainya: rounded, shadow, ring)
+              selalu presisi di tengah Hero apa pun rasio & komposisi foto
+              sumbernya, jadi ambient glow di kedua sisi simetris dan
+              terasa membungkus foto, bukan kosong sebelah. Tidak pernah
+              crop (object-contain + max-h/max-w, tanpa fixed width). */}
+          <div className="absolute inset-3 flex items-center justify-center sm:inset-6 lg:inset-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={slide.thumbnail_url}
+              alt={slide.title}
+              className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl ring-1 ring-white/10"
+            />
+          </div>
         </div>
       ))}
       <div className="hero-slide-overlay absolute inset-0" aria-hidden="true" />

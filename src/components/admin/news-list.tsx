@@ -34,6 +34,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatDateID } from "@/lib/format-date";
 import { cleanupStorageFileIfUnused } from "@/lib/storage-cleanup";
+import type { SiteTopic } from "@/lib/topics";
 
 type NewsRow = {
   id: string;
@@ -41,8 +42,7 @@ type NewsRow = {
   title: string;
   excerpt: string | null;
   content: string;
-  category: string | null;
-  category_id: string | null;
+  topic_id: string | null;
   author_name: string | null;
   thumbnail_url: string | null;
   is_featured: boolean;
@@ -51,29 +51,18 @@ type NewsRow = {
   created_at: string;
 };
 
-type CategoryOption = { id: string; name: string; slug: string };
+type TopicOption = Pick<SiteTopic, "id" | "key" | "label" | "is_active" | "allow_featured">;
 
 const PAGE_SIZE = 10;
 const ALL_VALUE = "__all__";
 
-export function NewsList({
-  categories,
-  initialCategorySlug,
-  featuredAllowed,
-}: {
-  categories: CategoryOption[];
-  initialCategorySlug?: string;
-  featuredAllowed: boolean;
-}) {
-  const initialCategoryId =
-    categories.find((c) => c.slug === initialCategorySlug)?.id ?? ALL_VALUE;
-
+export function NewsList({ topics }: { topics: TopicOption[] }) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 350);
   const [statusFilter, setStatusFilter] = useState(ALL_VALUE);
-  const [categoryFilter, setCategoryFilter] = useState(initialCategoryId);
+  const [topicFilter, setTopicFilter] = useState(ALL_VALUE);
   const [page, setPage] = useState(0);
-  const categoryById = new Map(categories.map((c) => [c.id, c]));
+  const topicById = new Map(topics.map((t) => [t.id, t]));
 
   const [rows, setRows] = useState<NewsRow[]>([]);
   const [count, setCount] = useState(0);
@@ -81,7 +70,7 @@ export function NewsList({
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const filterKey = `${debouncedSearch}|${statusFilter}|${categoryFilter}`;
+  const filterKey = `${debouncedSearch}|${statusFilter}|${topicFilter}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (filterKey !== prevFilterKey) {
     setPrevFilterKey(filterKey);
@@ -101,7 +90,7 @@ export function NewsList({
       let query = supabase
         .from("news")
         .select(
-          "id, slug, title, excerpt, content, category, category_id, author_name, thumbnail_url, is_featured, status, published_at, created_at",
+          "id, slug, title, excerpt, content, topic_id, author_name, thumbnail_url, is_featured, status, published_at, created_at",
           { count: "exact" },
         );
 
@@ -111,8 +100,8 @@ export function NewsList({
       if (statusFilter !== ALL_VALUE) {
         query = query.eq("status", statusFilter);
       }
-      if (categoryFilter !== ALL_VALUE) {
-        query = query.eq("category_id", categoryFilter);
+      if (topicFilter !== ALL_VALUE) {
+        query = query.eq("topic_id", topicFilter);
       }
 
       const from = page * PAGE_SIZE;
@@ -139,7 +128,7 @@ export function NewsList({
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, statusFilter, categoryFilter, page, reloadKey]);
+  }, [debouncedSearch, statusFilter, topicFilter, page, reloadKey]);
 
   const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
 
@@ -194,8 +183,7 @@ export function NewsList({
         title="Berita"
         actions={
           <NewsFormDialog
-            categories={categories}
-            featuredAllowed={featuredAllowed}
+            topics={topics}
             trigger={
               <Button>
                 <Plus />
@@ -216,15 +204,15 @@ export function NewsList({
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+        <Select value={topicFilter} onValueChange={setTopicFilter}>
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Semua kategori" />
+            <SelectValue placeholder="Semua topik" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_VALUE}>Semua kategori</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
+            <SelectItem value={ALL_VALUE}>Semua topik</SelectItem>
+            {topics.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
+                {t.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -274,11 +262,9 @@ export function NewsList({
                   <p className="mt-1 truncate font-medium">{row.title}</p>
                   <p className="text-sm text-muted-foreground">
                     {formatDateID(row.created_at)}
-                    {row.category_id && categoryById.get(row.category_id)
-                      ? ` · ${categoryById.get(row.category_id)!.name}`
-                      : row.category
-                        ? ` · ${row.category}`
-                        : ""}
+                    {row.topic_id && topicById.get(row.topic_id)
+                      ? ` · ${topicById.get(row.topic_id)!.label}`
+                      : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
@@ -300,8 +286,7 @@ export function NewsList({
                   </Button>
                   <NewsFormDialog
                     editing={row}
-                    categories={categories}
-                    featuredAllowed={featuredAllowed}
+                    topics={topics}
                     trigger={
                       <Button variant="outline" size="sm" disabled={busyId === row.id}>
                         <Pencil />

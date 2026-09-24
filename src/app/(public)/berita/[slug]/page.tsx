@@ -13,7 +13,9 @@ async function getNews(slug: string) {
   const supabase = createPublicClient();
   const { data } = await supabase
     .from("news")
-    .select("title, excerpt, content, thumbnail_url, author_name, category, published_at")
+    .select(
+      "title, excerpt, content, thumbnail_url, author_name, published_at, topic_id, site_topics(label)",
+    )
     .eq("slug", slug)
     .eq("status", "published")
     .single();
@@ -74,7 +76,9 @@ export default async function BeritaDetailPage({
       ) : null}
 
       <div>
-        {news.category ? <Badge variant="primary">{news.category}</Badge> : null}
+        {news.site_topics?.label ? (
+          <Badge variant="primary">{news.site_topics.label}</Badge>
+        ) : null}
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">{news.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {news.author_name ? `${news.author_name} · ` : ""}

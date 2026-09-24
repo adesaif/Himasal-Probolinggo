@@ -37,6 +37,7 @@ import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { createClient } from "@/lib/supabase/client";
 import { slugify } from "@/lib/slugify";
 import { newsSchema, type NewsInput } from "@/lib/validators/news";
+import { isTopicFeaturedAllowed, type SiteTopic } from "@/lib/topics";
 
 type Editing = {
   id: string;
@@ -44,26 +45,22 @@ type Editing = {
   title: string;
   excerpt: string | null;
   content: string;
-  category_id: string | null;
+  topic_id: string | null;
   author_name: string | null;
   thumbnail_url: string | null;
   is_featured: boolean;
   status: string;
 };
 
-type CategoryOption = { id: string; name: string; slug: string };
-
-const NO_CATEGORY_VALUE = "__none__";
+type TopicOption = Pick<SiteTopic, "id" | "key" | "label" | "is_active" | "allow_featured">;
 
 export function NewsFormDialog({
   editing,
-  categories,
-  featuredAllowed,
+  topics,
   trigger,
 }: {
   editing?: Editing;
-  categories: CategoryOption[];
-  featuredAllowed: boolean;
+  topics: TopicOption[];
   trigger: ReactNode;
 }) {
   const router = useRouter();
@@ -73,18 +70,29 @@ export function NewsFormDialog({
     editing?.thumbnail_url ?? null,
   );
 
+  const beritaTopic = topics.find((t) => t.key === "berita");
+
   const form = useForm<NewsInput>({
     resolver: zodResolver(newsSchema),
     defaultValues: {
       title: editing?.title ?? "",
       excerpt: editing?.excerpt ?? "",
       content: editing?.content ?? "",
-      category_id: editing?.category_id ?? NO_CATEGORY_VALUE,
+      topic_id: editing?.topic_id ?? beritaTopic?.id ?? "",
       author_name: editing?.author_name ?? "",
       is_featured: editing?.is_featured ?? false,
       status: (editing?.status as "draft" | "published") ?? "draft",
     },
   });
+
+  // Hero eligibility ikut Topik yang SEDANG dipilih di form (bukan selalu
+  // "berita") - kalau Admin memindahkan artikel ini ke Topik lain yang
+  // tidak mengizinkan Unggulan, switch otomatis ikut nonaktif.
+  const selectedTopicId = form.watch("topic_id");
+  const selectedTopic = topics.find((t) => t.id === selectedTopicId);
+  const featuredAllowed = selectedTopic
+    ? isTopicFeaturedAllowed([selectedTopic], selectedTopic.key)
+    : false;
 
   async function onSubmit(values: NewsInput) {
     setIsSubmitting(true);
@@ -94,10 +102,7 @@ export function NewsFormDialog({
       title: values.title,
       excerpt: values.excerpt || null,
       content: values.content,
-      category_id:
-        values.category_id && values.category_id !== NO_CATEGORY_VALUE
-          ? values.category_id
-          : null,
+      topic_id: values.topic_id,
       author_name: values.author_name || null,
       thumbnail_url: thumbnailUrl,
       is_featured: featuredAllowed ? values.is_featured : false,
@@ -212,27 +217,28 @@ export function NewsFormDialog({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 control={form.control}
-                name="category_id"
+                name="topic_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kategori</FormLabel>
+                    <FormLabel>Topik</FormLabel>
                     <Select
                       disabled={isSubmitting}
-                      value={field.value || NO_CATEGORY_VALUE}
+                      value={field.value}
                       onValueChange={field.onChange}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Tanpa kategori" />
+                          <SelectValue placeholder="Pilih topik" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value={NO_CATEGORY_VALUE}>Tanpa kategori</SelectItem>
-                        {categories.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
+                        {topics
+                          .filter((t) => t.is_active)
+                          .map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.label}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -296,8 +302,8 @@ export function NewsFormDialog({
                         </div>
                         {!featuredAllowed ? (
                           <p className="text-xs text-muted-foreground">
-                            Topik Berita belum mengizinkan Unggulan. Aktifkan
-                            dulu di Admin → Konten → Topik & Navigasi.
+                            Topik {selectedTopic?.label ?? "yang dipilih"} belum mengizinkan
+                            Unggulan. Aktifkan dulu di Admin → Konten → Topik & Navigasi.
                           </p>
                         ) : null}
                       </div>

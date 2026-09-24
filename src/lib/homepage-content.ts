@@ -60,7 +60,6 @@ type NewsCardRow = {
 };
 
 type NewsHeroRow = NewsCardRow & {
-  category: string | null;
   excerpt: string | null;
 };
 
@@ -101,6 +100,7 @@ export async function fetchBeritaSections(
       .from("news")
       .select(NEWS_CARD_COLUMNS)
       .eq("status", "published")
+      .eq("topic_id", topic.id)
       .not("published_at", "is", null)
       .order("published_at", { ascending: false })
       .limit(CARD_LIMIT),
@@ -110,6 +110,7 @@ export async function fetchBeritaSections(
       .from("news")
       .select(NEWS_CARD_COLUMNS)
       .eq("status", "published")
+      .eq("topic_id", topic.id)
       .not("published_at", "is", null)
       .lt("published_at", daysAgoIso(7))
       .gte("published_at", daysAgoIso(14))
@@ -119,6 +120,7 @@ export async function fetchBeritaSections(
       .from("news")
       .select(NEWS_CARD_COLUMNS)
       .eq("status", "published")
+      .eq("topic_id", topic.id)
       .not("published_at", "is", null)
       .lt("published_at", daysAgoIso(30))
       .gte("published_at", daysAgoIso(60))
@@ -127,8 +129,9 @@ export async function fetchBeritaSections(
     isTopicFeaturedAllowed([topic], topic.key)
       ? supabase
           .from("news")
-          .select("id, slug, title, thumbnail_url, published_at, category, excerpt")
+          .select("id, slug, title, thumbnail_url, published_at, excerpt")
           .eq("status", "published")
+          .eq("topic_id", topic.id)
           .eq("is_featured", true)
           .not("thumbnail_url", "is", null)
           .order("published_at", { ascending: false })
@@ -185,15 +188,64 @@ export async function fetchBeritaSections(
       href: `/berita/${n.slug}`,
       title: n.title,
       thumbnail_url: n.thumbnail_url,
-      // category asli dari berita (mis. "Politik") kalau ada, jatuh ke
-      // label topik ("Berita") kalau berita ini tidak dikategorikan -
-      // sama seperti pola Badge di halaman detail berita.
-      category: n.category || topic.label,
+      category: topic.label,
       summary: n.excerpt,
       sortDate: n.published_at ?? "",
     }));
 
   return { sections, heroCandidates };
+}
+
+/**
+ * Berita yang Topik-nya di-set ke topik LAIN (bukan Berita) oleh Admin -
+ * dipanggil dari fetchHomeSections untuk setiap topik non-Berita, supaya
+ * artikel tersebut muncul di section topik pilihannya (bukan di Berita
+ * Terbaru) dan Hero eligibility-nya ikut allow_featured topik itu. Ini
+ * PERSIS query yang sama dengan fetchBeritaSections, hanya topic.id-nya
+ * beda - Berita tetap satu-satunya sumber data (tabel `news`), topic_id
+ * yang menentukan section mana yang memilikinya.
+ */
+async function fetchTopicNews(
+  supabase: PublicSupabase,
+  topic: SiteTopic,
+): Promise<{ items: HomeCardItem[]; heroCandidates: HeroCandidate[] }> {
+  const [{ data: rows }, { data: featuredRows }] = await Promise.all([
+    supabase
+      .from("news")
+      .select(NEWS_CARD_COLUMNS)
+      .eq("status", "published")
+      .eq("topic_id", topic.id)
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(CARD_LIMIT),
+    isTopicFeaturedAllowed([topic], topic.key)
+      ? supabase
+          .from("news")
+          .select("id, slug, title, thumbnail_url, published_at, excerpt")
+          .eq("status", "published")
+          .eq("topic_id", topic.id)
+          .eq("is_featured", true)
+          .not("thumbnail_url", "is", null)
+          .order("published_at", { ascending: false })
+          .limit(HERO_CANDIDATE_LIMIT)
+      : Promise.resolve({ data: [] as never[] }),
+  ]);
+
+  const items: HomeCardItem[] = (rows ?? []).map(newsRowToCardItem);
+
+  const heroCandidates: HeroCandidate[] = (featuredRows ?? [])
+    .filter((n): n is NewsHeroRow & { thumbnail_url: string } => Boolean(n.thumbnail_url))
+    .map((n) => ({
+      id: `news-${n.id}`,
+      href: `/berita/${n.slug}`,
+      title: n.title,
+      thumbnail_url: n.thumbnail_url,
+      category: topic.label,
+      summary: n.excerpt,
+      sortDate: n.published_at ?? "",
+    }));
+
+  return { items, heroCandidates };
 }
 
 /**
@@ -504,9 +556,30 @@ export async function fetchHomeSections(
     .sort((a, b) => a.display_order - b.display_order);
 
   const results = await Promise.all(
-    activeTopics.map((topic) => {
+    activeTopics.map(async (topic) => {
       const fetcher = topic.is_system ? SYSTEM_FETCHERS[topic.key] : undefined;
-      return fetcher ? fetcher(supabase, topic) : fetchGenericSection(supabase, topic);
+      const base = await (fetcher ? fetcher(supabase, topic) : fetchGenericSection(supabase, topic));
+
+      // Berita yang Admin tandai Topik-nya = topik ini (bukan Berita)
+      // digabung ke section topik ini - lihat fetchTopicNews. Section
+      // "text" (Profil) tidak punya daftar item untuk digabung, jadi
+      // artikel yang ditandai ke topik itu tetap ada datanya tapi tidak
+      // dirender sebagai card di sana.
+      const newsExtra = await fetchTopicNews(supabase, topic);
+      if (newsExtra.items.length === 0 && newsExtra.heroCandidates.length === 0) {
+        return base;
+      }
+
+      const heroCandidates = [...base.heroCandidates, ...newsExtra.heroCandidates];
+      if (base.section.kind !== "cards" || newsExtra.items.length === 0) {
+        return { section: base.section, heroCandidates };
+      }
+
+      // Konten topik ini dulu, sisa slot diisi berita yang ditandai ke
+      // topik ini - urutan sederhana dan dapat diprediksi, bukan
+      // interleave berdasarkan tanggal lintas dua sumber data berbeda.
+      const items = [...base.section.items, ...newsExtra.items].slice(0, CARD_LIMIT);
+      return { section: { ...base.section, items }, heroCandidates };
     }),
   );
 

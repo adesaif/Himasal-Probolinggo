@@ -418,6 +418,7 @@ export type Database = {
           status: string
           thumbnail_url: string | null
           title: string
+          topic_id: string | null
           updated_at: string
         }
         Insert: {
@@ -434,6 +435,7 @@ export type Database = {
           status?: string
           thumbnail_url?: string | null
           title: string
+          topic_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -450,6 +452,7 @@ export type Database = {
           status?: string
           thumbnail_url?: string | null
           title?: string
+          topic_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -458,6 +461,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "site_topics"
             referencedColumns: ["id"]
           },
         ]

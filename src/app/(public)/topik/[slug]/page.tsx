@@ -56,19 +56,68 @@ export default async function GenericTopicPage({
   }
 
   const page = Math.max(1, Number(pageParam) || 1);
+
+  // Konten topik ini datang dari DUA tabel - topic_content (konten generik)
+  // dan news yang Admin tandai Topik-nya ke topik ini (lihat homepage-
+  // content.ts, pola yang sama). Karena Supabase tidak bisa UNION+range
+  // dua tabel dalam satu query, ambil keduanya (dibatasi wajar, bukan
+  // seluruh tabel), gabung + urutkan + paginate di sini - aman untuk
+  // volume konten organisasi kecil seperti ini.
+  const FETCH_CAP = 200;
+  const [{ data: topicContentRows, error: topicContentError }, { data: newsRows, error: newsError }] =
+    await Promise.all([
+      supabase
+        .from("topic_content")
+        .select("id, title, description, image_url, link_url, created_at")
+        .eq("topic_id", topic.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(FETCH_CAP),
+      supabase
+        .from("news")
+        .select("id, title, excerpt, thumbnail_url, slug, published_at")
+        .eq("topic_id", topic.id)
+        .eq("status", "published")
+        .not("published_at", "is", null)
+        .order("published_at", { ascending: false })
+        .limit(FETCH_CAP),
+    ]);
+
+  const error = topicContentError || newsError;
+
+  type ListItem = {
+    id: string;
+    title: string;
+    description: string | null;
+    image_url: string | null;
+    link_url: string | null;
+    sortDate: string;
+  };
+
+  const combined: ListItem[] = [
+    ...(topicContentRows ?? []).map((c) => ({
+      id: `topic-content-${c.id}`,
+      title: c.title,
+      description: c.description,
+      image_url: c.image_url,
+      link_url: c.link_url,
+      sortDate: c.created_at,
+    })),
+    ...(newsRows ?? []).map((n) => ({
+      id: `news-${n.id}`,
+      title: n.title,
+      description: n.excerpt,
+      image_url: n.thumbnail_url,
+      link_url: `/berita/${n.slug}`,
+      sortDate: n.published_at ?? "",
+    })),
+  ].sort((a, b) => (a.sortDate < b.sortDate ? 1 : -1));
+
+  const count = combined.length;
   const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const items = combined.slice(from, from + PAGE_SIZE);
 
-  const { data: items, error, count } = await supabase
-    .from("topic_content")
-    .select("id, title, description, image_url, link_url, created_at", { count: "exact" })
-    .eq("topic_id", topic.id)
-    .eq("is_active", true)
-    .order("display_order")
-    .order("created_at", { ascending: false })
-    .range(from, to);
-
-  const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
 
   return (
     <div className="flex flex-col gap-6">
@@ -113,11 +162,18 @@ export default async function GenericTopicPage({
                     </p>
                   ) : null}
                   <p className="text-xs text-muted-foreground">
-                    {formatDateID(item.created_at)}
+                    {item.sortDate ? formatDateID(item.sortDate) : null}
                   </p>
                 </CardContent>
               </Card>
             );
+            if (item.link_url?.startsWith("/")) {
+              return (
+                <Link key={item.id} href={item.link_url}>
+                  {content}
+                </Link>
+              );
+            }
             return item.link_url ? (
               <a key={item.id} href={item.link_url} target="_blank" rel="noopener noreferrer">
                 {content}

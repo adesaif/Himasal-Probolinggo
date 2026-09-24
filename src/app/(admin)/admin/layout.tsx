@@ -39,8 +39,6 @@ export default async function AdminLayout({
         { href: "/admin/berita", label: topicLabel(topics, "berita", "Berita"), icon: "newspaper" },
         { href: "/admin/agenda", label: topicLabel(topics, "agenda", "Agenda"), icon: "calendar" },
         { href: "/admin/galeri", label: topicLabel(topics, "galeri", "Galeri"), icon: "images" },
-        { href: "/admin/konten/hero", label: "Hero Wallpaper (Legacy)", icon: "sparkles" },
-        { href: "/admin/konten/kategori", label: "Kategori Berita", icon: "tag" },
         { href: "/admin/konten/topik", label: "Topik & Navigasi", icon: "list-tree" },
         { href: "/admin/konten/profil", label: topicLabel(topics, "profil", "Profil"), icon: "building" },
         { href: "/admin/konten/struktur", label: topicLabel(topics, "struktur", "Struktur"), icon: "network" },

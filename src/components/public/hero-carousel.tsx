@@ -136,25 +136,30 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               src={slide.thumbnail_url}
               alt=""
               aria-hidden="true"
-              className="absolute inset-0 size-full scale-125 object-cover blur-3xl brightness-[0.55] saturate-125"
+              className="absolute inset-0 size-full scale-125 object-cover blur-3xl brightness-[0.62] saturate-150"
             />
             {/* Foto utama: dibungkus flex-center supaya kotak gambar persis
                 sebesar foto yang tampil (mengikuti rasio asli), bukan kotak
-                selebar Hero dengan object-contain "melayang" di tengahnya -
-                pendekatan lama itu rapuh: untuk foto produksi yang framing
-                aslinya sudah landscape/lebar dengan subjek tidak persis di
-                tengah bingkai, kotak selebar Hero membuat foto terlihat
-                nempel ke satu sisi dengan ambient glow di sisi lain terasa
-                seperti blok kedua yang terpisah - bukan satu composition.
-                Dengan flex items-center justify-center + max-h-full
-                max-w-full, foto (dan bingkainya: rounded, shadow, ring)
-                selalu presisi di tengah Hero apa pun rasio & komposisi foto
-                sumbernya, jadi ambient glow di kedua sisi simetris dan
-                terasa membungkus foto, bukan kosong sebelah. Tidak pernah
-                crop (object-contain + max-h/max-w, tanpa fixed width) -
-                parallax cuma translate beberapa px, tidak menyentuh ukuran
-                kotak ini sama sekali. */}
-            <div className="absolute inset-3 flex items-center justify-center sm:inset-6 lg:inset-8">
+                selebar Hero dengan object-contain "melayang" di tengahnya.
+                Di layar >= lg (hero sudah cukup lebar, ~1120px+), kotak
+                digeser rapat ke tepi kanan (right diset, left dibiarkan
+                auto - BUKAN inset penuh di kedua sisi) dan dibatasi max-w
+                agar tidak pernah menjorok ke zona teks di kiri-bawah; foto
+                & teks bertemu dengan jarak wajar, terasa satu composition,
+                bukan dua blok terpisah dengan ruang kosong besar di kanan
+                (sudah diuji dengan judul/ringkasan realistis maupun judul
+                sangat panjang - tidak overlap). (Catatan teknis: sengaja
+                TIDAK memakai `inset` di kedua sisi bersamaan dengan max-w -
+                kalau left & right sama-sama diset, browser mengabaikan
+                sisi kanan begitu max-w aktif sehingga kotak diam-diam
+                balik nempel ke kiri.) Di bawah lg (termasuk tablet) hero
+                belum cukup lebar untuk pemisahan kanan-kiri tanpa
+                menabrak teks, jadi tetap pakai layout asli: center, foto
+                penuh selebar Hero, teks overlay di atasnya seperti biasa.
+                Tidak pernah crop (object-contain + max-h/max-w, tanpa
+                fixed width) - parallax cuma translate beberapa px, tidak
+                menyentuh ukuran kotak ini sama sekali. */}
+            <div className="absolute inset-2 flex items-center justify-center sm:inset-4 lg:inset-y-6 lg:right-6 lg:left-auto lg:max-w-[46%] lg:justify-end">
               <motion.img
                 src={slide.thumbnail_url}
                 alt={slide.title}

@@ -163,13 +163,13 @@ export default async function BerandaPage() {
           mana pun yang aktif & mengizinkan Unggulan. Kalau tidak ada
           konten unggulan, HeroCarousel return null dan section ini jatuh
           ke background gradient premium saja - tidak pernah menampilkan
-          dummy slide. Tinggi dinaikkan sedikit (+~12%) dari revisi
-          sebelumnya - foto utama TIDAK PERNAH di-crop (object-contain),
-          jadi foto potret (rasio tinggi) di kotak yang sangat lebar selalu
-          tampil sebagai pita foto yang agak sempit; menambah tinggi secara
-          moderat memberi foto ruang lebih tanpa membuat Hero terasa
-          sangat tinggi. */}
-      <section className="hero-premium-bg relative z-0 h-[380px] overflow-hidden rounded-2xl sm:h-[440px] lg:h-[500px]">
+          dummy slide. Tinggi dinaikkan lagi dari revisi sebelumnya - foto
+          utama TIDAK PERNAH di-crop (object-contain), jadi foto potret
+          (rasio tinggi) di kotak yang lebar selalu tampil sebagai pita
+          foto yang agak sempit; menambah tinggi memberi foto ruang untuk
+          jadi focal point yang lebih besar tanpa membuat Hero terasa
+          berlebihan tinggi. */}
+      <section className="hero-premium-bg relative z-0 h-[420px] overflow-hidden rounded-2xl sm:h-[480px] lg:h-[560px]">
         <HeroCarousel slides={heroSlides} />
       </section>
 

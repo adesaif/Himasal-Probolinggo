@@ -4,7 +4,19 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import {
+  X,
+  Home,
+  Mail,
+  Newspaper,
+  CalendarDays,
+  Images,
+  Building2,
+  Network,
+  GraduationCap,
+  Tag,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,7 +24,7 @@ import { HimasalLogo } from "@/components/shared/himasal-logo";
 import { HeaderSearch } from "@/components/shared/header-search";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { cn } from "@/lib/utils";
-import { topicHref, type SiteTopic } from "@/lib/topics";
+import { topicHref, type SiteTopic, type SystemTopicKey } from "@/lib/topics";
 
 // Beranda dan Kontak bukan Topik (tidak ada di site_topics) - selalu tetap
 // tampil. Sisanya (SEMUA topik aktif, sistem maupun custom) diambil dari
@@ -30,9 +42,94 @@ function buildNavItems(topics: SiteTopic[] | null | undefined) {
   return items;
 }
 
+// Ikon HANYA untuk presentasi drawer mobile (lihat DrawerNavLink) - dipetakan
+// dari topic KEY (bukan label, tidak pernah hardcode nama topik), khusus
+// enam topik sistem supaya konsisten dengan bahasa ikon Admin Sidebar.
+// Topik custom (dan "konten", yang berperilaku seperti topik generik) selalu
+// jatuh ke DEFAULT_TOPIC_ICON - tetap konsisten walau key-nya bebas.
+const SYSTEM_TOPIC_ICON: Record<SystemTopicKey, LucideIcon> = {
+  berita: Newspaper,
+  agenda: CalendarDays,
+  galeri: Images,
+  profil: Building2,
+  struktur: Network,
+  masayikh: GraduationCap,
+};
+const DEFAULT_TOPIC_ICON = Tag;
+
+function topicIcon(topic: SiteTopic): LucideIcon {
+  if (topic.is_system && topic.key in SYSTEM_TOPIC_ICON) {
+    return SYSTEM_TOPIC_ICON[topic.key as SystemTopicKey];
+  }
+  return DEFAULT_TOPIC_ICON;
+}
+
+type DrawerNavItem = { href: string; label: string; icon: LucideIcon };
+
+// Builder terpisah khusus drawer mobile (desktop nav tetap pakai
+// buildNavItems yang sudah ada, tidak disentuh) - mengelompokkan item jadi
+// tiga section bergaya Admin Sidebar (heading kecil uppercase di atas tiap
+// grup), tapi grouping-nya cuma presentasi: "Beranda"/"Kontak" tetap fixed,
+// isi grup tengah 100% dari site_topics aktif (rename/reorder/nonaktif/
+// hapus otomatis ikut berubah, sama seperti desktop nav).
+function buildDrawerSections(topics: SiteTopic[] | null | undefined) {
+  const topicItems: DrawerNavItem[] = [...(topics ?? [])]
+    .filter((t) => t.is_active)
+    .sort((a, b) => a.display_order - b.display_order)
+    .map((topic) => ({ href: topicHref(topic), label: topic.label, icon: topicIcon(topic) }));
+
+  return [
+    { heading: "Menu", items: [{ href: "/", label: "Beranda", icon: Home }] },
+    ...(topicItems.length > 0 ? [{ heading: "Topik", items: topicItems }] : []),
+    { heading: "Lainnya", items: [{ href: "/kontak", label: "Kontak", icon: Mail }] },
+  ];
+}
+
 function isActivePath(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+// Bahasa visual item nav persis Admin Sidebar (AdminShell.tsx: NavLink) -
+// pill rounded + bar aksen kiri saat aktif, token warna `sidebar-*` yang
+// sama - tapi ukuran ikon/teks/padding sengaja lebih lega (20px/16px) untuk
+// konteks publik/marketing, bukan admin yang padat.
+function DrawerNavLink({
+  href,
+  label,
+  icon: Icon,
+  active,
+  onNavigate,
+}: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+  onNavigate: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "relative flex items-center gap-3.5 rounded-xl px-4 py-3 text-[16px] font-medium transition-colors",
+        active
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute inset-y-2 left-0 w-[3px] rounded-full bg-sidebar-primary transition-transform duration-200",
+          active ? "scale-y-100" : "scale-y-0",
+        )}
+      />
+      <Icon className="size-5 shrink-0" />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
 }
 
 // size-8 (bukan size-9 bawaan Button) di breakpoint terkecil supaya logo +
@@ -45,6 +142,7 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const navItems = buildNavItems(topics);
+  const drawerSections = buildDrawerSections(topics);
 
   return (
     <header className="site-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
@@ -130,13 +228,18 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
               <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
               {/* Drawer ditampilkan sebagai surface mengambang (inset dari
                   tepi layar, rounded penuh) - bukan panel yang ditempel rata
-                  ke sisi layar - supaya terasa muncul DI ATAS halaman. */}
+                  ke sisi layar - supaya terasa muncul DI ATAS halaman.
+                  Token warna disamakan dengan Admin Sidebar (bg-sidebar,
+                  sidebar-border, dst - lihat globals.css) supaya bahasa
+                  visualnya konsisten (navy premium di dark mode), tapi
+                  bentuk mengambang + isi menu (site_topics) tetap khas
+                  publik, bukan salinan Admin. */}
               <DialogPrimitive.Content
-                className="fixed inset-y-3 right-3 z-50 flex w-[85vw] max-w-[320px] flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[0_20px_50px_-12px_rgba(15,23,42,0.25)] outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right duration-300"
+                className="fixed inset-y-3 right-3 z-50 flex w-[85vw] max-w-[340px] flex-col overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar shadow-[0_20px_50px_-12px_rgba(15,23,42,0.25)] outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right duration-300"
               >
                 <DialogPrimitive.Title className="sr-only">Menu Navigasi</DialogPrimitive.Title>
 
-                <div className="flex items-center justify-between gap-2 border-b border-border/70 px-3 pt-4 pb-3">
+                <div className="flex items-center justify-between gap-2 border-b border-sidebar-border px-4 pt-4 pb-3">
                   <Link
                     href="/"
                     onClick={() => setMobileOpen(false)}
@@ -153,50 +256,41 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
                       variant="ghost"
                       size="icon"
                       aria-label="Tutup menu navigasi"
-                      className="size-11 shrink-0 rounded-full border border-border/70 bg-background/60"
+                      className="size-11 shrink-0 rounded-full border border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/60"
                     >
                       <X className="size-[18px]" />
                     </Button>
                   </DialogPrimitive.Close>
                 </div>
 
-                {/* Setiap item jadi row bergaya editorial premium: bar
-                    aksen tipis + warna primary saat aktif (bukan kotak
-                    biru besar), muted saat tidak aktif - bahasa desain
-                    yang sama dengan underline aktif di nav desktop. */}
+                {/* Section heading kecil uppercase di atas tiap grup (bahasa
+                    visual Admin Sidebar), tapi grup tengah "Topik" 100% dari
+                    site_topics aktif - rename/reorder/nonaktif/hapus di
+                    Admin otomatis tercermin di sini tanpa perubahan kode. */}
                 <nav
                   aria-label="Navigasi mobile"
-                  className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-3"
+                  className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-3 py-4"
                 >
-                  {navItems.map((item) => {
-                    const active = isActivePath(pathname, item.href);
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        aria-current={active ? "page" : undefined}
-                        className={cn(
-                          "relative flex items-center rounded-lg py-2.5 pr-3 pl-4 text-[15px] font-medium transition-colors",
-                          active
-                            ? "bg-accent font-semibold text-primary"
-                            : "text-foreground/80 hover:bg-accent/60 hover:text-foreground",
-                        )}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-primary transition-transform duration-200",
-                            active ? "scale-y-100" : "scale-y-0",
-                          )}
+                  {drawerSections.map((section) => (
+                    <div key={section.heading} className="flex flex-col gap-1">
+                      <p className="px-4 text-[11px] font-semibold tracking-wide text-sidebar-foreground/45 uppercase">
+                        {section.heading}
+                      </p>
+                      {section.items.map((item) => (
+                        <DrawerNavLink
+                          key={item.href}
+                          href={item.href}
+                          label={item.label}
+                          icon={item.icon}
+                          active={isActivePath(pathname, item.href)}
+                          onNavigate={() => setMobileOpen(false)}
                         />
-                        {item.label}
-                      </Link>
-                    );
-                  })}
+                      ))}
+                    </div>
+                  ))}
                 </nav>
 
-                <div className="border-t border-border/70 px-4 pt-3 pb-4">
+                <div className="border-t border-sidebar-border px-4 pt-3 pb-4">
                   <Button
                     asChild
                     size="lg"

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export type ContentCardProps = {
   // topic_content di /topik/[slug] boleh tidak punya link_url sama sekali -
@@ -27,18 +27,22 @@ export type ContentCardProps = {
  * satu-satunya tempat styling kartu berita didefinisikan supaya ketiganya
  * selalu konsisten.
  *
- * Foto full-bleed (object-cover) mengisi SELURUH kartu, bukan foto kecil
- * di tengah dengan bidang kosong kiri-kanan (pendekatan object-contain
- * sebelumnya, terbukti terlihat seperti "foto ditempel di kotak" pada
- * review visual nyata) - judul/badge/ringkasan/tanggal jadi overlay di atas
- * foto lewat gradient gelap di bagian bawah, bukan panel terpisah di bawah
- * foto. Aspect ratio kartu tetap tetap (aspect-video) supaya grid rapi
- * apa pun rasio asli foto sumbernya - object-cover yang menyesuaikan, foto
- * tidak pernah stretch/distort karena cover selalu mempertahankan rasio
- * foto sambil memotong kelebihannya. object-top dipakai sebagai heuristik
- * fokus wajar untuk foto potret/wajah (subjek foto berita pesantren
- * umumnya di bagian atas-tengah bingkai) tanpa deteksi wajah - sengaja
- * tidak menambah dependency baru.
+ * PRINSIP: "image-first card, rasio asli dipertahankan." Foto TIDAK pernah
+ * dipaksa ke kotak rasio tetap (aspect-video dahulu) lalu di-crop
+ * (object-cover) atau disisakan ruang kosong (object-contain) - keduanya
+ * terbukti bermasalah pada review visual nyata (crop memotong wajah;
+ * contain menyisakan bidang kosong kiri-kanan). Sebagai gantinya, <img>
+ * dirender natural: width 100% dari card, height auto - browser
+ * menghitung tinggi dari rasio asli foto itu sendiri, jadi TIDAK ADA
+ * object-fit sama sekali (tidak ada yang di-crop, tidak ada yang
+ * distretch). Konsekuensinya: tinggi card mengikuti tinggi foto masing-
+ * masing (portrait jadi lebih tinggi dari landscape) - itu disengaja,
+ * bukan bug; self-start di wrapper mencegah CSS grid meregangkan card
+ * yang lebih pendek supaya menyamai tinggi tetangganya di baris yang
+ * sama (grid tetap rapi lewat kolom, bukan lewat tinggi seragam).
+ * Judul/badge/ringkasan/tanggal ada di panel BIASA di bawah foto (bukan
+ * overlay+gradient di atas foto) - lebih aman untuk keterbacaan dan tidak
+ * menutupi bagian foto mana pun.
  */
 export function ContentCard({
   href,
@@ -49,73 +53,39 @@ export function ContentCard({
   dateLabel,
   external = false,
 }: ContentCardProps) {
-  // self-start: grid default (align-items: stretch) akan meregangkan SEMUA
-  // card di baris yang sama setinggi card TERTINGGI - card tanpa foto punya
-  // panel tambahan di bawah placeholder jadi lebih tinggi dari card
-  // berfoto (yang tingginya cuma aspect-video, teks jadi overlay di
-  // DALAM foto, bukan menambah tinggi). Tanpa self-start, card berfoto di
-  // baris yang sama akan diregangkan, menyisakan bidang navy kosong di
-  // bawahnya - persis masalah yang sedang diperbaiki, hanya pindah tempat.
+  // self-start - lihat catatan di komentar utama: mencegah grid
+  // meregangkan card yang secara alami lebih pendek (foto landscape/
+  // tanpa foto) supaya menyamai card tertinggi di baris yang sama.
   const wrapperClassName =
-    "card-hover group block self-start overflow-hidden rounded-xl border bg-card shadow-sm";
+    "card-hover block self-start overflow-hidden rounded-xl border bg-card shadow-sm";
 
   const body = (
     <>
-      <div className="relative aspect-video w-full overflow-hidden bg-muted">
-        {imageUrl ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt={title}
-              loading="lazy"
-              className="absolute inset-0 size-full object-cover object-top transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-            />
-            {/* Gradient transparan -> gelap di bawah, bukan overlay rata di
-                seluruh foto, supaya foto tetap terang/terlihat di bagian
-                atas dan teks tetap terbaca di bagian bawah. */}
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent"
-            />
-            <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-4">
-              {badge ? (
-                <span className="inline-flex w-fit items-center rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold tracking-wide text-primary-foreground uppercase">
-                  {badge}
-                </span>
-              ) : null}
-              <p className="line-clamp-2 font-semibold text-white">{title}</p>
-              {summary ? (
-                <p className="line-clamp-2 text-sm text-white/80">{summary}</p>
-              ) : null}
-              {dateLabel ? <p className="text-xs text-white/60">{dateLabel}</p> : null}
-            </div>
-          </>
-        ) : (
-          <div className="flex size-full items-center justify-center text-sm text-muted-foreground">
-            Tidak ada gambar
-          </div>
-        )}
-      </div>
-
-      {/* Tanpa foto tidak ada apa pun untuk di-overlay - judul/ringkasan/
-          tanggal jatuh ke panel biasa di bawah placeholder, gaya sama
-          dengan card konten lain di situs (bukan overlay gelap di atas
-          kotak abu-abu kosong). */}
-      {!imageUrl ? (
-        <div className="flex flex-col gap-1 p-4">
-          {badge ? (
-            <span className="inline-flex w-fit items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-              {badge}
-            </span>
-          ) : null}
-          <p className={cn("line-clamp-2 font-medium", badge && "mt-1")}>{title}</p>
-          {summary ? (
-            <p className="line-clamp-2 text-sm text-muted-foreground">{summary}</p>
-          ) : null}
-          {dateLabel ? <p className="text-xs text-muted-foreground">{dateLabel}</p> : null}
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt={title}
+          loading="lazy"
+          className="block h-auto w-full"
+        />
+      ) : (
+        <div className="flex aspect-video w-full items-center justify-center bg-muted text-sm text-muted-foreground">
+          Tidak ada gambar
         </div>
-      ) : null}
+      )}
+      <div className="flex flex-col gap-1.5 p-4">
+        {badge ? (
+          <Badge variant="primary" className="w-fit">
+            {badge}
+          </Badge>
+        ) : null}
+        <p className="line-clamp-2 font-medium">{title}</p>
+        {summary ? (
+          <p className="line-clamp-2 text-sm text-muted-foreground">{summary}</p>
+        ) : null}
+        {dateLabel ? <p className="text-xs text-muted-foreground">{dateLabel}</p> : null}
+      </div>
     </>
   );
 

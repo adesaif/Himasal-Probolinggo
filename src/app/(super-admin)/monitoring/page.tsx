@@ -291,8 +291,8 @@ export default async function MonitoringDashboardPage({
         Butuh detail lebih lanjut?{" "}
         <Link href="/monitoring/laporan" className="underline">
           Lihat Laporan Detail
-        </Link>
-        .
+        </Link>{" "}
+        (segera hadir).
       </p>
     </div>
   );

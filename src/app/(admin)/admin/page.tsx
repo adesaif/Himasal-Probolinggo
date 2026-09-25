@@ -56,7 +56,7 @@ export default async function AdminDashboardPage() {
       .maybeSingle(),
     supabase
       .from("news")
-      .select("id, slug, title, thumbnail_url, category, published_at, status")
+      .select("id, slug, title, thumbnail_url, published_at, status, site_topics(label)")
       .eq("status", "published")
       .order("published_at", { ascending: false })
       .limit(3),
@@ -182,7 +182,7 @@ export default async function AdminDashboardPage() {
                     {recentNews.map((item) => (
                       <Link
                         key={item.id}
-                        href={`/admin/berita?category=${item.category ?? ""}`}
+                        href="/admin/berita"
                         className="flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/50"
                       >
                         {item.thumbnail_url ? (
@@ -200,7 +200,7 @@ export default async function AdminDashboardPage() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium">{item.title}</p>
                           <p className="text-xs text-muted-foreground">
-                            {item.category ? `${item.category} · ` : ""}
+                            {item.site_topics?.label ? `${item.site_topics.label} · ` : ""}
                             {item.published_at ? formatDateID(item.published_at) : ""}
                           </p>
                         </div>

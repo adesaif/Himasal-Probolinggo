@@ -4,6 +4,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+
+import { Badge } from "@/components/ui/badge";
 import {
   ChevronsLeft,
   ChevronsRight,
@@ -58,7 +60,11 @@ const ADMIN_ICON_MAP = {
 } as const;
 
 export type AdminIconKey = keyof typeof ADMIN_ICON_MAP;
-export type AdminNavItem = { href: string; label: string; icon: AdminIconKey };
+// `badge` - label kecil opsional di sebelah item nav (mis. "Segera") untuk
+// modul yang route-nya sudah ada tapi belum dibangun (PagePlaceholder) -
+// supaya Admin tahu dari sidebar saja tanpa perlu klik dulu, bukan
+// menyembunyikan link (route tetap ada/reversible, cuma diberi label jujur).
+export type AdminNavItem = { href: string; label: string; icon: AdminIconKey; badge?: string };
 export type AdminNavGroup = { label: string; items: AdminNavItem[] };
 
 const COLLAPSE_KEY = "himasal-admin-sidebar-collapsed";
@@ -102,7 +108,16 @@ function NavLink({
         )}
       />
       <Icon className="size-[18px] shrink-0" />
-      {!collapsed ? <span className="truncate">{item.label}</span> : null}
+      {!collapsed ? (
+        <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+          <span className="truncate">{item.label}</span>
+          {item.badge ? (
+            <Badge variant="neutral" className="shrink-0">
+              {item.badge}
+            </Badge>
+          ) : null}
+        </span>
+      ) : null}
     </Link>
   );
 }

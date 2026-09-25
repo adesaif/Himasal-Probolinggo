@@ -5,6 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { TOPIC_SELECT_COLUMNS, topicLabel, type SiteTopic } from "@/lib/topics";
 
+// "Kategori Berita" (/admin/konten/kategori) sengaja TIDAK dilink di sini -
+// form Berita (news-form-dialog.tsx) sudah tidak punya field kategori sama
+// sekali, hanya Topik (site_topics/topic_id). Rute + tabel `categories`
+// dipertahankan (tidak di-drop, data histori artikel lama tetap aman),
+// sama seperti perlakuan hero_slides yang sudah lebih dulu di-deprecate
+// di codebase ini - dilepas dari navigasi, bukan dihapus.
 function buildSections(topics: SiteTopic[] | null) {
   return [
     {
@@ -21,11 +27,6 @@ function buildSections(topics: SiteTopic[] | null) {
       href: "/admin/konten/masayikh",
       title: topicLabel(topics, "masayikh", "Masayikh"),
       description: "Kelola data masayikh.",
-    },
-    {
-      href: "/admin/konten/kategori",
-      title: "Kategori Berita",
-      description: "Kelola kategori, tagline, urutan, dan tampilan di Beranda.",
     },
     {
       href: "/admin/konten/topik",

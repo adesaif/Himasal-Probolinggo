@@ -49,8 +49,11 @@ export default async function AdminLayout({
       label: "Operasional",
       items: [
         { href: "/admin/absensi", label: "Absensi", icon: "qr-code" },
-        { href: "/admin/bank-soal", label: "Bank Soal", icon: "book-open" },
-        { href: "/admin/laporan", label: "Laporan", icon: "file-bar-chart" },
+        // badge "Segera" - kedua modul ini rute/nav-nya sudah ada tapi
+        // belum dibangun (PagePlaceholder, tanpa tabel/CRUD) - label ini
+        // supaya Admin tahu dari sidebar saja tanpa perlu klik dulu.
+        { href: "/admin/bank-soal", label: "Bank Soal", icon: "book-open", badge: "Segera" },
+        { href: "/admin/laporan", label: "Laporan", icon: "file-bar-chart", badge: "Segera" },
       ],
     },
     {

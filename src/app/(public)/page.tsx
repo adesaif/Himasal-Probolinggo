@@ -35,7 +35,7 @@ export const dynamic = "force-dynamic";
 // section yang baru punya sedikit konten adalah pola yang wajar dan
 // tidak rusak, jadi grid tetap - kolom (1/2/4) TIDAK bergantung jumlah
 // item.
-function CardGrid({ items }: { items: HomeCardItem[] }) {
+function CardGrid({ items, topicLabel }: { items: HomeCardItem[]; topicLabel: string }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
       {items.map((item) => (
@@ -44,7 +44,9 @@ function CardGrid({ items }: { items: HomeCardItem[] }) {
           href={item.href}
           title={item.title}
           imageUrl={item.image_url}
-          dateLabel={item.subtitle}
+          topicLabel={topicLabel}
+          summary={item.summary}
+          dateLabel={item.dateLabel}
         />
       ))}
     </div>
@@ -84,7 +86,7 @@ function HomeSectionBlock({ section }: { section: HomeSection }) {
         </div>
         {section.kind === "cards" ? (
           section.items.length > 0 ? (
-            <CardGrid items={section.items} />
+            <CardGrid items={section.items} topicLabel={section.topicLabel} />
           ) : (
             <EmptySectionState />
           )

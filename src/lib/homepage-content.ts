@@ -11,7 +11,12 @@ export type HomeCardItem = {
   id: string;
   href: string;
   title: string;
-  subtitle?: string | null;
+  // Ringkasan singkat (excerpt/deskripsi/jabatan tergantung sumber data) -
+  // dirender di bawah judul kalau tersedia, disembunyikan kalau tidak.
+  summary?: string | null;
+  // Tanggal+jam terformat (mis. dari published_at) - baris paling bawah
+  // card, disembunyikan total kalau konten tidak punya tanggal publikasi.
+  dateLabel?: string | null;
   image_url?: string | null;
 };
 
@@ -20,6 +25,9 @@ export type HomeSection =
       kind: "cards";
       topicKey: string;
       heading: string;
+      // Label topik dari site_topics untuk badge kecil di setiap card
+      // section ini - sama untuk semua item (satu section = satu topik).
+      topicLabel: string;
       viewAllHref: string;
       items: HomeCardItem[];
     }
@@ -43,26 +51,26 @@ type SystemFetcher = (supabase: PublicSupabase, topic: SiteTopic) => Promise<Sec
 const CARD_LIMIT = 4;
 const HERO_CANDIDATE_LIMIT = 6;
 
-const NEWS_CARD_COLUMNS = "id, slug, title, thumbnail_url, published_at";
+const NEWS_CARD_COLUMNS = "id, slug, title, excerpt, thumbnail_url, published_at";
 
 type NewsCardRow = {
   id: string;
   slug: string;
   title: string;
+  excerpt: string | null;
   thumbnail_url: string | null;
   published_at: string | null;
 };
 
-type NewsHeroRow = NewsCardRow & {
-  excerpt: string | null;
-};
+type NewsHeroRow = NewsCardRow;
 
 function newsRowToCardItem(n: NewsCardRow): HomeCardItem {
   return {
     id: n.id,
     href: `/berita/${n.slug}`,
     title: n.title,
-    subtitle: n.published_at ? formatCardDateTimeID(n.published_at) : null,
+    summary: n.excerpt,
+    dateLabel: n.published_at ? formatCardDateTimeID(n.published_at) : null,
     image_url: n.thumbnail_url,
   };
 }
@@ -149,6 +157,7 @@ export async function fetchBeritaSections(
       kind: "cards",
       topicKey: `${topic.key}-terbaru`,
       heading: `${topic.label} Terbaru`,
+      topicLabel: topic.label,
       viewAllHref: "/berita",
       items: terbaru.map(newsRowToCardItem),
     });
@@ -158,6 +167,7 @@ export async function fetchBeritaSections(
       kind: "cards",
       topicKey: `${topic.key}-minggu-lalu`,
       heading: `${topic.label} Satu Minggu Lalu`,
+      topicLabel: topic.label,
       viewAllHref: "/berita",
       items: mingguLalu.map(newsRowToCardItem),
     });
@@ -167,6 +177,7 @@ export async function fetchBeritaSections(
       kind: "cards",
       topicKey: `${topic.key}-bulan-lalu`,
       heading: `${topic.label} Satu Bulan Lalu`,
+      topicLabel: topic.label,
       viewAllHref: "/berita",
       items: bulanLalu.map(newsRowToCardItem),
     });
@@ -253,7 +264,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
     const [{ data: rows }, { data: featuredRows }] = await Promise.all([
       supabase
         .from("events")
-        .select("id, title, thumbnail_url, start_at")
+        .select("id, title, description, thumbnail_url, start_at")
         .eq("status", "published")
         .order("start_at", { ascending: false })
         .limit(CARD_LIMIT),
@@ -273,7 +284,8 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       id: e.id,
       href: `/agenda/${e.id}`,
       title: e.title,
-      subtitle: e.start_at ? formatDateID(e.start_at) : null,
+      summary: e.description,
+      dateLabel: e.start_at ? formatDateID(e.start_at) : null,
       image_url: e.thumbnail_url,
     }));
 
@@ -290,7 +302,14 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       }));
 
     return {
-      section: { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/agenda", items },
+      section: {
+        kind: "cards",
+        topicKey: topic.key,
+        heading: topic.label,
+        topicLabel: topic.label,
+        viewAllHref: "/agenda",
+        items,
+      },
       heroCandidates,
     };
   },
@@ -332,7 +351,14 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
     }));
 
     return {
-      section: { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/galeri", items },
+      section: {
+        kind: "cards",
+        topicKey: topic.key,
+        heading: topic.label,
+        topicLabel: topic.label,
+        viewAllHref: "/galeri",
+        items,
+      },
       heroCandidates,
     };
   },
@@ -361,7 +387,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       id: s.id,
       href: "/struktur",
       title: s.nama,
-      subtitle: s.jabatan,
+      summary: s.jabatan,
       image_url: s.foto_url,
     }));
 
@@ -377,7 +403,14 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       }));
 
     return {
-      section: { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/struktur", items },
+      section: {
+        kind: "cards",
+        topicKey: topic.key,
+        heading: topic.label,
+        topicLabel: topic.label,
+        viewAllHref: "/struktur",
+        items,
+      },
       heroCandidates,
     };
   },
@@ -406,7 +439,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       id: m.id,
       href: "/masayikh",
       title: m.nama,
-      subtitle: m.deskripsi,
+      summary: m.deskripsi,
       image_url: m.foto_url,
     }));
 
@@ -423,7 +456,14 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
       }));
 
     return {
-      section: { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref: "/masayikh", items },
+      section: {
+        kind: "cards",
+        topicKey: topic.key,
+        heading: topic.label,
+        topicLabel: topic.label,
+        viewAllHref: "/masayikh",
+        items,
+      },
       heroCandidates,
     };
   },
@@ -501,7 +541,7 @@ async function fetchGenericSection(
     id: c.id,
     href: c.link_url || viewAllHref,
     title: c.title,
-    subtitle: c.description,
+    summary: c.description,
     image_url: c.image_url,
   }));
 
@@ -518,7 +558,14 @@ async function fetchGenericSection(
     }));
 
   return {
-    section: { kind: "cards", topicKey: topic.key, heading: topic.label, viewAllHref, items },
+    section: {
+      kind: "cards",
+      topicKey: topic.key,
+      heading: topic.label,
+      topicLabel: topic.label,
+      viewAllHref,
+      items,
+    },
     heroCandidates,
   };
 }

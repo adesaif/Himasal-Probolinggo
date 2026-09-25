@@ -116,7 +116,8 @@ export default async function BeritaPage({
               href={`/berita/${item.slug}`}
               title={item.title}
               imageUrl={item.thumbnail_url}
-              badge={item.is_featured ? "Unggulan" : null}
+              topicLabel={beritaLabel}
+              summary={item.excerpt}
               dateLabel={item.published_at ? formatCardDateTimeID(item.published_at) : null}
             />
           ))}

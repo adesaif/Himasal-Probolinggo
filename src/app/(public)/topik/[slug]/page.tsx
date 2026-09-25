@@ -150,6 +150,8 @@ export default async function GenericTopicPage({
               external={!!item.link_url && !item.link_url.startsWith("/")}
               title={item.title}
               imageUrl={item.image_url}
+              topicLabel={topic.label}
+              summary={item.description}
               dateLabel={item.sortDate ? formatCardDateTimeID(item.sortDate) : null}
             />
           ))}

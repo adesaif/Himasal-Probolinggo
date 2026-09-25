@@ -85,7 +85,7 @@ export default async function BeritaPage({
         </p>
         {activeCategory ? (
           <Link href="/berita" className="mt-1 inline-block text-sm text-primary hover:underline">
-            ← Lihat semua berita
+            Lihat semua berita
           </Link>
         ) : null}
       </div>

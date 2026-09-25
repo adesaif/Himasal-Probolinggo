@@ -42,6 +42,7 @@ export function PublicFooter({
     settings?.instagram_url && { href: settings.instagram_url, label: "Instagram" },
     settings?.facebook_url && { href: settings.facebook_url, label: "Facebook" },
     settings?.youtube_url && { href: settings.youtube_url, label: "YouTube" },
+    settings?.tiktok_url && { href: settings.tiktok_url, label: "TikTok" },
   ].filter((v): v is { href: string; label: string } => Boolean(v));
   // Kolom kontak disembunyikan total (bukan dirender kosong) kalau belum
   // ada satu pun info kontak/sosial yang diisi Admin - ditemukan lewat

@@ -179,7 +179,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             transition={prefersReducedMotion ? { duration: 0 } : TEXT_SPRING}
           >
             {active.category ? (
-              <span className="mb-2 inline-flex w-fit items-center rounded-full bg-[#1d5fa8] px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white uppercase sm:mb-3 sm:text-xs">
+              <span className="mb-2 inline-flex w-fit items-center rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white uppercase sm:mb-3 sm:text-xs">
                 {active.category}
               </span>
             ) : null}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
+import { CalendarDays, MapPin } from "lucide-react";
 
 import { createPublicClient } from "@/lib/supabase/public";
 import { Button } from "@/components/ui/button";
@@ -48,10 +48,7 @@ export default async function AgendaDetailPage({
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
       <Button variant="ghost" size="sm" asChild className="w-fit">
-        <Link href="/agenda">
-          <ArrowLeft />
-          Kembali ke Agenda
-        </Link>
+        <Link href="/agenda">Kembali ke Agenda</Link>
       </Button>
 
       <div className="flex flex-col gap-3">

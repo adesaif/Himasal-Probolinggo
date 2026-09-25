@@ -29,9 +29,11 @@ export default async function StrukturPage() {
       </h1>
 
       {!structure || structure.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Data struktur organisasi belum tersedia.
-        </p>
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            Data struktur organisasi belum tersedia.
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {structure.map((person) => (

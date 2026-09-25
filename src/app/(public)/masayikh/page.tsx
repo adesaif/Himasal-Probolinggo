@@ -29,9 +29,11 @@ export default async function MasayikhPage() {
       </h1>
 
       {!masayikhList || masayikhList.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Data masayikh belum tersedia.
-        </p>
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            Data masayikh belum tersedia.
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {masayikhList.map((m) => (

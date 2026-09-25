@@ -47,13 +47,20 @@ function CardGrid({ items }: { items: HomeCardItem[] }) {
               CardContent supaya foto benar-benar rapat ke tepi Card. */}
           <Card className="card-hover h-full gap-0 overflow-hidden py-0">
             {item.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={item.image_url}
-                alt={item.title}
-                loading="lazy"
-                className="aspect-video w-full object-cover"
-              />
+              // object-contain (bukan object-cover) supaya foto berita
+              // selalu utuh - tidak pernah memotong wajah/objek penting.
+              // bg-muted mengisi ruang kosong kiri-kanan/atas-bawah kalau
+              // rasio foto beda dari aspect-video, bukan dibiarkan
+              // transparan/putih kosong.
+              <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.image_url}
+                  alt={item.title}
+                  loading="lazy"
+                  className="absolute inset-0 size-full object-contain"
+                />
+              </div>
             ) : (
               <div className="flex aspect-video w-full items-center justify-center bg-muted text-sm text-muted-foreground">
                 Tidak ada gambar

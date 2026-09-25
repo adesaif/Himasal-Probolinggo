@@ -149,13 +149,19 @@ export default async function GenericTopicPage({
               // ke-inset oleh padding default.
               <Card className="card-hover h-full gap-0 overflow-hidden py-0">
                 {item.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    loading="lazy"
-                    className="aspect-video w-full object-cover"
-                  />
+                  // object-contain (bukan object-cover) - foto selalu
+                  // utuh, tidak pernah memotong objek penting; bg-muted
+                  // mengisi ruang kosong kalau rasio foto beda dari
+                  // aspect-video.
+                  <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      loading="lazy"
+                      className="absolute inset-0 size-full object-contain"
+                    />
+                  </div>
                 ) : null}
                 <CardContent className="flex flex-col gap-1 p-4">
                   <p className="font-medium">{item.title}</p>

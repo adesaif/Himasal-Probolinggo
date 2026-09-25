@@ -124,22 +124,34 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             transition={prefersReducedMotion ? { duration: 0 } : SLIDE_SPRING}
             style={{ pointerEvents: isActive ? "auto" : "none" }}
           >
-            {/* Foto utama: full-bleed mengisi seluruh kotak Hero (object-
-                cover, bukan object-contain) - ini yang bikin Hero terasa
-                clean/premium seperti hero editorial pada umumnya, alih-alih
-                foto kecil "melayang" di tengah dengan ruang kosong di
-                sekitarnya. scale-105 memberi sedikit overscan supaya
-                translate parallax tidak pernah menyingkap tepi foto.
-                Rounded corner Hero sudah ditangani oleh section pembungkus
-                (overflow-hidden rounded-2xl di page.tsx), jadi foto ini
-                tidak perlu rounded/shadow/ring sendiri - dia MEMENUHI
-                Hero, bukan kartu terpisah di dalamnya. */}
-            <motion.img
+            {/* Strategi image-fit: object-cover PERNAH dipakai di sini dan
+                selalu berisiko memotong wajah/kepala pada foto produksi -
+                tidak bisa diterima untuk foto berita. Foto utama harus
+                selalu utuh (object-contain, tidak pernah di-crop di sisi
+                mana pun), jadi dipisah dua lapis:
+                1) backdrop - foto yang sama, di-blur+digelapkan, object-
+                   cover (backdrop BOLEH ter-crop karena cuma ambient glow
+                   pengisi ruang kosong, bukan foto yang harus utuh).
+                2) foreground - foto asli, object-contain + max-h/max-w,
+                   selalu menampilkan foto secara penuh sesuai rasio
+                   aslinya (potret tetap potret utuh, lanskap tetap
+                   lanskap utuh), tidak pernah diperbesar melebihi ukuran
+                   aman kotaknya. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={slide.thumbnail_url}
-              alt={slide.title}
-              style={isActive ? { x: springParallaxX, y: springParallaxY } : undefined}
-              className="absolute inset-0 size-full scale-105 object-cover"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 size-full scale-125 object-cover blur-3xl brightness-[0.55] saturate-125"
             />
+            <div className="absolute inset-3 flex items-center justify-center sm:inset-6 lg:inset-8">
+              <motion.img
+                src={slide.thumbnail_url}
+                alt={slide.title}
+                style={isActive ? { x: springParallaxX, y: springParallaxY } : undefined}
+                className="max-h-full max-w-full rounded-2xl object-contain shadow-2xl ring-1 ring-white/10"
+              />
+            </div>
           </motion.div>
         );
       })}

@@ -116,13 +116,19 @@ export default async function BeritaPage({
                   bukan ke-inset oleh padding default. */}
               <Card className="card-hover h-full gap-0 overflow-hidden py-0">
                 {item.thumbnail_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.thumbnail_url}
-                    alt={item.title}
-                    loading="lazy"
-                    className="aspect-video w-full object-cover"
-                  />
+                  // object-contain (bukan object-cover) - foto berita
+                  // selalu utuh, tidak pernah memotong wajah/objek
+                  // penting; bg-muted mengisi ruang kosong kalau rasio
+                  // foto beda dari aspect-video.
+                  <div className="relative aspect-video w-full overflow-hidden bg-muted">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.thumbnail_url}
+                      alt={item.title}
+                      loading="lazy"
+                      className="absolute inset-0 size-full object-contain"
+                    />
+                  </div>
                 ) : (
                   <div className="flex aspect-video w-full items-center justify-center bg-muted text-sm text-muted-foreground">
                     Tidak ada gambar

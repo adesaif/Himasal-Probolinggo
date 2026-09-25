@@ -79,7 +79,7 @@ function HomeSectionBlock({ section }: { section: HomeSection }) {
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-2xl font-semibold tracking-tight">{section.heading}</h2>
           <Button asChild variant="link" className="shrink-0">
-            <Link href={section.viewAllHref}>Lihat semua →</Link>
+            <Link href={section.viewAllHref}>Lihat semua</Link>
           </Button>
         </div>
         {section.kind === "cards" ? (

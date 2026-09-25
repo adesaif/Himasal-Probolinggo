@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatCardDateTimeID } from "@/lib/format-date";
 
 export const revalidate = 300;
 
@@ -57,8 +58,18 @@ export default async function BeritaDetailPage({
     notFound();
   }
 
+  // Paragraf dipisah dari baris kosong pada `content` mentah supaya jarak
+  // antar-paragraf terasa seperti artikel portal berita (bukan satu blok
+  // teks) - murni presentasi, TIDAK mengubah/menulis ulang isi. Kalau
+  // datanya cuma satu blok tanpa baris kosong, hasilnya tetap satu paragraf
+  // seperti sebelumnya (tidak ada regresi untuk konten pendek).
+  const paragraphs = news.content
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   return (
-    <article className="mx-auto flex max-w-2xl flex-col gap-4">
+    <article className="mx-auto flex max-w-2xl flex-col gap-6">
       <Button variant="ghost" size="sm" asChild className="w-fit">
         <Link href="/berita">
           <ArrowLeft />
@@ -66,34 +77,51 @@ export default async function BeritaDetailPage({
         </Link>
       </Button>
 
+      {/* Header artikel: Topik -> Judul -> tanggal+jam WIB, SEBELUM foto -
+          urutan portal berita profesional, judul jadi elemen paling
+          dominan alih-alih tersembunyi di bawah foto. */}
+      <div className="flex flex-col gap-3">
+        {news.site_topics?.label ? (
+          <Badge variant="primary" className="w-fit">
+            {news.site_topics.label}
+          </Badge>
+        ) : null}
+        <h1 className="text-3xl leading-tight font-bold tracking-tight text-balance sm:text-4xl">
+          {news.title}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {news.author_name ? `${news.author_name} · ` : ""}
+          {news.published_at ? formatCardDateTimeID(news.published_at) : ""}
+        </p>
+      </div>
+
+      {/* Foto utama - TIDAK di-crop, TIDAK dipaksa aspect ratio: <img>
+          natural (width 100%, height auto) supaya portrait/landscape/
+          square semuanya tampil utuh, beda dari card grid (yang memang
+          boleh crop terkontrol demi grid). */}
       {news.thumbnail_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={news.thumbnail_url}
           alt={news.title}
-          className="aspect-video w-full rounded-lg object-cover"
+          className="block h-auto w-full rounded-2xl border"
         />
       ) : null}
 
-      <div>
-        {news.site_topics?.label ? (
-          <Badge variant="primary">{news.site_topics.label}</Badge>
-        ) : null}
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{news.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {news.author_name ? `${news.author_name} · ` : ""}
-          {news.published_at
-            ? new Date(news.published_at).toLocaleDateString("id-ID", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })
-            : ""}
+      {/* Ringkasan/dek - HANYA kalau excerpt tersedia, tidak pernah
+          placeholder. Lebih besar dari body, lebih ringan dari headline. */}
+      {news.excerpt ? (
+        <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
+          {news.excerpt}
         </p>
-      </div>
+      ) : null}
 
-      <div className="whitespace-pre-line leading-relaxed text-foreground">
-        {news.content}
+      <div className="flex flex-col gap-5 text-base leading-relaxed text-foreground sm:text-[17px]">
+        {paragraphs.map((paragraph, i) => (
+          <p key={i} className="whitespace-pre-line">
+            {paragraph}
+          </p>
+        ))}
       </div>
     </article>
   );

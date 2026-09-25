@@ -54,9 +54,15 @@ export default async function AgendaDetailPage({
         </Link>
       </Button>
 
-      <div>
-        {event.is_mandatory ? <Badge variant="warning">Wajib Hadir</Badge> : null}
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">{event.title}</h1>
+      <div className="flex flex-col gap-3">
+        {event.is_mandatory ? (
+          <Badge variant="warning" className="w-fit">
+            Wajib Hadir
+          </Badge>
+        ) : null}
+        <h1 className="text-3xl leading-tight font-bold tracking-tight text-balance sm:text-4xl">
+          {event.title}
+        </h1>
       </div>
 
       <Card>
@@ -75,8 +81,16 @@ export default async function AgendaDetailPage({
       </Card>
 
       {event.description ? (
-        <div className="whitespace-pre-line leading-relaxed text-foreground">
-          {event.description}
+        <div className="flex flex-col gap-5 text-base leading-relaxed text-foreground sm:text-[17px]">
+          {event.description
+            .split(/\n{2,}/)
+            .map((p) => p.trim())
+            .filter(Boolean)
+            .map((paragraph, i) => (
+              <p key={i} className="whitespace-pre-line">
+                {paragraph}
+              </p>
+            ))}
         </div>
       ) : null}
     </div>

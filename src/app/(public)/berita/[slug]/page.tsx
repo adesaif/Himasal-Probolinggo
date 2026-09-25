@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 
 import { createPublicClient } from "@/lib/supabase/public";
 import { Button } from "@/components/ui/button";
@@ -71,10 +70,7 @@ export default async function BeritaDetailPage({
   return (
     <article className="mx-auto flex max-w-2xl flex-col gap-6">
       <Button variant="ghost" size="sm" asChild className="w-fit">
-        <Link href="/berita">
-          <ArrowLeft />
-          Kembali ke Berita
-        </Link>
+        <Link href="/berita">Kembali ke Berita</Link>
       </Button>
 
       {/* Header artikel: Topik -> Judul -> tanggal+jam WIB, SEBELUM foto -

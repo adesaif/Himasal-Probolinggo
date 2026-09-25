@@ -37,14 +37,14 @@ export const dynamic = "force-dynamic";
 // item.
 function CardGrid({ items }: { items: HomeCardItem[] }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
       {items.map((item) => (
         <ContentCard
           key={item.id}
           href={item.href}
           title={item.title}
           imageUrl={item.image_url}
-          summary={item.subtitle}
+          dateLabel={item.subtitle}
         />
       ))}
     </div>

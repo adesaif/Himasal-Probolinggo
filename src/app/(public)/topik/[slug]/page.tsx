@@ -6,7 +6,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ContentCard } from "@/components/public/content-card";
-import { formatDateID } from "@/lib/format-date";
+import { formatCardDateTimeID } from "@/lib/format-date";
 import { topicHref } from "@/lib/topics";
 
 export const revalidate = 300;
@@ -142,7 +142,7 @@ export default async function GenericTopicPage({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {items.map((item) => (
             <ContentCard
               key={item.id}
@@ -150,8 +150,7 @@ export default async function GenericTopicPage({
               external={!!item.link_url && !item.link_url.startsWith("/")}
               title={item.title}
               imageUrl={item.image_url}
-              summary={item.description}
-              dateLabel={item.sortDate ? formatDateID(item.sortDate) : null}
+              dateLabel={item.sortDate ? formatCardDateTimeID(item.sortDate) : null}
             />
           ))}
         </div>

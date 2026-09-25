@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database.types";
 import type { HeroSlide } from "@/components/public/hero-carousel";
-import { formatDateID } from "@/lib/format-date";
+import { formatCardDateTimeID, formatDateID } from "@/lib/format-date";
 import { isTopicFeaturedAllowed, topicHref, type SiteTopic } from "@/lib/topics";
 
 type PublicSupabase = SupabaseClient<Database>;
@@ -62,7 +62,7 @@ function newsRowToCardItem(n: NewsCardRow): HomeCardItem {
     id: n.id,
     href: `/berita/${n.slug}`,
     title: n.title,
-    subtitle: n.published_at ? formatDateID(n.published_at) : null,
+    subtitle: n.published_at ? formatCardDateTimeID(n.published_at) : null,
     image_url: n.thumbnail_url,
   };
 }

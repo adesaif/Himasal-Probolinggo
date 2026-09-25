@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BeritaSearchInput } from "@/components/public/berita-search-input";
 import { ContentCard } from "@/components/public/content-card";
+import { formatCardDateTimeID } from "@/lib/format-date";
 import { topicLabel } from "@/lib/topics";
 
 export const metadata: Metadata = {
@@ -108,7 +109,7 @@ export default async function BeritaPage({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {newsList.map((item) => (
             <ContentCard
               key={item.id}
@@ -116,16 +117,7 @@ export default async function BeritaPage({
               title={item.title}
               imageUrl={item.thumbnail_url}
               badge={item.is_featured ? "Unggulan" : null}
-              summary={item.excerpt}
-              dateLabel={
-                item.published_at
-                  ? new Date(item.published_at).toLocaleDateString("id-ID", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })
-                  : null
-              }
+              dateLabel={item.published_at ? formatCardDateTimeID(item.published_at) : null}
             />
           ))}
         </div>

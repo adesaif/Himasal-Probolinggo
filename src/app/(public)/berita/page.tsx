@@ -4,8 +4,8 @@ import Link from "next/link";
 import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { BeritaSearchInput } from "@/components/public/berita-search-input";
+import { ContentCard } from "@/components/public/content-card";
 import { topicLabel } from "@/lib/topics";
 
 export const metadata: Metadata = {
@@ -110,50 +110,23 @@ export default async function BeritaPage({
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {newsList.map((item) => (
-            <Link key={item.id} href={`/berita/${item.slug}`}>
-              {/* Card bawaan punya py-6 + gap-6 (ui/card.tsx) - dinolkan
-                  di sini supaya foto benar-benar rapat ke tepi Card,
-                  bukan ke-inset oleh padding default. */}
-              <Card className="card-hover h-full gap-0 overflow-hidden py-0">
-                {item.thumbnail_url ? (
-                  // object-contain (bukan object-cover) - foto berita
-                  // selalu utuh, tidak pernah memotong wajah/objek
-                  // penting; bg-muted mengisi ruang kosong kalau rasio
-                  // foto beda dari aspect-video.
-                  <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={item.thumbnail_url}
-                      alt={item.title}
-                      loading="lazy"
-                      className="absolute inset-0 size-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex aspect-video w-full items-center justify-center bg-muted text-sm text-muted-foreground">
-                    Tidak ada gambar
-                  </div>
-                )}
-                <CardContent className="flex flex-col gap-1 p-4">
-                  {item.is_featured ? <Badge variant="primary">Unggulan</Badge> : null}
-                  <p className="font-medium">{item.title}</p>
-                  {item.excerpt ? (
-                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                      {item.excerpt}
-                    </p>
-                  ) : null}
-                  {item.published_at ? (
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(item.published_at).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </p>
-                  ) : null}
-                </CardContent>
-              </Card>
-            </Link>
+            <ContentCard
+              key={item.id}
+              href={`/berita/${item.slug}`}
+              title={item.title}
+              imageUrl={item.thumbnail_url}
+              badge={item.is_featured ? "Unggulan" : null}
+              summary={item.excerpt}
+              dateLabel={
+                item.published_at
+                  ? new Date(item.published_at).toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
+                  : null
+              }
+            />
           ))}
         </div>
       )}

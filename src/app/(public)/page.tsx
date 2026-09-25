@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/reveal";
 import { HeroCarousel } from "@/components/public/hero-carousel";
+import { ContentCard } from "@/components/public/content-card";
 import { TOPIC_SELECT_COLUMNS } from "@/lib/topics";
 import {
   fetchBeritaSections,
@@ -38,42 +39,13 @@ function CardGrid({ items }: { items: HomeCardItem[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {items.map((item) => (
-        <Link key={item.id} href={item.href}>
-          {/* Card bawaan punya py-6 + gap-6 (lihat ui/card.tsx) - kalau
-              tidak di-nol-kan, foto (walau sudah object-cover) tetap
-              keinset ~24px dari tepi atas/bawah Card oleh padding itu,
-              jadi foto terlihat "tidak memenuhi" walau CSS object-fit-nya
-              sudah benar. gap-0 py-0 di sini + padding manual di
-              CardContent supaya foto benar-benar rapat ke tepi Card. */}
-          <Card className="card-hover h-full gap-0 overflow-hidden py-0">
-            {item.image_url ? (
-              // object-contain (bukan object-cover) supaya foto berita
-              // selalu utuh - tidak pernah memotong wajah/objek penting.
-              // bg-muted mengisi ruang kosong kiri-kanan/atas-bawah kalau
-              // rasio foto beda dari aspect-video, bukan dibiarkan
-              // transparan/putih kosong.
-              <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.image_url}
-                  alt={item.title}
-                  loading="lazy"
-                  className="absolute inset-0 size-full object-contain"
-                />
-              </div>
-            ) : (
-              <div className="flex aspect-video w-full items-center justify-center bg-muted text-sm text-muted-foreground">
-                Tidak ada gambar
-              </div>
-            )}
-            <CardContent className="flex flex-col gap-1 p-4">
-              <p className="line-clamp-2 font-medium">{item.title}</p>
-              {item.subtitle ? (
-                <p className="line-clamp-1 text-xs text-muted-foreground">{item.subtitle}</p>
-              ) : null}
-            </CardContent>
-          </Card>
-        </Link>
+        <ContentCard
+          key={item.id}
+          href={item.href}
+          title={item.title}
+          imageUrl={item.image_url}
+          summary={item.subtitle}
+        />
       ))}
     </div>
   );

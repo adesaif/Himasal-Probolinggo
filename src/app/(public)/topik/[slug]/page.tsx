@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ContentCard } from "@/components/public/content-card";
 import { formatDateID } from "@/lib/format-date";
 import { topicHref } from "@/lib/topics";
 
@@ -142,55 +143,17 @@ export default async function GenericTopicPage({
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => {
-            const content = (
-              // Card bawaan punya py-6 + gap-6 (ui/card.tsx) - dinolkan di
-              // sini supaya foto benar-benar rapat ke tepi Card, bukan
-              // ke-inset oleh padding default.
-              <Card className="card-hover h-full gap-0 overflow-hidden py-0">
-                {item.image_url ? (
-                  // object-contain (bukan object-cover) - foto selalu
-                  // utuh, tidak pernah memotong objek penting; bg-muted
-                  // mengisi ruang kosong kalau rasio foto beda dari
-                  // aspect-video.
-                  <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      loading="lazy"
-                      className="absolute inset-0 size-full object-contain"
-                    />
-                  </div>
-                ) : null}
-                <CardContent className="flex flex-col gap-1 p-4">
-                  <p className="font-medium">{item.title}</p>
-                  {item.description ? (
-                    <p className="line-clamp-3 text-sm text-muted-foreground">
-                      {item.description}
-                    </p>
-                  ) : null}
-                  <p className="text-xs text-muted-foreground">
-                    {item.sortDate ? formatDateID(item.sortDate) : null}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-            if (item.link_url?.startsWith("/")) {
-              return (
-                <Link key={item.id} href={item.link_url}>
-                  {content}
-                </Link>
-              );
-            }
-            return item.link_url ? (
-              <a key={item.id} href={item.link_url} target="_blank" rel="noopener noreferrer">
-                {content}
-              </a>
-            ) : (
-              <div key={item.id}>{content}</div>
-            );
-          })}
+          {items.map((item) => (
+            <ContentCard
+              key={item.id}
+              href={item.link_url}
+              external={!!item.link_url && !item.link_url.startsWith("/")}
+              title={item.title}
+              imageUrl={item.image_url}
+              summary={item.description}
+              dateLabel={item.sortDate ? formatDateID(item.sortDate) : null}
+            />
+          ))}
         </div>
       )}
 

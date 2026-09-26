@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -12,6 +12,17 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// Khusus wordmark brand lockup (BrandLockup) - dibandingkan dengan Geist
+// (dipakai untuk seluruh UI lain), Plus Jakarta Sans lebih terasa seperti
+// logotype institusional (humanist, sedikit lebih hangat) daripada teks UI
+// biasa, membantu wordmark terbaca sebagai SATU identitas dengan lambang,
+// bukan berbaur dengan teks navigasi di sekelilingnya.
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
+  subsets: ["latin"],
+  weight: ["700", "800"],
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -56,7 +67,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       // Class ini di-render dari server sebagai Navy; ThemeToggle + script
       // di <head> di bawah yang mengelola pergantian ke Light Mode di
       // client tanpa mengubah default ini.
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} ${plusJakartaSans.variable} h-full antialiased dark`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

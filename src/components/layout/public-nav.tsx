@@ -20,7 +20,7 @@ import {
 
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { HimasalLogo } from "@/components/shared/himasal-logo";
+import { BrandLockup } from "@/components/shared/brand-lockup";
 import { HeaderSearch } from "@/components/shared/header-search";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -146,14 +146,8 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
 
   return (
     <header className="site-header sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:px-4">
-        <Link href="/" className="flex min-w-0 shrink items-center gap-1 sm:shrink-0 sm:gap-2.5">
-          <HimasalLogo heightClassName="h-7 sm:h-9" className="shrink-0" />
-          <span className="flex items-baseline whitespace-nowrap text-sm leading-none font-bold tracking-[-0.01em] uppercase sm:text-base">
-            <span className="text-brand-text-himasal">HIMASAL</span>{" "}
-            <span className="text-brand-text-probolinggo">PROBOLINGGO</span>
-          </span>
-        </Link>
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:px-4 lg:h-[74px]">
+        <BrandLockup className="min-w-0 shrink sm:shrink-0" />
 
         <nav
           aria-label="Navigasi utama"
@@ -240,17 +234,7 @@ export function PublicNav({ topics }: { topics?: SiteTopic[] | null }) {
                 <DialogPrimitive.Title className="sr-only">Menu Navigasi</DialogPrimitive.Title>
 
                 <div className="flex items-center justify-between gap-2 border-b border-sidebar-border px-4 pt-4 pb-3">
-                  <Link
-                    href="/"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex min-w-0 items-center gap-1.5"
-                  >
-                    <HimasalLogo heightClassName="h-7" className="shrink-0" />
-                    <span className="flex items-baseline whitespace-nowrap text-[13px] leading-none font-bold tracking-[-0.01em] uppercase">
-                      <span className="text-brand-text-himasal">HIMASAL</span>{" "}
-                      <span className="text-brand-text-probolinggo">PROBOLINGGO</span>
-                    </span>
-                  </Link>
+                  <BrandLockup size="compact" onNavigate={() => setMobileOpen(false)} />
                   <DialogPrimitive.Close asChild>
                     <Button
                       variant="ghost"

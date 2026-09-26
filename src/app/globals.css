@@ -143,6 +143,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-brand: var(--font-plus-jakarta-sans);
 }
 
 @layer base {

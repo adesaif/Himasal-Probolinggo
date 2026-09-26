@@ -1,0 +1,75 @@
+import Link from "next/link";
+
+import { createClient } from "@/lib/supabase/server";
+import { Card, CardContent } from "@/components/ui/card";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { TOPIC_SELECT_COLUMNS, topicLabel, type SiteTopic } from "@/lib/topics";
+
+// "Kategori Berita" (/admin/konten/kategori) sengaja TIDAK dilink di sini -
+// form Berita (news-form-dialog.tsx) sudah tidak punya field kategori sama
+// sekali, hanya Topik (site_topics/topic_id). Rute + tabel `categories`
+// dipertahankan (tidak di-drop, data histori artikel lama tetap aman),
+// sama seperti perlakuan hero_slides yang sudah lebih dulu di-deprecate
+// di codebase ini - dilepas dari navigasi, bukan dihapus.
+function buildSections(topics: SiteTopic[] | null) {
+  return [
+    {
+      href: "/admin/konten/profil",
+      title: topicLabel(topics, "profil", "Profil"),
+      description: "Sejarah, visi, misi, tujuan, dan deskripsi.",
+    },
+    {
+      href: "/admin/konten/struktur",
+      title: topicLabel(topics, "struktur", "Struktur"),
+      description: "Kelola daftar pengurus dan jabatan.",
+    },
+    {
+      href: "/admin/konten/masayikh",
+      title: topicLabel(topics, "masayikh", "Masayikh"),
+      description: "Kelola data masayikh.",
+    },
+    {
+      href: "/admin/konten/topik",
+      title: "Topik & Navigasi",
+      description:
+        "Rename, aktif/nonaktif, urutan, dan izin Unggulan untuk tiap topik website.",
+    },
+    {
+      href: "/admin/konten/pengaturan",
+      title: "Pengaturan Situs",
+      description: "Nama organisasi, tagline, kontak, dan media sosial.",
+    },
+  ];
+}
+
+export default async function AdminKontenPage() {
+  const supabase = await createClient();
+  const { data: topics } = await supabase
+    .from("site_topics")
+    .select(TOPIC_SELECT_COLUMNS);
+  const sections = buildSections(topics);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader
+        title="Manajemen Konten"
+        description="Kelola konten yang tampil di website publik. Berita, Agenda, dan Galeri dikelola dari menu sidebar masing-masing."
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {sections.map((section) => (
+          <Link key={section.href} href={section.href}>
+            <Card className="h-full transition-colors hover:bg-muted/50">
+              <CardContent>
+                <p className="font-medium">{section.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {section.description}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}

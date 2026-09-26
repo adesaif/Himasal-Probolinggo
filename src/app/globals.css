@@ -1,0 +1,256 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design tokens HIMASAL Probolinggo - diturunkan dari logo resmi
+ * (public/brand/himasal-logo.png): biru azure pada perisai, biru navy pada
+ * emblem, dan emas pada bintang. Logo sendiri TIDAK diubah - warna di sini
+ * hanya dipakai untuk elemen UI (tombol, focus ring, badge, dsb), bukan
+ * untuk mewarnai ulang logo.
+ */
+:root {
+  --radius: 0.75rem;
+  --background: #fbfcfe;
+  --foreground: #10182b;
+  --card: #ffffff;
+  --card-foreground: #10182b;
+  --popover: #ffffff;
+  --popover-foreground: #10182b;
+  --primary: #1d5fa8;
+  --primary-foreground: #ffffff;
+  --secondary: #eaf2fb;
+  --secondary-foreground: #163a63;
+  --muted: #f1f5f9;
+  --muted-foreground: #5b6b82;
+  --accent: #e7f0fa;
+  --accent-foreground: #163a63;
+  --destructive: #dc2626;
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+  --brand-gold: #c8952e;
+  --brand-gold-foreground: #3a2a05;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #1d5fa8;
+  --brand-text-himasal: #0b1730;
+  --brand-text-probolinggo: #1d5fa8;
+  --header-elevation: rgba(16, 24, 40, 0.07);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0b1730;
+  --sidebar-primary: #1d5fa8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e7f0fa;
+  --sidebar-accent-foreground: #163a63;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #1d5fa8;
+}
+
+.dark {
+  --background: #0b1220;
+  --foreground: #e7eef7;
+  --card: #111a2e;
+  --card-foreground: #e7eef7;
+  --popover: #111a2e;
+  --popover-foreground: #e7eef7;
+  --primary: #4c8fd1;
+  --primary-foreground: #ffffff;
+  --secondary: #16213a;
+  --secondary-foreground: #c7d6ea;
+  --muted: #16213a;
+  --muted-foreground: #8ca0bc;
+  --accent: #1b2a47;
+  --accent-foreground: #cfe0f5;
+  --destructive: #f2685c;
+  --success: #22c55e;
+  --success-foreground: #06210f;
+  --warning: #f59e0b;
+  --warning-foreground: #241900;
+  --brand-gold: #d9a843;
+  --brand-gold-foreground: #2a1d02;
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: #4c8fd1;
+  --brand-text-himasal: #f1f5f9;
+  --brand-text-probolinggo: #5ba7e8;
+  --header-elevation: rgba(2, 6, 14, 0.4);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: #111a2e;
+  --sidebar-foreground: #e7eef7;
+  --sidebar-primary: #4c8fd1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1b2a47;
+  --sidebar-accent-foreground: #cfe0f5;
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: #4c8fd1;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-foreground: var(--brand-gold-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand-text-himasal: var(--brand-text-himasal);
+  --color-brand-text-probolinggo: var(--brand-text-probolinggo);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-brand: var(--font-plus-jakarta-sans);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/*
+ * Motion utilities Fase 7B - dipakai oleh PageTransition, Reveal, dan card
+ * interaktif. Semua berbasis transform/opacity (murah untuk browser, tidak
+ * memicu layout reflow) dan otomatis dinonaktifkan lewat media query
+ * prefers-reduced-motion di bawah.
+ */
+@layer utilities {
+  .animate-page-in {
+    animation: page-fade-in 280ms ease-out both;
+  }
+
+  .reveal-on-enter {
+    opacity: 0;
+    transform: translateY(12px);
+    transition:
+      opacity 450ms ease-out,
+      transform 450ms ease-out;
+  }
+
+  .reveal-on-enter.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .card-hover {
+    transition:
+      transform 200ms ease-out,
+      box-shadow 200ms ease-out,
+      border-color 200ms ease-out;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -12px oklch(0 0 0 / 0.18);
+  }
+
+  /*
+   * Soft elevation di bawah header publik - gradient sangat halus yang
+   * memberi kesan header sedikit "floating" di atas konten, bukan garis
+   * tegas. Warna mengikuti tema lewat --header-elevation (didefinisikan di
+   * :root dan .dark), jadi otomatis pas untuk Light maupun Navy.
+   */
+  .site-header {
+    position: relative;
+  }
+
+  .site-header::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    height: 18px;
+    background: linear-gradient(180deg, var(--header-elevation) 0%, transparent 100%);
+    pointer-events: none;
+  }
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/*
+ * Hormati preferensi pengguna yang mematikan animasi (aksesibilitas).
+ * Feedback fungsional (skeleton pulse, spinner loading) SENGAJA tidak
+ * dimatikan total - hanya animasi dekoratif (durasi dipangkas ke hampir 0
+ * lewat !important pada transition/animation umum) agar tetap terasa
+ * responsif tanpa gerakan yang mengganggu.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-enter {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .animate-page-in {
+    animation: none;
+  }
+
+  .card-hover:hover {
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

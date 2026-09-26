@@ -234,46 +234,54 @@ export function TopicList({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  {!topic.is_system ? (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm" disabled={busyId === topic.id}>
-                          <Trash2 />
-                          Hapus
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Hapus Topik &quot;{topic.label}&quot;?</AlertDialogTitle>
-                          <AlertDialogDescription asChild>
-                            <div className="flex flex-col gap-2">
-                              <p>
-                                Tindakan ini akan menghapus topik dari konfigurasi
-                                website (site_topics). Konten yang sudah ada{" "}
-                                <strong>TIDAK otomatis dihapus</strong>.
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm" disabled={busyId === topic.id}>
+                        <Trash2 />
+                        Hapus
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Topik &quot;{topic.label}&quot; secara permanen?</AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                          <div className="flex flex-col gap-2">
+                            <p>
+                              Tindakan ini menghapus PERMANEN baris topik ini dari
+                              database (site_topics). Konten yang sudah ada{" "}
+                              <strong>TIDAK ikut terhapus</strong> - hanya kaitannya
+                              ke topik ini yang dilepas.
+                            </p>
+                            {topic.is_system ? (
+                              <p className="font-medium text-destructive">
+                                Topik &quot;{topic.label}&quot; adalah bagian bawaan
+                                sistem (kunci: {topic.key}). Setelah dihapus, bagian
+                                ini hilang dari navigasi publik, Beranda, dan
+                                selektor Topik sampai Admin membuat topik baru
+                                dengan nama yang sama untuk menyambungnya kembali.
                               </p>
-                              {count > 0 ? (
-                                <p className="font-medium text-destructive">
-                                  Topik &quot;{topic.label}&quot; masih memiliki{" "}
-                                  {count} konten. Menghapus topik tidak akan
-                                  menghapus konten tersebut, tapi topik ini akan
-                                  hilang dari navigasi publik, Beranda, dan tidak
-                                  lagi bisa menjadi sumber Featured.
-                                </p>
-                              ) : null}
-                              <p>Tindakan ini tidak dapat dibatalkan.</p>
-                            </div>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Batal</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(topic)}>
-                            Hapus Permanen
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  ) : null}
+                            ) : null}
+                            {count > 0 ? (
+                              <p className="font-medium text-destructive">
+                                Topik &quot;{topic.label}&quot; masih memiliki{" "}
+                                {count} konten. Konten tersebut TIDAK terhapus,
+                                tapi akan kehilangan topiknya (tidak lagi tampil di
+                                navigasi publik, Beranda, atau sebagai sumber
+                                Featured) sampai ditandai ulang ke topik lain.
+                              </p>
+                            ) : null}
+                            <p>Tindakan ini tidak dapat dibatalkan.</p>
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(topic)}>
+                          Hapus Permanen
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </Card>

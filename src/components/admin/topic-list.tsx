@@ -234,44 +234,46 @@ export function TopicList({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm" disabled={busyId === topic.id}>
-                        <Trash2 />
-                        Hapus
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus Topik &quot;{topic.label}&quot;?</AlertDialogTitle>
-                        <AlertDialogDescription asChild>
-                          <div className="flex flex-col gap-2">
-                            <p>
-                              Tindakan ini akan menghapus topik dari konfigurasi
-                              website (site_topics). Konten yang sudah ada{" "}
-                              <strong>TIDAK otomatis dihapus</strong>.
-                            </p>
-                            {count > 0 ? (
-                              <p className="font-medium text-destructive">
-                                Topik &quot;{topic.label}&quot; masih memiliki{" "}
-                                {count} konten. Menghapus topik tidak akan
-                                menghapus konten tersebut, tapi topik ini akan
-                                hilang dari navigasi publik, Beranda, dan tidak
-                                lagi bisa menjadi sumber Featured.
+                  {!topic.is_system ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" disabled={busyId === topic.id}>
+                          <Trash2 />
+                          Hapus
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Hapus Topik &quot;{topic.label}&quot;?</AlertDialogTitle>
+                          <AlertDialogDescription asChild>
+                            <div className="flex flex-col gap-2">
+                              <p>
+                                Tindakan ini akan menghapus topik dari konfigurasi
+                                website (site_topics). Konten yang sudah ada{" "}
+                                <strong>TIDAK otomatis dihapus</strong>.
                               </p>
-                            ) : null}
-                            <p>Tindakan ini tidak dapat dibatalkan.</p>
-                          </div>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(topic)}>
-                          Hapus Permanen
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                              {count > 0 ? (
+                                <p className="font-medium text-destructive">
+                                  Topik &quot;{topic.label}&quot; masih memiliki{" "}
+                                  {count} konten. Menghapus topik tidak akan
+                                  menghapus konten tersebut, tapi topik ini akan
+                                  hilang dari navigasi publik, Beranda, dan tidak
+                                  lagi bisa menjadi sumber Featured.
+                                </p>
+                              ) : null}
+                              <p>Tindakan ini tidak dapat dibatalkan.</p>
+                            </div>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(topic)}>
+                            Hapus Permanen
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>

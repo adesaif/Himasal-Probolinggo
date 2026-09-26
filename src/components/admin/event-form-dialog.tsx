@@ -47,6 +47,7 @@ type Editing = {
   end_at: string | null;
   is_mandatory: boolean;
   is_featured: boolean;
+  is_popular: boolean;
   thumbnail_url: string | null;
   status: string;
 };
@@ -77,6 +78,7 @@ export function EventFormDialog({
       end_at: editing?.end_at ? toDatetimeLocalInput(editing.end_at) : "",
       is_mandatory: editing?.is_mandatory ?? false,
       is_featured: editing?.is_featured ?? false,
+      is_popular: editing?.is_popular ?? false,
       status: (editing?.status as "draft" | "published") ?? "draft",
     },
   });
@@ -93,6 +95,7 @@ export function EventFormDialog({
       end_at: values.end_at ? new Date(values.end_at).toISOString() : null,
       is_mandatory: values.is_mandatory,
       is_featured: featuredAllowed ? values.is_featured : false,
+      is_popular: values.is_popular,
       thumbnail_url: thumbnailUrl,
       status: values.status,
     };
@@ -261,6 +264,25 @@ export function EventFormDialog({
                           dulu di Admin → Konten → Topik & Navigasi.
                         </p>
                       ) : null}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="is_popular"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Populer</FormLabel>
+                  <FormControl>
+                    <div className="flex h-9 items-center">
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isSubmitting}
+                      />
                     </div>
                   </FormControl>
                   <FormMessage />

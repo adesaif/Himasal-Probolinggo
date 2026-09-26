@@ -33,6 +33,7 @@ type ContentRow = {
   display_order: number;
   is_active: boolean;
   is_featured: boolean;
+  is_popular: boolean;
 };
 
 export function TopicContentList({
@@ -60,7 +61,9 @@ export function TopicContentList({
 
       const { data, error } = await supabase
         .from("topic_content")
-        .select("id, title, description, image_url, link_url, display_order, is_active, is_featured")
+        .select(
+          "id, title, description, image_url, link_url, display_order, is_active, is_featured, is_popular",
+        )
         .eq("topic_id", topicId)
         .order("display_order")
         .order("created_at", { ascending: false });
@@ -197,9 +200,18 @@ export function TopicContentList({
                     Tersembunyi
                   </span>
                 ) : null}
-                {row.is_featured ? (
-                  <span className="absolute top-2 right-2 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground">
-                    Unggulan
+                {row.is_featured || row.is_popular ? (
+                  <span className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                    {row.is_featured ? (
+                      <span className="rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground">
+                        Unggulan
+                      </span>
+                    ) : null}
+                    {row.is_popular ? (
+                      <span className="rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground">
+                        Populer
+                      </span>
+                    ) : null}
                   </span>
                 ) : null}
               </div>

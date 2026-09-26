@@ -24,7 +24,35 @@ import {
 import { TopicFormDialog } from "@/components/admin/topic-form-dialog";
 import { TopicCreateDialog } from "@/components/admin/topic-create-dialog";
 import { createClient } from "@/lib/supabase/client";
-import type { SiteTopic } from "@/lib/topics";
+import type { SiteTopic, SystemTopicKey } from "@/lib/topics";
+
+// Profil/Struktur/Masayikh/Galeri punya tabel dedicated + halaman admin
+// sendiri (bukan topic_content generik) - sidebar utama tidak lagi punya
+// link langsung ke halaman-halaman ini (lihat admin/layout.tsx), jadi
+// "Kelola Konten" di sini jadi satu-satunya jalan menjangkaunya. Precedent
+// sama seperti SYSTEM_TOPIC_HREF di lib/topics.ts - klasifikasi tampilan
+// berdasar `key`, bukan hardcode label/href konten.
+const SYSTEM_TOPIC_MANAGE_HREF: Partial<Record<SystemTopicKey, string>> = {
+  profil: "/admin/konten/profil",
+  struktur: "/admin/konten/struktur",
+  masayikh: "/admin/konten/masayikh",
+  galeri: "/admin/galeri",
+};
+
+// berita/agenda tetap dikecualikan total (masih punya sidebar sendiri).
+// "konten" is_system=true TAPI tidak punya tabel dedicated - selalu
+// dibackup topic_content generik yang sama dengan topik custom (lihat
+// fetchGenericSection di homepage-content.ts) - jadi tetap diarahkan ke
+// rute generik yang sama, bukan disembunyikan seperti berita/agenda.
+const SIDEBAR_MANAGED_SYSTEM_KEYS = new Set<SystemTopicKey>(["berita", "agenda"]);
+
+function manageContentHref(topic: SiteTopic): string | null {
+  if (topic.is_system) {
+    if (SIDEBAR_MANAGED_SYSTEM_KEYS.has(topic.key as SystemTopicKey)) return null;
+    return SYSTEM_TOPIC_MANAGE_HREF[topic.key as SystemTopicKey] ?? `/admin/konten/topik/${topic.id}/konten`;
+  }
+  return `/admin/konten/topik/${topic.id}/konten`;
+}
 
 export function TopicList({
   rows,
@@ -191,9 +219,9 @@ export function TopicList({
                       </Button>
                     }
                   />
-                  {!topic.is_system ? (
+                  {manageContentHref(topic) ? (
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/admin/konten/topik/${topic.id}/konten`}>
+                      <Link href={manageContentHref(topic)!}>
                         <FolderOpen />
                         Kelola Konten
                       </Link>

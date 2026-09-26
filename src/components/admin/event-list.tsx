@@ -35,6 +35,7 @@ type EventRow = {
   end_at: string | null;
   is_mandatory: boolean;
   is_featured: boolean;
+  is_popular: boolean;
   thumbnail_url: string | null;
   status: string;
 };
@@ -57,7 +58,7 @@ export function EventList({ featuredAllowed }: { featuredAllowed: boolean }) {
       const { data, error } = await supabase
         .from("events")
         .select(
-          "id, title, description, location, start_at, end_at, is_mandatory, is_featured, thumbnail_url, status",
+          "id, title, description, location, start_at, end_at, is_mandatory, is_featured, is_popular, thumbnail_url, status",
         )
         .order("start_at", { ascending: false });
 
@@ -184,6 +185,7 @@ export function EventList({ featuredAllowed }: { featuredAllowed: boolean }) {
                     </Badge>
                     {row.is_mandatory ? <Badge variant="warning">Wajib Hadir</Badge> : null}
                     {row.is_featured ? <Badge variant="primary">Unggulan</Badge> : null}
+                    {row.is_popular ? <Badge variant="primary">Populer</Badge> : null}
                   </div>
                   <p className="mt-1 truncate font-medium">{row.title}</p>
                   <p className="text-sm text-muted-foreground">

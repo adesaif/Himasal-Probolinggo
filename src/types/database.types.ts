@@ -255,6 +255,7 @@ export type Database = {
           id: string
           is_featured: boolean
           is_mandatory: boolean
+          is_popular: boolean
           location: string | null
           start_at: string
           status: string
@@ -271,6 +272,7 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_mandatory?: boolean
+          is_popular?: boolean
           location?: string | null
           start_at: string
           status?: string
@@ -287,6 +289,7 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_mandatory?: boolean
+          is_popular?: boolean
           location?: string | null
           start_at?: string
           status?: string
@@ -312,6 +315,7 @@ export type Database = {
           id: string
           image_url: string
           is_featured: boolean
+          is_popular: boolean
           is_published: boolean
           updated_at: string
         }
@@ -322,6 +326,7 @@ export type Database = {
           id?: string
           image_url: string
           is_featured?: boolean
+          is_popular?: boolean
           is_published?: boolean
           updated_at?: string
         }
@@ -332,6 +337,7 @@ export type Database = {
           id?: string
           image_url?: string
           is_featured?: boolean
+          is_popular?: boolean
           is_published?: boolean
           updated_at?: string
         }
@@ -413,6 +419,7 @@ export type Database = {
           excerpt: string | null
           id: string
           is_featured: boolean
+          is_popular: boolean
           published_at: string | null
           slug: string
           status: string
@@ -430,6 +437,7 @@ export type Database = {
           excerpt?: string | null
           id?: string
           is_featured?: boolean
+          is_popular?: boolean
           published_at?: string | null
           slug: string
           status?: string
@@ -447,6 +455,7 @@ export type Database = {
           excerpt?: string | null
           id?: string
           is_featured?: boolean
+          is_popular?: boolean
           published_at?: string | null
           slug?: string
           status?: string
@@ -691,6 +700,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           is_featured: boolean
+          is_popular: boolean
           link_url: string | null
           title: string
           topic_id: string | null
@@ -704,6 +714,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          is_popular?: boolean
           link_url?: string | null
           title: string
           topic_id?: string | null
@@ -717,6 +728,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          is_popular?: boolean
           link_url?: string | null
           title?: string
           topic_id?: string | null

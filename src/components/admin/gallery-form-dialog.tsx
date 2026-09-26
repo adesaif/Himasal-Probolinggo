@@ -36,6 +36,7 @@ type Editing = {
   display_order: number;
   is_published: boolean;
   is_featured: boolean;
+  is_popular: boolean;
 };
 
 export function GalleryFormDialog({
@@ -59,6 +60,7 @@ export function GalleryFormDialog({
       display_order: editing?.display_order?.toString() ?? "0",
       is_published: editing?.is_published ?? true,
       is_featured: editing?.is_featured ?? false,
+      is_popular: editing?.is_popular ?? false,
     },
   });
 
@@ -76,6 +78,7 @@ export function GalleryFormDialog({
       display_order: values.display_order ? Number(values.display_order) : 0,
       is_published: values.is_published,
       is_featured: featuredAllowed ? values.is_featured : false,
+      is_popular: values.is_popular,
     };
 
     const { error } = editing
@@ -176,6 +179,25 @@ export function GalleryFormDialog({
                           ? "Tampilkan di Hero Carousel"
                           : "Topik Galeri belum mengizinkan Unggulan"}
                       </span>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="is_popular"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Populer</FormLabel>
+                  <FormControl>
+                    <div className="flex h-9 items-center">
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isSubmitting}
+                      />
                     </div>
                   </FormControl>
                   <FormMessage />

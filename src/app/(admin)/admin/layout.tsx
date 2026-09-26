@@ -9,6 +9,14 @@ import { TOPIC_SELECT_COLUMNS, topicLabel } from "@/lib/topics";
 // /monitoring - itu area Super Admin terpisah (role berbeda, lihat
 // proxy.ts), admin role tidak pernah bisa membukanya.
 //
+// Galeri/Profil/Struktur/Masayikh SENGAJA tidak lagi jadi item sidebar di
+// sini - halamannya (/admin/galeri, /admin/konten/{profil,struktur,
+// masayikh}) tetap ada dan tetap berfungsi persis seperti sebelumnya,
+// hanya dijangkau lewat "Kelola Konten" pada baris topiknya masing-masing
+// di Topik & Navigasi (lihat SYSTEM_TOPIC_MANAGE_HREF di topic-list.tsx),
+// bukan dihapus. Agenda TIDAK ikut dipindah (tetap item sidebar sendiri)
+// karena tidak diminta.
+//
 // Ikon dirujuk lewat key string (bukan import komponen lucide-react
 // langsung) - AdminShell adalah Client Component, dan referensi fungsi
 // komponen tidak bisa dikirim sebagai prop lewat batas Server/Client
@@ -38,11 +46,7 @@ export default async function AdminLayout({
       items: [
         { href: "/admin/berita", label: topicLabel(topics, "berita", "Berita"), icon: "newspaper" },
         { href: "/admin/agenda", label: topicLabel(topics, "agenda", "Agenda"), icon: "calendar" },
-        { href: "/admin/galeri", label: topicLabel(topics, "galeri", "Galeri"), icon: "images" },
         { href: "/admin/konten/topik", label: "Topik & Navigasi", icon: "list-tree" },
-        { href: "/admin/konten/profil", label: topicLabel(topics, "profil", "Profil"), icon: "building" },
-        { href: "/admin/konten/struktur", label: topicLabel(topics, "struktur", "Struktur"), icon: "network" },
-        { href: "/admin/konten/masayikh", label: topicLabel(topics, "masayikh", "Masayikh"), icon: "graduation-cap" },
       ],
     },
     {

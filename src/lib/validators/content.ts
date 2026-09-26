@@ -59,6 +59,7 @@ export const topicContentSchema = z.object({
   display_order: z.string().trim().optional().or(z.literal("")),
   is_active: z.boolean(),
   is_featured: z.boolean(),
+  is_popular: z.boolean(),
 });
 export type TopicContentInput = z.infer<typeof topicContentSchema>;
 

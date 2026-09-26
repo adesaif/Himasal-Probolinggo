@@ -9,12 +9,12 @@ import { HeroCarousel } from "@/components/public/hero-carousel";
 import { ContentCard } from "@/components/public/content-card";
 import { TOPIC_SELECT_COLUMNS } from "@/lib/topics";
 import {
-  fetchBeritaSections,
   fetchHomeSections,
   finalizeHeroSlides,
   type HomeCardItem,
   type HomeSection,
 } from "@/lib/homepage-content";
+import { fetchUnifiedContent, type UnifiedContentItem } from "@/lib/unified-content";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -50,6 +50,56 @@ function CardGrid({ items, topicLabel }: { items: HomeCardItem[]; topicLabel: st
         />
       ))}
     </div>
+  );
+}
+
+// Grid Terbaru/Populer - beda dari CardGrid per-topik di atas karena
+// setiap item BISA datang dari topik berbeda-beda (badge topik per-item,
+// bukan satu topicLabel untuk seluruh grid).
+function UnifiedCardGrid({ items }: { items: UnifiedContentItem[] }) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+      {items.map((item) => (
+        <ContentCard
+          key={item.id}
+          href={item.href}
+          title={item.title}
+          imageUrl={item.image_url}
+          topicLabel={item.topicLabel}
+          summary={item.summary}
+          dateLabel={item.dateLabel}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Terbaru & Populer sama-sama lintas topik (lihat lib/unified-content.ts) -
+// heading tetap + "Lihat semua" ke arsip masing-masing, empty state kalau
+// belum ada satu pun content yang memenuhi syarat (Terbaru: published apa
+// pun; Populer: is_popular=true) - tidak pernah disembunyikan diam-diam
+// supaya section topik di bawahnya tidak terasa "melompat".
+function UnifiedSectionBlock({
+  heading,
+  viewAllHref,
+  items,
+}: {
+  heading: string;
+  viewAllHref: string;
+  items: UnifiedContentItem[];
+}) {
+  return (
+    <Reveal>
+      <section>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <h2 className="text-2xl font-semibold tracking-tight">{heading}</h2>
+          <Button asChild variant="link" className="shrink-0">
+            <Link href={viewAllHref}>Lihat semua</Link>
+          </Button>
+        </div>
+        {items.length > 0 ? <UnifiedCardGrid items={items} /> : <EmptySectionState />}
+      </section>
+    </Reveal>
   );
 }
 
@@ -105,19 +155,18 @@ export default async function BerandaPage() {
 
   const { data: topics } = await supabase.from("site_topics").select(TOPIC_SELECT_COLUMNS);
 
-  // Berita punya 3 section tetap (Terbaru/Satu Minggu Lalu/Satu Bulan
-  // Lalu) - requirement yang berdiri sendiri, BUKAN bagian dari loop topik
-  // generik di bawah. Dilewati sepenuhnya (termasuk hero-nya) kalau topik
-  // Berita dinonaktifkan.
-  const beritaTopic = topics?.find((t) => t.key === "berita" && t.is_active);
-  const [berita, others] = await Promise.all([
-    beritaTopic
-      ? fetchBeritaSections(supabase, beritaTopic)
-      : Promise.resolve({ sections: [] as HomeSection[], heroCandidates: [] }),
+  // Terbaru & Populer lintas topik (lihat lib/unified-content.ts - hanya
+  // dari news/events/gallery_items/topic_content, BUKAN dari
+  // organization_profile/organization_structure/masayikh yang merupakan
+  // data master, bukan publikasi bertanggal), lalu section per topik
+  // sistem/custom seperti sebelumnya (fetchHomeSections, tidak diubah).
+  const [terbaru, populer, others] = await Promise.all([
+    fetchUnifiedContent(supabase, topics, { limit: 6 }),
+    fetchUnifiedContent(supabase, topics, { onlyPopular: true, limit: 6 }),
     fetchHomeSections(supabase, topics),
   ]);
 
-  const heroSlides = finalizeHeroSlides([...berita.heroCandidates, ...others.heroCandidates]);
+  const heroSlides = finalizeHeroSlides(others.heroCandidates);
 
   return (
     <div className="flex flex-col gap-16">
@@ -128,19 +177,29 @@ export default async function BerandaPage() {
           dummy slide. Foto memenuhi seluruh kotak (object-cover di
           HeroCarousel) - Hero yang lebih tinggi jadi terasa lebih
           immersive/premium, bukan sekadar memberi ruang untuk foto kecil
-          seperti sebelumnya. */}
+          seperti sebelumnya. Hero TIDAK disentuh oleh perubahan Terbaru/
+          Populer - tetap murni berdasarkan is_featured, lihat
+          fetchHomeSections/SYSTEM_FETCHERS di homepage-content.ts. */}
       <section className="hero-premium-bg relative z-0 h-[420px] overflow-hidden rounded-2xl sm:h-[480px] lg:h-[560px]">
         <HeroCarousel slides={heroSlides} />
       </section>
 
-      {/* Tiga section Berita tetap (disembunyikan per bucket kalau bucket
-          itu kosong - lihat fetchBeritaSections), lalu satu section per
-          topik AKTIF lainnya berurutan sesuai display_order. Topik aktif
-          lain SELALU mendapat section walau kontennya masih kosong - lihat
+      {/* Terbaru: 6 content terbaru dari SEMUA topik (bukan hanya Berita) -
+          menggantikan 3 section Berita-only (Terbaru/Minggu Lalu/Bulan
+          Lalu) yang lama, karena section itu sekarang duplikat dengan ini
+          (Berita tetap ikut tampil di sini, hanya tidak lagi py punya
+          section homepage sendiri - lihat /berita untuk listing khusus
+          Berita, dan /arsip untuk arsip lintas-topik lengkap). */}
+      <UnifiedSectionBlock heading="Terbaru" viewAllHref="/arsip" items={terbaru.items} />
+
+      {/* Populer: is_popular=true, flag editorial Admin - independen dari
+          Hero (is_featured). Lihat /admin/berita untuk mengatur flag ini. */}
+      <UnifiedSectionBlock heading="Populer" viewAllHref="/populer" items={populer.items} />
+
+      {/* Satu section per topik AKTIF lainnya (sistem maupun custom)
+          berurutan sesuai display_order - tidak diubah. Topik aktif
+          SELALU mendapat section walau kontennya masih kosong - lihat
           EmptySectionState di HomeSectionBlock. */}
-      {berita.sections.map((section) => (
-        <HomeSectionBlock key={section.topicKey} section={section} />
-      ))}
       {others.sections.map((section) => (
         <HomeSectionBlock key={section.topicKey} section={section} />
       ))}

@@ -49,6 +49,7 @@ type Editing = {
   author_name: string | null;
   thumbnail_url: string | null;
   is_featured: boolean;
+  is_popular: boolean;
   status: string;
 };
 
@@ -81,6 +82,7 @@ export function NewsFormDialog({
       topic_id: editing?.topic_id ?? beritaTopic?.id ?? "",
       author_name: editing?.author_name ?? "",
       is_featured: editing?.is_featured ?? false,
+      is_popular: editing?.is_popular ?? false,
       status: (editing?.status as "draft" | "published") ?? "draft",
     },
   });
@@ -106,6 +108,7 @@ export function NewsFormDialog({
       author_name: values.author_name || null,
       thumbnail_url: thumbnailUrl,
       is_featured: featuredAllowed ? values.is_featured : false,
+      is_popular: values.is_popular,
       status: values.status,
       published_at:
         values.status === "published"
@@ -313,6 +316,25 @@ export function NewsFormDialog({
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="is_popular"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Populer</FormLabel>
+                  <FormControl>
+                    <div className="flex h-9 items-center">
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Menyimpan..." : "Simpan"}

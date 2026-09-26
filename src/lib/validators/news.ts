@@ -7,6 +7,7 @@ export const newsSchema = z.object({
   topic_id: z.string().trim().min(1, "Topik wajib dipilih"),
   author_name: z.string().trim().max(100).optional().or(z.literal("")),
   is_featured: z.boolean(),
+  is_popular: z.boolean(),
   status: z.enum(["draft", "published"]),
 });
 

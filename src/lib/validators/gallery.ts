@@ -5,6 +5,7 @@ export const galleryItemSchema = z.object({
   display_order: z.string().trim().optional().or(z.literal("")),
   is_published: z.boolean(),
   is_featured: z.boolean(),
+  is_popular: z.boolean(),
 });
 
 export type GalleryItemInput = z.infer<typeof galleryItemSchema>;

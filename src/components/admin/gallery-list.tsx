@@ -30,6 +30,7 @@ type GalleryRow = {
   display_order: number;
   is_published: boolean;
   is_featured: boolean;
+  is_popular: boolean;
 };
 
 export function GalleryList({ featuredAllowed }: { featuredAllowed: boolean }) {
@@ -49,7 +50,7 @@ export function GalleryList({ featuredAllowed }: { featuredAllowed: boolean }) {
 
       const { data, error } = await supabase
         .from("gallery_items")
-        .select("id, image_url, caption, display_order, is_published, is_featured")
+        .select("id, image_url, caption, display_order, is_published, is_featured, is_popular")
         .order("display_order")
         .order("created_at", { ascending: false });
 
@@ -166,9 +167,18 @@ export function GalleryList({ featuredAllowed }: { featuredAllowed: boolean }) {
                     Tersembunyi
                   </span>
                 ) : null}
-                {row.is_featured ? (
-                  <span className="absolute top-2 right-2 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground">
-                    Unggulan
+                {row.is_featured || row.is_popular ? (
+                  <span className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                    {row.is_featured ? (
+                      <span className="rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground">
+                        Unggulan
+                      </span>
+                    ) : null}
+                    {row.is_popular ? (
+                      <span className="rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground">
+                        Populer
+                      </span>
+                    ) : null}
                   </span>
                 ) : null}
               </div>

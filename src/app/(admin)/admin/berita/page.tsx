@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { NewsList } from "@/components/admin/news-list";
+import { ContentAggregatorList } from "@/components/admin/content-aggregator-list";
 import { TOPIC_SELECT_COLUMNS } from "@/lib/topics";
 
 export default async function AdminBeritaPage() {
@@ -9,5 +9,5 @@ export default async function AdminBeritaPage() {
     .select(TOPIC_SELECT_COLUMNS)
     .order("display_order");
 
-  return <NewsList topics={topics ?? []} />;
+  return <ContentAggregatorList topics={topics ?? []} />;
 }

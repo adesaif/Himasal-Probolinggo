@@ -38,6 +38,23 @@ export function toDatetimeLocalInput(iso: string): string {
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 }
 
+// Label section/bucket untuk halaman arsip (/arsip) - "Minggu Ini" untuk 7
+// hari terakhir, selebihnya "September 2026" (bulan+tahun, locale id-ID) -
+// dipakai untuk mengelompokkan daftar kronologis panjang jadi heading yang
+// bisa di-scan, TANPA membuang/menyembunyikan konten lama ke satu bucket
+// generik "lebih lama" (lihat fetchUnifiedContent + halaman /arsip).
+export function formatArchiveBucketLabel(value: string): string {
+  const date = new Date(value);
+  const now = new Date();
+  const daysAgo = (now.getTime() - date.getTime()) / (24 * 60 * 60 * 1000);
+  if (daysAgo <= 7) return "Minggu Ini";
+  return date.toLocaleDateString("id-ID", {
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  });
+}
+
 export function formatEventRange(startAt: string, endAt: string | null) {
   if (!endAt) return formatDateTimeID(startAt);
 

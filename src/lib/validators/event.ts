@@ -9,6 +9,7 @@ export const eventSchema = z
     end_at: z.string().trim().optional().or(z.literal("")),
     is_mandatory: z.boolean(),
     is_featured: z.boolean(),
+    is_popular: z.boolean(),
     status: z.enum(["draft", "published"]),
   })
   .refine(

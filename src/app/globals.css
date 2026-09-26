@@ -192,31 +192,6 @@
   }
 
   /*
-   * Background hero premium HIMASAL - navy dalam sebagai dasar, glow biru
-   * azure lembut mengikuti identitas logo, sentuhan emas sangat tipis.
-   * Dipakai HANYA pada section hero beranda; bukan pengganti token tema.
-   */
-  .hero-premium-bg {
-    background-color: #050b16;
-    background-image:
-      radial-gradient(120% 90% at 15% 0%, rgba(29, 95, 168, 0.38) 0%, rgba(29, 95, 168, 0) 55%),
-      radial-gradient(90% 70% at 100% 100%, rgba(200, 149, 46, 0.12) 0%, rgba(200, 149, 46, 0) 60%),
-      linear-gradient(160deg, #050b16 0%, #0a1730 45%, #0d2142 100%);
-  }
-
-  /* Overlay gelap di atas foto carousel hero agar teks tetap terbaca.
-     Blok teks editorial (category/judul/ringkasan/tanggal) ada di
-     kiri-bawah, jadi gradient dibuat bias ke sana: bagian atas nyaris
-     bersih (foto tetap terlihat terang), radial burst di kiri-bawah
-     menggelapkan khusus area di belakang teks tanpa menggelapkan foto
-     di sisi lain Hero secara merata. */
-  .hero-slide-overlay {
-    background:
-      linear-gradient(180deg, rgba(5, 11, 22, 0.1) 0%, rgba(5, 11, 22, 0.32) 60%, rgba(5, 11, 22, 0.8) 100%),
-      radial-gradient(85% 75% at 10% 100%, rgba(5, 11, 22, 0.78) 0%, rgba(5, 11, 22, 0) 65%);
-  }
-
-  /*
    * Soft elevation di bawah header publik - gradient sangat halus yang
    * memberi kesan header sedikit "floating" di atas konten, bukan garis
    * tegas. Warna mengikuti tema lewat --header-elevation (didefinisikan di

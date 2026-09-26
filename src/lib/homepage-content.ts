@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database.types";
-import type { HeroSlide } from "@/components/public/hero-carousel";
+import type { HeroSlide } from "@/components/public/scroll-morph-hero";
 import { formatCardDateTimeID, formatDateID } from "@/lib/format-date";
 import { isTopicFeaturedAllowed, topicHref, type SiteTopic } from "@/lib/topics";
 
@@ -49,7 +49,11 @@ type SectionFetchResult = {
 type SystemFetcher = (supabase: PublicSupabase, topic: SiteTopic) => Promise<SectionFetchResult>;
 
 const CARD_LIMIT = 4;
-const HERO_CANDIDATE_LIMIT = 6;
+// Hero sekarang Scroll Morph (banyak kartu sekaligus, lihat
+// scroll-morph-hero.tsx) - kandidat per sumber & total dinaikkan supaya ring/
+// arc punya cukup konten nyata. Tetap dibatasi: kartu di panggung maksimal 20.
+const HERO_CANDIDATE_LIMIT = 20;
+const HERO_SLIDE_LIMIT = 20;
 
 const NEWS_CARD_COLUMNS = "id, slug, title, excerpt, thumbnail_url, published_at";
 
@@ -498,21 +502,28 @@ export async function fetchHomeSections(
     }),
   );
 
+  // Berita tidak punya section sendiri di Beranda (sudah terwakili oleh
+  // Terbaru/Populer), tapi berita Unggulan yang topiknya Berita tetap
+  // kandidat Hero yang sah - dulu disuplai fetchBeritaSections (sudah
+  // dihapus), jadi diambil di sini tanpa membuat section.
+  const beritaTopic = (topics ?? []).find((t) => t.is_active && t.key === "berita");
+  const beritaHero = beritaTopic ? (await fetchTopicNews(supabase, beritaTopic)).heroCandidates : [];
+
   const sections = results.map((r) => r.section);
-  const heroCandidates = results.flatMap((r) => r.heroCandidates);
+  const heroCandidates = [...results.flatMap((r) => r.heroCandidates), ...beritaHero];
 
   return { sections, heroCandidates };
 }
 
 /**
- * Gabungkan kandidat hero dari Berita + semua topik lain, urutkan
- * berdasarkan tanggal terbaru, batasi 6 - dipanggil sekali di Beranda
- * setelah kedua sumber (fetchBeritaSections + fetchHomeSections) selesai.
+ * Gabungkan kandidat hero dari semua topik (termasuk berita bertopik
+ * Berita, lihat fetchHomeSections), urutkan berdasarkan tanggal terbaru,
+ * batasi HERO_SLIDE_LIMIT.
  */
 export function finalizeHeroSlides(candidates: HeroCandidate[]): HeroSlide[] {
   return candidates
     .sort((a, b) => (a.sortDate < b.sortDate ? 1 : -1))
-    .slice(0, 6)
+    .slice(0, HERO_SLIDE_LIMIT)
     .map((slide) => ({
       id: slide.id,
       href: slide.href,

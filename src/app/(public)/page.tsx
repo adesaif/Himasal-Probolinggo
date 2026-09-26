@@ -5,7 +5,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/reveal";
-import { HeroCarousel } from "@/components/public/hero-carousel";
+import { ScrollMorphHero } from "@/components/public/scroll-morph-hero";
 import { ContentCard } from "@/components/public/content-card";
 import { TOPIC_SELECT_COLUMNS } from "@/lib/topics";
 import {
@@ -160,29 +160,27 @@ export default async function BerandaPage() {
   // organization_profile/organization_structure/masayikh yang merupakan
   // data master, bukan publikasi bertanggal), lalu section per topik
   // sistem/custom seperti sebelumnya (fetchHomeSections, tidak diubah).
-  const [terbaru, populer, others] = await Promise.all([
+  const [terbaru, populer, others, { data: settings }] = await Promise.all([
     fetchUnifiedContent(supabase, topics, { limit: 6 }),
     fetchUnifiedContent(supabase, topics, { onlyPopular: true, limit: 6 }),
     fetchHomeSections(supabase, topics),
+    supabase.from("site_settings").select("nama_organisasi, tagline").maybeSingle(),
   ]);
 
   const heroSlides = finalizeHeroSlides(others.heroCandidates);
+  // Teks pusat Hero dari Pengaturan Situs (CMS), fallback sama persis dengan
+  // footer - bukan copy demo.
+  const brandName = settings?.nama_organisasi || "HIMASAL Probolinggo";
+  const tagline = settings?.tagline || "Himpunan Alumni Santri Lirboyo Probolinggo";
 
   return (
     <div className="flex flex-col gap-16">
-      {/* Hero: portal konten - foto + judul asli dari konten Unggulan topik
-          mana pun yang aktif & mengizinkan Unggulan. Kalau tidak ada
-          konten unggulan, HeroCarousel return null dan section ini jatuh
-          ke background gradient premium saja - tidak pernah menampilkan
-          dummy slide. Foto memenuhi seluruh kotak (object-cover di
-          HeroCarousel) - Hero yang lebih tinggi jadi terasa lebih
-          immersive/premium, bukan sekadar memberi ruang untuk foto kecil
-          seperti sebelumnya. Hero TIDAK disentuh oleh perubahan Terbaru/
-          Populer - tetap murni berdasarkan is_featured, lihat
-          fetchHomeSections/SYSTEM_FETCHERS di homepage-content.ts. */}
-      <section className="hero-premium-bg relative z-0 h-[420px] overflow-hidden rounded-2xl sm:h-[480px] lg:h-[560px]">
-        <HeroCarousel slides={heroSlides} />
-      </section>
+      {/* Hero: Scroll Morph - semua konten Unggulan (is_featured, published,
+          topik mengizinkan Unggulan) dirender sekaligus dan digerakkan satu
+          scroll progress native. 0-3 konten atau prefers-reduced-motion ->
+          komposisi statis; tidak pernah dummy/duplikat. Lihat
+          components/public/scroll-morph-hero.tsx. */}
+      <ScrollMorphHero items={heroSlides} brandName={brandName} tagline={tagline} />
 
       {/* Terbaru: 6 content terbaru dari SEMUA topik (bukan hanya Berita) -
           menggantikan 3 section Berita-only (Terbaru/Minggu Lalu/Bulan

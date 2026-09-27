@@ -417,7 +417,7 @@ function StaticHero({
   return (
     <section
       aria-labelledby="hero-heading"
-      className="rounded-[28px] border bg-card px-5 py-12 sm:px-10 sm:py-16"
+      className="rounded-[28px] border border-border/50 bg-card/30 px-5 py-12 sm:px-10 sm:py-16"
     >
       <div className="mx-auto max-w-2xl text-center">
         <BrandHeading brandName={brandName} tagline={tagline} />
@@ -608,7 +608,7 @@ function MorphStage({
           ref={stageRef}
           onPointerMove={handlePointerMove}
           onPointerLeave={resetPointer}
-          className="relative h-full overflow-hidden rounded-[28px] border bg-card"
+          className="relative h-full overflow-hidden rounded-[28px] border border-border/50 bg-card/30"
         >
           {/* Lapisan kartu - dirender setelah ukuran panggung terukur di
               client, jadi posisi (hasil trigonometri) tidak pernah ikut

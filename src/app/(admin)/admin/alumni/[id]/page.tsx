@@ -4,11 +4,13 @@ import { ArrowLeft } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { EditAlumniDialog } from "@/components/admin/edit-alumni-dialog";
-import { AlumniStatusToggle } from "@/components/admin/alumni-status-toggle";
+import { AlumniDetailActions } from "@/components/admin/alumni-detail-actions";
+import { desaKelurahanLabel, fetchLokasiAlumni } from "@/lib/alumni-lokasi";
+import { formatDateID } from "@/lib/format-date";
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -25,20 +27,43 @@ export default async function AdminAlumniDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: alumni }, { data: wilayahList }] = await Promise.all([
-    supabase
-      .from("alumni")
-      .select(
-        "id, tempat_lahir, tanggal_lahir, alamat, angkatan, status_keanggotaan, wilayah_id, wilayah:wilayah_id(nama), profiles:profile_id(full_name, phone)",
-      )
-      .eq("id", id)
-      .single(),
-    supabase.from("wilayah").select("id, nama").eq("is_active", true).order("nama"),
-  ]);
+  const [{ data: alumni }, { data: isAktif }, { count: jumlahHadir }, { count: jumlahAbsensi }, lokasi] =
+    await Promise.all([
+      supabase
+        .from("alumni")
+        .select(
+          "id, profile_id, nama_lengkap, no_hp, tempat_lahir, tanggal_lahir, alamat, angkatan, kecamatan_id, desa_kelurahan_id, kecamatan:kecamatan_id(nama), desa:desa_kelurahan!alumni_desa_kelurahan_fkey(nama, jenis), profiles:profile_id(full_name, phone)",
+        )
+        .eq("id", id)
+        .maybeSingle(),
+      supabase.rpc("alumni_is_aktif", { p_alumni_id: id }),
+      supabase
+        .from("attendance_records")
+        .select("id", { count: "exact", head: true })
+        .eq("alumni_id", id)
+        .eq("status", "HADIR"),
+      supabase
+        .from("attendance_records")
+        .select("id", { count: "exact", head: true })
+        .eq("alumni_id", id),
+      fetchLokasiAlumni(supabase),
+    ]);
 
   if (!alumni) {
     notFound();
   }
+
+  // Alumni dengan akun login: nama/HP diutamakan dari profiles (yang juga
+  // diperbarui admin_save_alumni), fallback ke kolom alumni.
+  const nama = alumni.profiles?.full_name?.trim() || alumni.nama_lengkap?.trim() || null;
+  const noHp = alumni.profiles?.phone?.trim() || alumni.no_hp?.trim() || null;
+  const kecamatanNama = alumni.kecamatan?.nama ?? null;
+  const desa = alumni.desa ?? null;
+  const alamatRingkas = kecamatanNama
+    ? desa
+      ? `${desaKelurahanLabel(desa.jenis)} ${desa.nama}, Kec. ${kecamatanNama}`
+      : `Kec. ${kecamatanNama}`
+    : null;
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
@@ -50,46 +75,82 @@ export default async function AdminAlumniDetailPage({
       </Button>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {alumni.profiles?.full_name || "(Belum diisi)"}
-        </h1>
-        <div className="flex gap-2">
-          <EditAlumniDialog
-            alumniId={alumni.id}
-            wilayahList={wilayahList ?? []}
-            initialValues={{
-              full_name: alumni.profiles?.full_name ?? "",
-              phone: alumni.profiles?.phone ?? "",
-              tempat_lahir: alumni.tempat_lahir ?? "",
-              tanggal_lahir: alumni.tanggal_lahir ?? "",
-              alamat: alumni.alamat ?? "",
-              wilayah_id: alumni.wilayah_id ?? "",
-              angkatan: alumni.angkatan?.toString() ?? "",
-            }}
-          />
-          <AlumniStatusToggle
-            alumniId={alumni.id}
-            currentStatus={alumni.status_keanggotaan}
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">{nama || "(Belum diisi)"}</h1>
+          <Badge variant={isAktif ? "success" : "neutral"}>{isAktif ? "Aktif" : "Nonaktif"}</Badge>
         </div>
+        <AlumniDetailActions
+          alumniId={alumni.id}
+          lokasi={lokasi}
+          initialValues={{
+            full_name: nama ?? "",
+            kecamatan_id: alumni.kecamatan_id,
+            desa_kelurahan_id: alumni.desa_kelurahan_id,
+            phone: noHp ?? "",
+            tempat_lahir: alumni.tempat_lahir ?? "",
+            tanggal_lahir: alumni.tanggal_lahir ?? "",
+            angkatan: alumni.angkatan,
+          }}
+          deleteTarget={{
+            id: alumni.id,
+            nama,
+            alamat: alamatRingkas,
+            angkatan: alumni.angkatan,
+            jumlahAbsensi: jumlahAbsensi ?? 0,
+            hasAccount: alumni.profile_id !== null,
+          }}
+        />
       </div>
 
       <Card>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <InfoRow
+              label="Status (otomatis)"
+              value={
+                <>
+                  {isAktif ? "Aktif" : "Nonaktif"}
+                  <span className="block text-sm font-normal text-muted-foreground">
+                    {isAktif
+                      ? `Tercatat hadir di ${jumlahHadir ?? 0} agenda.`
+                      : "Belum pernah tercatat hadir di agenda."}
+                  </span>
+                </>
+              }
+            />
+          </div>
+          <InfoRow label="Kecamatan" value={kecamatanNama ?? "-"} />
           <InfoRow
-            label="Status"
-            value={alumni.status_keanggotaan === "aktif" ? "Aktif" : "Nonaktif"}
+            label="Desa/Kelurahan"
+            value={desa ? `${desaKelurahanLabel(desa.jenis)} ${desa.nama}` : "-"}
           />
-          <InfoRow label="Nomor HP" value={alumni.profiles?.phone || "-"} />
-          <InfoRow label="Wilayah" value={alumni.wilayah?.nama ?? "-"} />
+          <InfoRow label="Nomor HP" value={noHp ?? "-"} />
           <InfoRow label="Angkatan" value={alumni.angkatan?.toString() ?? "-"} />
           <InfoRow label="Tempat Lahir" value={alumni.tempat_lahir || "-"} />
-          <InfoRow label="Tanggal Lahir" value={alumni.tanggal_lahir || "-"} />
-          <div className="sm:col-span-2">
-            <InfoRow label="Alamat" value={alumni.alamat || "-"} />
-          </div>
+          <InfoRow
+            label="Tanggal Lahir"
+            value={alumni.tanggal_lahir ? formatDateID(alumni.tanggal_lahir) : "-"}
+          />
         </CardContent>
       </Card>
+
+      {!kecamatanNama && alumni.alamat?.trim() ? (
+        // Data lama (sebelum struktur Kecamatan -> Desa/Kelurahan) tidak
+        // dipetakan otomatis - ditampilkan apa adanya supaya Admin bisa
+        // memperbaikinya lewat Edit, tanpa mengarang alamat baru.
+        <Card>
+          <CardContent className="flex flex-col gap-1 text-sm">
+            <p className="font-medium">Alamat lama perlu dipetakan</p>
+            <p className="text-muted-foreground">
+              Tercatat sebelum alamat memakai Kecamatan → Desa/Kelurahan:{" "}
+              <span className="text-foreground">{alumni.alamat}</span>
+            </p>
+            <p className="text-muted-foreground">
+              Pilih Kecamatan dan Desa/Kelurahan yang sesuai lewat tombol Edit.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

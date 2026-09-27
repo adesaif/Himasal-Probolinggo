@@ -1,13 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { AlumniList } from "@/components/admin/alumni-list";
+import { fetchLokasiAlumni } from "@/lib/alumni-lokasi";
 
 export default async function AdminAlumniPage() {
   const supabase = await createClient();
-  const { data: wilayahList } = await supabase
-    .from("wilayah")
-    .select("id, nama")
-    .eq("is_active", true)
-    .order("nama");
+  const lokasi = await fetchLokasiAlumni(supabase);
 
-  return <AlumniList wilayahList={wilayahList ?? []} />;
+  return <AlumniList lokasi={lokasi} />;
 }

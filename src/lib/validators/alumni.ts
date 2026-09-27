@@ -1,18 +1,39 @@
 import { z } from "zod";
 
-export const createAlumniSchema = z.object({
-  full_name: z.string().trim().min(1, "Nama wajib diisi").max(150),
-  email: z.string().trim().min(1, "Email wajib diisi").email("Format email tidak valid"),
-  phone: z.string().trim().max(20).optional().or(z.literal("")),
-  tempat_lahir: z.string().trim().max(100).optional().or(z.literal("")),
-  tanggal_lahir: z.string().trim().optional().or(z.literal("")),
-  alamat: z.string().trim().max(500).optional().or(z.literal("")),
-  wilayah_id: z.string().trim().optional().or(z.literal("")),
-  angkatan: z.string().trim().optional().or(z.literal("")),
-});
+// Form Tambah/Edit Alumni (Admin). Sengaja TIDAK ada email, wilayah, atau
+// status: alumni dibuat tanpa akun login, alamat memakai Kecamatan ->
+// Desa/Kelurahan, dan status Aktif/Nonaktif dihitung otomatis dari absensi.
+export const alumniFormSchema = z
+  .object({
+    full_name: z.string().trim().min(1, "Nama lengkap wajib diisi").max(150),
+    kecamatan_id: z.string().nullable(),
+    desa_kelurahan_id: z.string().nullable(),
+    phone: z
+      .string()
+      .trim()
+      .max(20, "Nomor HP maksimal 20 karakter")
+      .regex(/^[0-9+()\-\s]*$/, "Nomor HP hanya boleh berisi angka, spasi, +, -, ( )"),
+    tempat_lahir: z.string().trim().max(100),
+    tanggal_lahir: z.string().trim(),
+    angkatan: z.number().int().nullable(),
+  })
+  .refine((v) => !v.desa_kelurahan_id || v.kecamatan_id, {
+    message: "Pilih kecamatan terlebih dahulu",
+    path: ["desa_kelurahan_id"],
+  })
+  .refine(
+    (v) => v.angkatan === null || (v.angkatan >= 1800 && v.angkatan <= new Date().getFullYear()),
+    { message: "Angkatan harus antara 1800 dan tahun berjalan", path: ["angkatan"] },
+  );
 
-export type CreateAlumniInput = z.infer<typeof createAlumniSchema>;
+export type AlumniFormValues = z.infer<typeof alumniFormSchema>;
 
-export const updateAlumniSchema = createAlumniSchema.omit({ email: true });
-
-export type UpdateAlumniInput = z.infer<typeof updateAlumniSchema>;
+export const EMPTY_ALUMNI_FORM: AlumniFormValues = {
+  full_name: "",
+  kecamatan_id: null,
+  desa_kelurahan_id: null,
+  phone: "",
+  tempat_lahir: "",
+  tanggal_lahir: "",
+  angkatan: null,
+};

@@ -19,7 +19,11 @@ export type Database = {
           alamat: string | null
           angkatan: number | null
           created_at: string
+          desa_kelurahan_id: string | null
           id: string
+          kecamatan_id: string | null
+          nama_lengkap: string | null
+          no_hp: string | null
           profile_id: string | null
           status_keanggotaan: string
           tanggal_lahir: string | null
@@ -31,7 +35,11 @@ export type Database = {
           alamat?: string | null
           angkatan?: number | null
           created_at?: string
+          desa_kelurahan_id?: string | null
           id?: string
+          kecamatan_id?: string | null
+          nama_lengkap?: string | null
+          no_hp?: string | null
           profile_id?: string | null
           status_keanggotaan?: string
           tanggal_lahir?: string | null
@@ -43,7 +51,11 @@ export type Database = {
           alamat?: string | null
           angkatan?: number | null
           created_at?: string
+          desa_kelurahan_id?: string | null
           id?: string
+          kecamatan_id?: string | null
+          nama_lengkap?: string | null
+          no_hp?: string | null
           profile_id?: string | null
           status_keanggotaan?: string
           tanggal_lahir?: string | null
@@ -52,6 +64,20 @@ export type Database = {
           wilayah_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "alumni_desa_kelurahan_fkey"
+            columns: ["desa_kelurahan_id", "kecamatan_id"]
+            isOneToOne: false
+            referencedRelation: "desa_kelurahan"
+            referencedColumns: ["id", "kecamatan_id"]
+          },
+          {
+            foreignKeyName: "alumni_kecamatan_id_fkey"
+            columns: ["kecamatan_id"]
+            isOneToOne: false
+            referencedRelation: "kecamatan"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "alumni_profile_id_fkey"
             columns: ["profile_id"]
@@ -199,6 +225,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      desa_kelurahan: {
+        Row: {
+          created_at: string
+          id: string
+          jenis: string
+          kecamatan_id: string
+          nama: string
+          urutan: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jenis: string
+          kecamatan_id: string
+          nama: string
+          urutan?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jenis?: string
+          kecamatan_id?: string
+          nama?: string
+          urutan?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "desa_kelurahan_kecamatan_id_fkey"
+            columns: ["kecamatan_id"]
+            isOneToOne: false
+            referencedRelation: "kecamatan"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       event_qr_tokens: {
         Row: {
@@ -370,6 +431,24 @@ export type Database = {
           image_url?: string
           is_active?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      kecamatan: {
+        Row: {
+          created_at: string
+          id: string
+          nama: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nama: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nama?: string
         }
         Relationships: []
       }
@@ -773,10 +852,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_alumni_angkatan_options: {
+        Args: never
+        Returns: {
+          angkatan: number
+        }[]
+      }
       admin_close_event_attendance: {
         Args: { p_event_id: string }
         Returns: number
       }
+      admin_delete_alumni: { Args: { p_alumni_id: string }; Returns: undefined }
       admin_generate_event_qr: {
         Args: { p_event_id: string; p_ttl_minutes?: number }
         Returns: {
@@ -795,14 +881,78 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_list_alumni: {
+        Args: {
+          p_angkatan?: number
+          p_desa_kelurahan_id?: string
+          p_kecamatan_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_status?: string
+        }
+        Returns: {
+          angkatan: number
+          desa_kelurahan_id: string
+          desa_kelurahan_jenis: string
+          desa_kelurahan_nama: string
+          has_account: boolean
+          id: string
+          is_aktif: boolean
+          jumlah_absensi: number
+          kecamatan_id: string
+          kecamatan_nama: string
+          nama: string
+          no_hp: string
+          total_count: number
+        }[]
+      }
       admin_revoke_event_qr: { Args: { p_event_id: string }; Returns: number }
+      admin_save_alumni: {
+        Args: {
+          p_alumni_id?: string
+          p_angkatan?: number
+          p_desa_kelurahan_id?: string
+          p_kecamatan_id?: string
+          p_nama_lengkap?: string
+          p_no_hp?: string
+          p_tanggal_lahir?: string
+          p_tempat_lahir?: string
+        }
+        Returns: {
+          alamat: string | null
+          angkatan: number | null
+          created_at: string
+          desa_kelurahan_id: string | null
+          id: string
+          kecamatan_id: string | null
+          nama_lengkap: string | null
+          no_hp: string | null
+          profile_id: string | null
+          status_keanggotaan: string
+          tanggal_lahir: string | null
+          tempat_lahir: string | null
+          updated_at: string
+          wilayah_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "alumni"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_set_alumni_status: {
         Args: { p_alumni_id: string; p_status: string }
         Returns: {
           alamat: string | null
           angkatan: number | null
           created_at: string
+          desa_kelurahan_id: string | null
           id: string
+          kecamatan_id: string | null
+          nama_lengkap: string | null
+          no_hp: string | null
           profile_id: string | null
           status_keanggotaan: string
           tanggal_lahir: string | null
@@ -854,7 +1004,11 @@ export type Database = {
           alamat: string | null
           angkatan: number | null
           created_at: string
+          desa_kelurahan_id: string | null
           id: string
+          kecamatan_id: string | null
+          nama_lengkap: string | null
+          no_hp: string | null
           profile_id: string | null
           status_keanggotaan: string
           tanggal_lahir: string | null
@@ -869,6 +1023,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      alumni_is_aktif: { Args: { p_alumni_id: string }; Returns: boolean }
       alumni_stats: {
         Args: never
         Returns: {
@@ -990,7 +1145,11 @@ export type Database = {
           alamat: string | null
           angkatan: number | null
           created_at: string
+          desa_kelurahan_id: string | null
           id: string
+          kecamatan_id: string | null
+          nama_lengkap: string | null
+          no_hp: string | null
           profile_id: string | null
           status_keanggotaan: string
           tanggal_lahir: string | null

@@ -1094,6 +1094,26 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      monitoring_alumni_by_kecamatan: {
+        Args: never
+        Returns: {
+          kecamatan_id: string
+          kecamatan_nama: string
+          total: number
+        }[]
+      }
+      monitoring_alumni_summary: {
+        Args: never
+        Returns: {
+          akun_aktif: number
+          akun_belum_ada: number
+          akun_menunggu_password: number
+          akun_undangan_terkirim: number
+          alumni_aktif: number
+          alumni_tidak_aktif: number
+          total_alumni: number
+        }[]
+      }
       monitoring_available_years: {
         Args: never
         Returns: {

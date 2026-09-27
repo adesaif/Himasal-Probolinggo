@@ -9,6 +9,7 @@ import { MonitoringFilters } from "@/components/monitoring/monitoring-filters";
 import { GroupedBarChart, type BarChartDatum } from "@/components/charts/grouped-bar-chart";
 import { DonutChart, type DonutSegment } from "@/components/charts/donut-chart";
 import { RecentEventsTable } from "@/components/monitoring/recent-events-table";
+import { KecamatanDistribution } from "@/components/monitoring/kecamatan-distribution";
 import {
   ATTENDANCE_STATUS_CHART_COLOR,
   ATTENDANCE_STATUS_LABEL,
@@ -35,12 +36,11 @@ function isUuidLike(value: string | undefined): value is string {
 export default async function MonitoringDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; event?: string; wilayah?: string; status?: string }>;
+  searchParams: Promise<{ year?: string; event?: string; status?: string }>;
 }) {
   const params = await searchParams;
   const year = parseYear(params.year);
   const eventId = isUuidLike(params.event) ? params.event : undefined;
-  const wilayahId = isUuidLike(params.wilayah) ? params.wilayah : undefined;
   const statusFilter = ATTENDANCE_STATUS_KEYS.includes(params.status as never)
     ? (params.status as (typeof ATTENDANCE_STATUS_KEYS)[number])
     : null;
@@ -52,33 +52,29 @@ export default async function MonitoringDashboardPage({
     { data: periodStats, error: periodError },
     { data: recentEvents, error: recentError },
     { data: availableYears },
-    { data: byWilayah },
+    { data: alumniSummary, error: alumniSummaryError },
+    { data: byKecamatan, error: byKecamatanError },
     { data: eventOptions },
-    { data: wilayahOptions },
   ] = await Promise.all([
-    supabase
-      .rpc("monitoring_overview", { p_year: year, p_event_id: eventId, p_wilayah_id: wilayahId })
-      .single(),
-    supabase.rpc("monitoring_period_stats", {
-      p_year: year,
-      p_event_id: eventId,
-      p_wilayah_id: wilayahId,
-    }),
-    supabase.rpc("monitoring_recent_events", {
-      p_limit: 10,
-      p_year: year,
-      p_wilayah_id: wilayahId,
-    }),
+    // RPC absensi lama tetap dipakai apa adanya (status_keanggotaan = kumpulan
+    // peserta untuk "Belum Absen"); filter wilayah lama tidak lagi dikirim.
+    supabase.rpc("monitoring_overview", { p_year: year, p_event_id: eventId }).single(),
+    supabase.rpc("monitoring_period_stats", { p_year: year, p_event_id: eventId }),
+    supabase.rpc("monitoring_recent_events", { p_limit: 10, p_year: year }),
     supabase.rpc("monitoring_available_years"),
-    supabase.rpc("alumni_stats_by_wilayah"),
+    // Statistik Alumni - definisi sama dengan Admin -> Alumni (lihat
+    // migration 20260928100000_monitoring_alumni_summary).
+    supabase.rpc("monitoring_alumni_summary").single(),
+    supabase.rpc("monitoring_alumni_by_kecamatan"),
     supabase.from("events").select("id, title").order("start_at", { ascending: false }),
-    supabase.from("wilayah").select("id, nama").order("nama"),
   ]);
 
   const years = (availableYears ?? []).map((y) => y.year).filter((y): y is number => y !== null);
   const displayYear = year ?? new Date().getFullYear();
 
-  const criticalError = overviewError || periodError || recentError;
+  const criticalError =
+    overviewError || periodError || recentError || alumniSummaryError || byKecamatanError;
+  const totalAlumni = alumniSummary?.total_alumni ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -90,11 +86,7 @@ export default async function MonitoringDashboardPage({
       </div>
 
       <Suspense fallback={<Skeleton className="h-10 w-full" />}>
-        <MonitoringFilters
-          years={years}
-          events={eventOptions ?? []}
-          wilayahList={wilayahOptions ?? []}
-        />
+        <MonitoringFilters years={years} events={eventOptions ?? []} />
       </Suspense>
 
       {criticalError ? (
@@ -105,10 +97,57 @@ export default async function MonitoringDashboardPage({
         </Card>
       ) : (
         <>
-          {/* 1. Ringkasan utama */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Alumni Aktif" value={overview?.total_alumni_aktif ?? 0} />
-            <StatCard label="Alumni Nonaktif" value={overview?.total_alumni_nonaktif ?? 0} />
+          {/* 1. Status Alumni - Aktif = pernah tercatat HADIR (alumni_is_aktif) */}
+          <section className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">Status Alumni</h2>
+              <p className="text-sm text-muted-foreground">
+                Aktif = pernah tercatat hadir di minimal satu agenda.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <StatCard label="Total Alumni" value={totalAlumni} />
+              <StatCard label="Alumni Aktif" value={alumniSummary?.alumni_aktif ?? 0} />
+              <StatCard label="Alumni Tidak Aktif" value={alumniSummary?.alumni_tidak_aktif ?? 0} />
+            </div>
+          </section>
+
+          {/* 2. Status akun login alumni (agregat, tanpa data pribadi) */}
+          <section className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">Status Akun Alumni</h2>
+              <p className="text-sm text-muted-foreground">
+                Status login alumni - terpisah dari status Aktif/Tidak Aktif di atas.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCard label="Belum Punya Akun" value={alumniSummary?.akun_belum_ada ?? 0} />
+              <StatCard label="Undangan Terkirim" value={alumniSummary?.akun_undangan_terkirim ?? 0} />
+              <StatCard
+                label="Menunggu Pembuatan Password"
+                value={alumniSummary?.akun_menunggu_password ?? 0}
+              />
+              <StatCard label="Akun Aktif" value={alumniSummary?.akun_aktif ?? 0} />
+            </div>
+          </section>
+
+          {/* 3. Distribusi Alumni per Kecamatan (master lokasi Admin -> Alumni) */}
+          <Card>
+            <CardContent className="flex flex-col gap-3">
+              <h3 className="font-semibold tracking-tight">Distribusi Alumni per Kecamatan</h3>
+              <KecamatanDistribution
+                rows={(byKecamatan ?? [])
+                  // "Belum Dipetakan" hanya ditampilkan kalau memang ada.
+                  .filter((r) => r.kecamatan_id !== null || r.total > 0)
+                  .map((r) => ({ id: r.kecamatan_id, nama: r.kecamatan_nama, total: r.total }))}
+                totalAlumni={totalAlumni}
+              />
+            </CardContent>
+          </Card>
+
+          {/* 4. Monitoring absensi */}
+          <h2 className="text-lg font-semibold tracking-tight">Monitoring Absensi</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard label="Total Kegiatan" value={overview?.total_events ?? 0} />
             <StatCard label="Kegiatan Wajib Hadir" value={overview?.total_mandatory_events ?? 0} />
             <StatCard label="Total Hadir" value={overview?.total_hadir ?? 0} />
@@ -200,25 +239,6 @@ export default async function MonitoringDashboardPage({
           <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card>
               <CardContent className="flex flex-col gap-3">
-                <h3 className="font-semibold tracking-tight">Distribusi Alumni per Wilayah</h3>
-                {!byWilayah || byWilayah.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-muted-foreground">
-                    Belum ada data wilayah.
-                  </p>
-                ) : (
-                  <GroupedBarChart
-                    data={byWilayah.map((w) => ({
-                      label: w.wilayah_nama,
-                      values: { total: w.total },
-                    }))}
-                    series={[{ key: "total", label: "Total Alumni", colorClass: "bg-primary" }]}
-                  />
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="flex flex-col gap-3">
                 <h3 className="font-semibold tracking-tight">
                   Statistik Absensi Bulanan ({displayYear})
                 </h3>
@@ -249,7 +269,7 @@ export default async function MonitoringDashboardPage({
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2">
+            <Card>
               <CardContent className="flex flex-col gap-3">
                 <h3 className="font-semibold tracking-tight">
                   Statistik Kegiatan per Periode ({displayYear})

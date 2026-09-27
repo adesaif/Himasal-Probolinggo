@@ -17,7 +17,7 @@ export type Kecamatan = {
 /**
  * Master Kecamatan -> Desa/Kelurahan untuk modul Admin -> Alumni. Satu-
  * satunya sumber daftar lokasi (tabel `kecamatan` + `desa_kelurahan`, lihat
- * migration 20260927100000) - dipakai bersama oleh filter daftar alumni,
+ * migration 20260927195352) - dipakai bersama oleh filter daftar alumni,
  * form Tambah, dan form Edit, jadi tidak pernah ada dua daftar berbeda.
  * Kecamatan urut abjad; desa/kelurahan mengikuti `urutan` daftar resmi.
  */

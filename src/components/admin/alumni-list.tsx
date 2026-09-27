@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, RotateCcw, Search } from "lucide-react";
+import { Mail, Plus, RotateCcw, Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,11 @@ import { DeleteAlumniButton } from "@/components/admin/delete-alumni-button";
 import { createClient } from "@/lib/supabase/client";
 import { desaKelurahanLabel, type Kecamatan } from "@/lib/alumni-lokasi";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import {
+  ACCOUNT_STATUS_LABEL,
+  toAccountStatus,
+  type AlumniAccountStatus,
+} from "@/lib/alumni-account-status";
 import type { Database } from "@/types/database.types";
 
 type AlumniRow = Database["public"]["Functions"]["admin_list_alumni"]["Returns"][number];
@@ -64,6 +69,9 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
   const [reloadKey, setReloadKey] = useState(0);
 
   const [rows, setRows] = useState<AlumniRow[]>([]);
+  const [accounts, setAccounts] = useState<
+    Record<string, { status: AlumniAccountStatus; isStaff: boolean }>
+  >({});
   const [count, setCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +116,24 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
         setPage((p) => Math.max(0, p - 1));
         return;
       } else {
+        // Status akun login untuk baris di halaman ini saja - satu query,
+        // bukan per baris.
+        const ids = (data ?? []).map((r) => r.id);
+        const { data: statuses } = ids.length
+          ? await supabase.rpc("admin_alumni_account_status", { p_alumni_ids: ids })
+          : { data: [] };
+        if (cancelled) return;
+        setAccounts(
+          Object.fromEntries(
+            (statuses ?? []).map((st) => [
+              st.alumni_id,
+              {
+                status: toAccountStatus(st.account_status),
+                isStaff: Boolean(st.role && st.role !== "alumni"),
+              },
+            ]),
+          ),
+        );
         setRows(data ?? []);
         setCount(data?.[0]?.total_count ?? 0);
       }
@@ -315,6 +341,14 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
                         {alamat ?? <span className="italic">Alamat belum dipetakan</span>}
                         {row.angkatan ? ` · Angkatan ${row.angkatan}` : ""}
                       </p>
+                      {accounts[row.id] ? (
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Mail className="size-3 shrink-0" />
+                          {accounts[row.id].isStaff
+                            ? "Akun Admin/Super Admin"
+                            : ACCOUNT_STATUS_LABEL[accounts[row.id].status]}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 sm:justify-end">
                       <Badge variant={row.is_aktif ? "success" : "neutral"}>

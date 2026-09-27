@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlumniDetailActions } from "@/components/admin/alumni-detail-actions";
+import { AlumniAccountCard } from "@/components/admin/alumni-account-card";
+import { toAccountStatus, type AlumniAccountInfo } from "@/lib/alumni-account-status";
 import { desaKelurahanLabel, fetchLokasiAlumni } from "@/lib/alumni-lokasi";
 import { formatDateID } from "@/lib/format-date";
 
@@ -27,8 +29,14 @@ export default async function AdminAlumniDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: alumni }, { data: isAktif }, { count: jumlahHadir }, { count: jumlahAbsensi }, lokasi] =
-    await Promise.all([
+  const [
+    { data: alumni },
+    { data: isAktif },
+    { count: jumlahHadir },
+    { count: jumlahAbsensi },
+    lokasi,
+    { data: accountRows },
+  ] = await Promise.all([
       supabase
         .from("alumni")
         .select(
@@ -47,6 +55,7 @@ export default async function AdminAlumniDetailPage({
         .select("id", { count: "exact", head: true })
         .eq("alumni_id", id),
       fetchLokasiAlumni(supabase),
+      supabase.rpc("admin_alumni_account_status", { p_alumni_ids: [id] }),
     ]);
 
   if (!alumni) {
@@ -58,6 +67,14 @@ export default async function AdminAlumniDetailPage({
   const nama = alumni.profiles?.full_name?.trim() || alumni.nama_lengkap?.trim() || null;
   const noHp = alumni.profiles?.phone?.trim() || alumni.no_hp?.trim() || null;
   const kecamatanNama = alumni.kecamatan?.nama ?? null;
+  const accountRow = accountRows?.[0];
+  const account: AlumniAccountInfo = {
+    status: toAccountStatus(accountRow?.account_status),
+    email: accountRow?.email ?? null,
+    isStaff: Boolean(accountRow?.role && accountRow.role !== "alumni"),
+    invitedAt: accountRow?.invited_at ?? null,
+    lastSignInAt: accountRow?.last_sign_in_at ?? null,
+  };
   const desa = alumni.desa ?? null;
   const alamatRingkas = kecamatanNama
     ? desa
@@ -82,8 +99,10 @@ export default async function AdminAlumniDetailPage({
         <AlumniDetailActions
           alumniId={alumni.id}
           lokasi={lokasi}
+          account={account}
           initialValues={{
             full_name: nama ?? "",
+            email: "",
             kecamatan_id: alumni.kecamatan_id,
             desa_kelurahan_id: alumni.desa_kelurahan_id,
             phone: noHp ?? "",
@@ -133,6 +152,8 @@ export default async function AdminAlumniDetailPage({
           />
         </CardContent>
       </Card>
+
+      <AlumniAccountCard alumniId={alumni.id} account={account} />
 
       {!kecamatanNama && alumni.alamat?.trim() ? (
         // Data lama (sebelum struktur Kecamatan -> Desa/Kelurahan) tidak

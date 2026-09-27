@@ -852,6 +852,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_alumni_account_status: {
+        Args: { p_alumni_ids: string[] }
+        Returns: {
+          account_status: string
+          alumni_id: string
+          email: string
+          email_confirmed_at: string
+          invited_at: string
+          last_sign_in_at: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       admin_alumni_angkatan_options: {
         Args: never
         Returns: {
@@ -863,6 +875,17 @@ export type Database = {
         Returns: number
       }
       admin_delete_alumni: { Args: { p_alumni_id: string }; Returns: undefined }
+      admin_find_account_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          alumni_id: string
+          alumni_nama: string
+          email_confirmed: boolean
+          password_set: boolean
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
       admin_generate_event_qr: {
         Args: { p_event_id: string; p_ttl_minutes?: number }
         Returns: {
@@ -877,6 +900,31 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "event_qr_tokens"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_link_alumni_account: {
+        Args: { p_alumni_id: string; p_user_id: string }
+        Returns: {
+          alamat: string | null
+          angkatan: number | null
+          created_at: string
+          desa_kelurahan_id: string | null
+          id: string
+          kecamatan_id: string | null
+          nama_lengkap: string | null
+          no_hp: string | null
+          profile_id: string | null
+          status_keanggotaan: string
+          tanggal_lahir: string | null
+          tempat_lahir: string | null
+          updated_at: string
+          wilayah_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "alumni"
           isOneToOne: true
           isSetofReturn: false
         }

@@ -73,3 +73,42 @@ export const alumniCreateBodySchema = z.object({
 export const alumniAccountBodySchema = z.object({
   email: z.string().trim().refine(isValidEmailFormat, { message: EMAIL_INVALID }).optional(),
 });
+
+// Password akun staf yang dibuat manual oleh Admin (Supabase Auth yang
+// menyimpan hash-nya - tidak pernah disimpan di tabel aplikasi).
+export const staffPasswordSchema = z
+  .string()
+  .min(8, "Password minimal 8 karakter")
+  .max(72, "Password maksimal 72 karakter")
+  .regex(/[A-Za-z]/, "Password harus mengandung huruf")
+  .regex(/[0-9]/, "Password harus mengandung angka");
+
+// Form "Jadikan Admin/Super Admin" untuk Alumni yang BELUM punya akun.
+export const staffAccountFormSchema = z
+  .object({
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email wajib diisi")
+      .refine(isValidEmailFormat, { message: EMAIL_INVALID }),
+    password: staffPasswordSchema,
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, {
+    message: "Konfirmasi password tidak sama",
+    path: ["confirm"],
+  });
+
+export type StaffAccountFormValues = z.infer<typeof staffAccountFormSchema>;
+
+// Body POST /api/admin/alumni/:id/role. email+password hanya dipakai kalau
+// Alumni belum punya akun (diabaikan kalau sudah - tidak ada akun kedua).
+export const alumniRoleBodySchema = z
+  .object({
+    role: z.enum(["alumni", "admin", "super_admin"]),
+    email: z.string().trim().refine(isValidEmailFormat, { message: EMAIL_INVALID }).optional(),
+    password: staffPasswordSchema.optional(),
+  })
+  .refine((v) => (v.email === undefined) === (v.password === undefined), {
+    message: "Email dan password harus diisi bersamaan",
+  });

@@ -14,6 +14,7 @@ import {
   canResendInvitation,
   type AlumniAccountInfo,
 } from "@/lib/alumni-account-status";
+import { ROLE_HOME_ROUTE, ROLE_LABEL } from "@/lib/constants";
 import { formatDateID } from "@/lib/format-date";
 
 const STATUS_HINT = {
@@ -61,8 +62,8 @@ export function AlumniAccountCard({
       <CardContent className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="font-medium">Akun Login</p>
-          <Badge variant={account.isStaff ? "primary" : ACCOUNT_STATUS_BADGE[account.status]}>
-            {account.isStaff ? "Akun Admin/Super Admin" : ACCOUNT_STATUS_LABEL[account.status]}
+          <Badge variant={ACCOUNT_STATUS_BADGE[account.status]}>
+            {ACCOUNT_STATUS_LABEL[account.status]}
           </Badge>
         </div>
         {account.email ? (
@@ -72,8 +73,8 @@ export function AlumniAccountCard({
           </p>
         ) : null}
         <p className="text-sm text-muted-foreground">
-          {account.isStaff
-            ? "Akun ini milik Admin/Super Admin dan dikelola terpisah - tidak diubah lewat modul Alumni."
+          {account.isStaff && account.role
+            ? `Akun ini ber-role ${ROLE_LABEL[account.role]} - login ke ${ROLE_HOME_ROUTE[account.role]}. Email & password dikelola pemilik akun; role diatur di kartu Role.`
             : STATUS_HINT[account.status]}
         </p>
         {!account.isStaff && (account.invitedAt || account.lastSignInAt) ? (

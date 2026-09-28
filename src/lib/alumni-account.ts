@@ -223,3 +223,121 @@ export async function resendAlumniInvitation(
 
   return sendActivation(status.email, status.email_confirmed_at !== null, redirectTo);
 }
+
+export type RoleOutcome =
+  | { ok: true; message: string; accountCreated: boolean }
+  | { ok: false; status: number; error: string };
+
+const ROLE_NAME: Record<"alumni" | "admin" | "super_admin", string> = {
+  alumni: "Alumni",
+  admin: "Admin",
+  super_admin: "Super Admin",
+};
+
+/**
+ * Ubah role Alumni (Admin -> Alumni). Aturan role ditegakkan di database
+ * (admin_set_alumni_role/admin_set_role: hanya Admin, target wajib punya
+ * record Alumni, bukan akun sendiri, Admin Pusat tidak tersentuh, audit
+ * log). Di sini hanya urusan akun:
+ *  - Alumni SUDAH punya akun -> ubah role akun yang sama (email & password
+ *    tetap, tidak ada akun kedua; email/password yang dikirim diabaikan).
+ *  - Alumni BELUM punya akun & diangkat jadi Admin/Super Admin -> akun
+ *    dibuat manual di Supabase Auth (email + password dari Admin, langsung
+ *    terverifikasi - TANPA email undangan/SMTP), dihubungkan ke record
+ *    Alumni ini, lalu role-nya diubah. Kalau salah satu langkah gagal, akun
+ *    yang baru dibuat dihapus lagi supaya tidak ada akun yatim.
+ * Password hanya diteruskan ke Supabase Auth (yang menyimpan hash-nya) -
+ * tidak pernah disimpan di tabel aplikasi maupun di-log.
+ */
+export async function changeAlumniRole(
+  supabase: SessionClient,
+  params: {
+    alumniId: string;
+    role: "alumni" | "admin" | "super_admin";
+    email?: string;
+    password?: string;
+  },
+): Promise<RoleOutcome> {
+  const { alumniId, role, email, password } = params;
+
+  const { data: alumni, error: alumniError } = await supabase
+    .from("alumni")
+    .select("id, profile_id, nama_lengkap")
+    .eq("id", alumniId)
+    .maybeSingle();
+  if (alumniError) return { ok: false, status: 500, error: alumniError.message };
+  if (!alumni) return { ok: false, status: 404, error: "Data alumni tidak ditemukan" };
+
+  if (alumni.profile_id) {
+    const { error } = await supabase.rpc("admin_set_alumni_role", {
+      p_alumni_id: alumniId,
+      p_new_role: role,
+    });
+    if (error) return { ok: false, status: 409, error: error.message };
+    return {
+      ok: true,
+      accountCreated: false,
+      message: `Role diubah menjadi ${ROLE_NAME[role]}. Email & password akun tetap.`,
+    };
+  }
+
+  if (role === "alumni") {
+    return { ok: false, status: 409, error: "Alumni ini belum punya akun login." };
+  }
+  if (!email || !password) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Alumni ini belum punya akun. Isi email dan password untuk membuat akun.",
+    };
+  }
+
+  // Email tidak boleh dipakai akun mana pun (Alumni lain, Admin, Super Admin).
+  const { data: found, error: findError } = await supabase.rpc("admin_find_account_by_email", {
+    p_email: email,
+  });
+  if (findError) return { ok: false, status: 500, error: findError.message };
+  if (found?.[0]) {
+    return { ok: false, status: 409, error: "Email ini sudah terdaftar sebagai akun HIMASAL." };
+  }
+
+  const admin = serviceClient();
+  const { data: created, error: createError } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: alumni.nama_lengkap ?? "" },
+  });
+  if (createError || !created.user) {
+    const message = createError
+      ? createError.code === "weak_password"
+        ? "Password ditolak Supabase Auth karena terlalu lemah. Gunakan password lain."
+        : describeAuthError(createError)
+      : "Gagal membuat akun.";
+    return { ok: false, status: createError?.status === 422 ? 409 : 502, error: message };
+  }
+
+  const userId = created.user.id;
+  const rollback = async (reason: string): Promise<RoleOutcome> => {
+    await admin.auth.admin.deleteUser(userId);
+    return { ok: false, status: 409, error: reason };
+  };
+
+  const { error: linkError } = await supabase.rpc("admin_link_alumni_account", {
+    p_alumni_id: alumniId,
+    p_user_id: userId,
+  });
+  if (linkError) return rollback(linkError.message);
+
+  const { error: roleError } = await supabase.rpc("admin_set_alumni_role", {
+    p_alumni_id: alumniId,
+    p_new_role: role,
+  });
+  if (roleError) return rollback(roleError.message);
+
+  return {
+    ok: true,
+    accountCreated: true,
+    message: `Akun ${email} dibuat dan diangkat menjadi ${ROLE_NAME[role]}. Akun langsung dapat login.`,
+  };
+}

@@ -8,7 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlumniDetailActions } from "@/components/admin/alumni-detail-actions";
 import { AlumniAccountCard } from "@/components/admin/alumni-account-card";
-import { toAccountStatus, type AlumniAccountInfo } from "@/lib/alumni-account-status";
+import { AlumniRoleCard } from "@/components/admin/alumni-role-card";
+import {
+  ROLE_BADGE,
+  toAccountStatus,
+  type AlumniAccountInfo,
+} from "@/lib/alumni-account-status";
+import { ROLE_LABEL } from "@/lib/constants";
 import { desaKelurahanLabel, fetchLokasiAlumni } from "@/lib/alumni-lokasi";
 import { formatDateID } from "@/lib/format-date";
 
@@ -71,6 +77,7 @@ export default async function AdminAlumniDetailPage({
   const account: AlumniAccountInfo = {
     status: toAccountStatus(accountRow?.account_status),
     email: accountRow?.email ?? null,
+    role: accountRow?.role ?? null,
     isStaff: Boolean(accountRow?.role && accountRow.role !== "alumni"),
     invitedAt: accountRow?.invited_at ?? null,
     lastSignInAt: accountRow?.last_sign_in_at ?? null,
@@ -95,6 +102,9 @@ export default async function AdminAlumniDetailPage({
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">{nama || "(Belum diisi)"}</h1>
           <Badge variant={isAktif ? "success" : "neutral"}>{isAktif ? "Aktif" : "Nonaktif"}</Badge>
+          {account.isStaff && account.role ? (
+            <Badge variant={ROLE_BADGE[account.role]}>{ROLE_LABEL[account.role]}</Badge>
+          ) : null}
         </div>
         <AlumniDetailActions
           alumniId={alumni.id}
@@ -117,6 +127,7 @@ export default async function AdminAlumniDetailPage({
             angkatan: alumni.angkatan,
             jumlahAbsensi: jumlahAbsensi ?? 0,
             hasAccount: alumni.profile_id !== null,
+            staffRole: account.isStaff ? account.role : null,
           }}
         />
       </div>
@@ -154,6 +165,8 @@ export default async function AdminAlumniDetailPage({
       </Card>
 
       <AlumniAccountCard alumniId={alumni.id} account={account} />
+
+      <AlumniRoleCard alumniId={alumni.id} nama={nama} account={account} />
 
       {!kecamatanNama && alumni.alamat?.trim() ? (
         // Data lama (sebelum struktur Kecamatan -> Desa/Kelurahan) tidak

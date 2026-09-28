@@ -25,9 +25,11 @@ import { desaKelurahanLabel, type Kecamatan } from "@/lib/alumni-lokasi";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   ACCOUNT_STATUS_LABEL,
+  ROLE_BADGE,
   toAccountStatus,
   type AlumniAccountStatus,
 } from "@/lib/alumni-account-status";
+import { ROLE_LABEL, type Role } from "@/lib/constants";
 import type { Database } from "@/types/database.types";
 
 type AlumniRow = Database["public"]["Functions"]["admin_list_alumni"]["Returns"][number];
@@ -70,7 +72,7 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
 
   const [rows, setRows] = useState<AlumniRow[]>([]);
   const [accounts, setAccounts] = useState<
-    Record<string, { status: AlumniAccountStatus; isStaff: boolean }>
+    Record<string, { status: AlumniAccountStatus; role: Role }>
   >({});
   const [count, setCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,7 +131,7 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
               st.alumni_id,
               {
                 status: toAccountStatus(st.account_status),
-                isStaff: Boolean(st.role && st.role !== "alumni"),
+                role: st.role ?? "alumni",
               },
             ]),
           ),
@@ -326,6 +328,8 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
         <ul className="flex flex-col gap-2">
           {rows.map((row) => {
             const alamat = formatAlamat(row);
+            // Label role - Alumni tanpa akun tetap "Alumni".
+            const role = accounts[row.id]?.role ?? "alumni";
             return (
               <li key={row.id}>
                 <Card className="relative gap-0 py-0 transition-colors hover:bg-muted/50">
@@ -344,13 +348,12 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
                       {accounts[row.id] ? (
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                           <Mail className="size-3 shrink-0" />
-                          {accounts[row.id].isStaff
-                            ? "Akun Admin/Super Admin"
-                            : ACCOUNT_STATUS_LABEL[accounts[row.id].status]}
+                          {ACCOUNT_STATUS_LABEL[accounts[row.id].status]}
                         </p>
                       ) : null}
                     </div>
                     <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 sm:justify-end">
+                      <Badge variant={ROLE_BADGE[role]}>{ROLE_LABEL[role]}</Badge>
                       <Badge variant={row.is_aktif ? "success" : "neutral"}>
                         {row.is_aktif ? "Aktif" : "Nonaktif"}
                       </Badge>
@@ -362,6 +365,7 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
                           angkatan: row.angkatan,
                           jumlahAbsensi: row.jumlah_absensi,
                           hasAccount: row.has_account,
+                          staffRole: role !== "alumni" ? role : null,
                         }}
                         onDeleted={reload}
                       />

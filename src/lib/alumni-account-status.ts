@@ -1,6 +1,8 @@
 // Status akun login alumni (dihitung di database oleh
 // admin_alumni_account_status dari auth.users). Dipakai daftar, detail, dan
 // form Edit Alumni.
+import type { Role } from "@/lib/constants";
+
 export type AlumniAccountStatus =
   | "tanpa_akun"
   | "undangan_terkirim"
@@ -10,7 +12,9 @@ export type AlumniAccountStatus =
 export type AlumniAccountInfo = {
   status: AlumniAccountStatus;
   email: string | null;
-  /** Akun milik Admin/Super Admin - dikelola terpisah, tidak lewat Alumni. */
+  /** Role akun yang terhubung (null = belum punya akun = Alumni). */
+  role: Role | null;
+  /** Akun ber-role Admin/Super Admin - role diatur lewat kartu Role. */
   isStaff: boolean;
   invitedAt?: string | null;
   lastSignInAt?: string | null;
@@ -42,3 +46,9 @@ export function toAccountStatus(value: string | null | undefined): AlumniAccount
 export function canResendInvitation(info: AlumniAccountInfo) {
   return !info.isStaff && (info.status === "undangan_terkirim" || info.status === "menunggu_password");
 }
+
+export const ROLE_BADGE: Record<Role, "neutral" | "primary" | "warning"> = {
+  alumni: "neutral",
+  admin: "primary",
+  super_admin: "warning",
+};

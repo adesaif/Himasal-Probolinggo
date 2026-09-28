@@ -990,6 +990,28 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_set_alumni_role: {
+        Args: {
+          p_alumni_id: string
+          p_new_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          member_id: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_set_alumni_status: {
         Args: { p_alumni_id: string; p_status: string }
         Returns: {

@@ -21,3 +21,10 @@ export const ROLE_HOME_ROUTE: Record<Role, string> = {
   admin: "/admin",
   super_admin: "/monitoring",
 };
+
+// Label role - HANYA ditampilkan di area Admin (bukan halaman publik).
+export const ROLE_LABEL: Record<Role, string> = {
+  alumni: "Alumni",
+  admin: "Admin",
+  super_admin: "Super Admin",
+};

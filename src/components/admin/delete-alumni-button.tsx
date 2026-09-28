@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
+import { ROLE_LABEL, type Role } from "@/lib/constants";
 
 export type DeleteAlumniTarget = {
   id: string;
@@ -24,6 +25,8 @@ export type DeleteAlumniTarget = {
   angkatan: number | null;
   jumlahAbsensi: number;
   hasAccount: boolean;
+  /** Role staf akun yang terhubung - Alumni ber-role staf tidak bisa dihapus. */
+  staffRole?: Role | null;
 };
 
 /**
@@ -100,8 +103,14 @@ export function DeleteAlumniButton({
                   {target.jumlahAbsensi} catatan absensi milik alumni ini ikut terhapus.
                 </p>
               ) : null}
-              {target.hasAccount ? (
+              {target.hasAccount && !target.staffRole ? (
                 <p>Akun login alumni ini tidak ikut dihapus.</p>
+              ) : null}
+              {target.staffRole ? (
+                <p className="text-destructive">
+                  Alumni ini sedang ber-role {ROLE_LABEL[target.staffRole]} dan tidak dapat
+                  dihapus. Kembalikan ke Alumni terlebih dahulu.
+                </p>
               ) : null}
             </div>
           </AlertDialogDescription>
@@ -113,7 +122,11 @@ export function DeleteAlumniButton({
         ) : null}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
-          <Button variant="destructive" disabled={isDeleting} onClick={handleDelete}>
+          <Button
+            variant="destructive"
+            disabled={isDeleting || Boolean(target.staffRole)}
+            onClick={handleDelete}
+          >
             {isDeleting ? "Menghapus..." : "Hapus"}
           </Button>
         </AlertDialogFooter>

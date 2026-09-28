@@ -2,9 +2,9 @@ import Link from "next/link";
 import {
   Users,
   UserCheck,
-  CalendarCheck,
-  CalendarX,
-  ClipboardList,
+  UserX,
+  KeyRound,
+  UserRoundX,
   CalendarDays,
   Newspaper,
   Images,
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RecentEventsTable } from "@/components/monitoring/recent-events-table";
+import { AdminDashboardCharts } from "@/components/admin/admin-dashboard-charts";
 import { formatEventRange, formatDateID } from "@/lib/format-date";
 
 const QUICK_ACTIONS = [
@@ -32,19 +33,23 @@ const QUICK_ACTIONS = [
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
+  const year = new Date().getFullYear();
 
+  // Dashboard yang sama untuk SEMUA Admin (Admin Pusat maupun Admin yang
+  // diangkat) - RPC yang sama dengan /monitoring, definisi Aktif = pernah
+  // tercatat HADIR (alumni_is_aktif), distribusi per Kecamatan master.
   const [
-    { data: alumniStats, error: alumniStatsError },
-    { data: byWilayah },
-    { data: overview, error: overviewError },
+    { data: alumniSummary, error: alumniSummaryError },
+    { data: byKecamatan, error: byKecamatanError },
+    { data: periodStats, error: periodError },
     { data: recentEvents },
     { data: nextEvent },
     { data: recentNews },
     { data: recentGallery },
   ] = await Promise.all([
-    supabase.rpc("alumni_stats").single(),
-    supabase.rpc("alumni_stats_by_wilayah"),
-    supabase.rpc("monitoring_overview", {}).single(),
+    supabase.rpc("monitoring_alumni_summary").single(),
+    supabase.rpc("monitoring_alumni_by_kecamatan"),
+    supabase.rpc("monitoring_period_stats", { p_year: year }),
     supabase.rpc("monitoring_recent_events", { p_limit: 5 }),
     supabase
       .from("events")
@@ -68,7 +73,16 @@ export default async function AdminDashboardPage() {
       .limit(3),
   ]);
 
-  const statsError = alumniStatsError || overviewError;
+  const statsError = alumniSummaryError || byKecamatanError || periodError;
+  const summary = {
+    total_alumni: alumniSummary?.total_alumni ?? 0,
+    alumni_aktif: alumniSummary?.alumni_aktif ?? 0,
+    alumni_tidak_aktif: alumniSummary?.alumni_tidak_aktif ?? 0,
+    akun_belum_ada: alumniSummary?.akun_belum_ada ?? 0,
+    akun_undangan_terkirim: alumniSummary?.akun_undangan_terkirim ?? 0,
+    akun_menunggu_password: alumniSummary?.akun_menunggu_password ?? 0,
+    akun_aktif: alumniSummary?.akun_aktif ?? 0,
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -93,74 +107,77 @@ export default async function AdminDashboardPage() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
-            <AdminStatCard
-              label="Alumni Aktif"
-              value={alumniStats?.aktif ?? 0}
-              icon={UserCheck}
-              emphasis
-            />
-            <AdminStatCard label="Alumni Nonaktif" value={alumniStats?.nonaktif ?? 0} icon={Users} />
-            <AdminStatCard label="Total Kegiatan" value={overview?.total_events ?? 0} icon={CalendarDays} />
-            <AdminStatCard label="Hadir" value={overview?.total_hadir ?? 0} icon={CalendarCheck} emphasis />
-            <AdminStatCard label="Tidak Hadir" value={overview?.total_tidak_hadir ?? 0} icon={CalendarX} />
-            <AdminStatCard
-              label="Izin/Sakit"
-              value={(overview?.total_izin ?? 0) + (overview?.total_sakit ?? 0)}
-              icon={ClipboardList}
-            />
-          </div>
+          <section className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">Ringkasan Alumni</h2>
+              <p className="text-sm text-muted-foreground">
+                Aktif = pernah tercatat hadir di minimal satu agenda.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
+              <AdminStatCard label="Total Alumni" value={summary.total_alumni} icon={Users} />
+              <AdminStatCard
+                label="Alumni Aktif"
+                value={summary.alumni_aktif}
+                icon={UserCheck}
+                emphasis
+              />
+              <AdminStatCard
+                label="Alumni Tidak Aktif"
+                value={summary.alumni_tidak_aktif}
+                icon={UserX}
+              />
+              <AdminStatCard
+                label="Sudah Punya Akun"
+                value={summary.total_alumni - summary.akun_belum_ada}
+                icon={KeyRound}
+              />
+              <AdminStatCard
+                label="Belum Punya Akun"
+                value={summary.akun_belum_ada}
+                icon={UserRoundX}
+              />
+            </div>
+          </section>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <section className="flex flex-col gap-3">
-              <h2 className="text-lg font-semibold tracking-tight">Agenda Mendatang</h2>
-              {!nextEvent ? (
-                <Card>
-                  <CardContent className="py-6 text-center text-sm text-muted-foreground">
-                    Tidak ada kegiatan mendatang yang dipublikasikan.
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium">{nextEvent.title}</p>
-                      {nextEvent.is_mandatory ? <Badge variant="warning">Wajib Hadir</Badge> : null}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {formatEventRange(nextEvent.start_at, nextEvent.end_at)}
-                      {nextEvent.location ? ` · ${nextEvent.location}` : ""}
-                    </p>
-                    <Button variant="outline" size="sm" asChild className="w-fit">
-                      <Link href={`/admin/absensi/${nextEvent.id}`}>Kelola Absensi</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </section>
+          <AdminDashboardCharts
+            summary={summary}
+            byKecamatan={(byKecamatan ?? []).map((r) => ({
+              id: r.kecamatan_id,
+              nama: r.kecamatan_nama,
+              total: r.total,
+            }))}
+            latestEvent={recentEvents?.[0] ?? null}
+            periodStats={periodStats ?? []}
+            year={year}
+          />
 
-            <section className="flex flex-col gap-3">
-              <h2 className="text-lg font-semibold tracking-tight">Distribusi Alumni per Wilayah</h2>
-              {!byWilayah || byWilayah.length === 0 ? (
-                <Card>
-                  <CardContent className="py-6 text-center text-sm text-muted-foreground">
-                    Belum ada data wilayah.
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col gap-2.5">
-                    {byWilayah.map((w) => (
-                      <div key={w.wilayah_id} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{w.wilayah_nama}</span>
-                        <span className="font-medium tabular-nums">{w.total}</span>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-            </section>
-          </div>
+          <section className="flex flex-col gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">Agenda Mendatang</h2>
+            {!nextEvent ? (
+              <Card>
+                <CardContent className="py-6 text-center text-sm text-muted-foreground">
+                  Tidak ada kegiatan mendatang yang dipublikasikan.
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium">{nextEvent.title}</p>
+                    {nextEvent.is_mandatory ? <Badge variant="warning">Wajib Hadir</Badge> : null}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {formatEventRange(nextEvent.start_at, nextEvent.end_at)}
+                    {nextEvent.location ? ` · ${nextEvent.location}` : ""}
+                  </p>
+                  <Button variant="outline" size="sm" asChild className="w-fit">
+                    <Link href={`/admin/absensi/${nextEvent.id}`}>Kelola Absensi</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </section>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <section className="flex flex-col gap-3">

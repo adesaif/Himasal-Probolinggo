@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/reveal";
 import { ScrollMorphHero } from "@/components/public/scroll-morph-hero";
 import { ContentCard } from "@/components/public/content-card";
+import { EditorialContentGrid } from "@/components/public/editorial-content-grid";
 import { TOPIC_SELECT_COLUMNS } from "@/lib/topics";
 import {
   fetchHomeSections,
@@ -15,6 +16,7 @@ import {
   type HomeSection,
 } from "@/lib/homepage-content";
 import { fetchUnifiedContent, type UnifiedContentItem } from "@/lib/unified-content";
+import { formatDateID } from "@/lib/format-date";
 
 export const metadata: Metadata = {
   title: "Beranda",
@@ -53,24 +55,24 @@ function CardGrid({ items, topicLabel }: { items: HomeCardItem[]; topicLabel: st
   );
 }
 
-// Grid Terbaru/Populer - beda dari CardGrid per-topik di atas karena
-// setiap item BISA datang dari topik berbeda-beda (badge topik per-item,
-// bukan satu topicLabel untuk seluruh grid).
+// Grid Terbaru/Populer - editorial: satu card foto besar + card foto kecil
+// 2 kolom (lihat EditorialContentGrid). Setiap item BISA datang dari topik
+// berbeda (badge = label topik per-item dari site_topics). Tanggal di card
+// ringkas (tanggal saja) dari sortDate yang sama dengan urutan data.
 function UnifiedCardGrid({ items }: { items: UnifiedContentItem[] }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-      {items.map((item) => (
-        <ContentCard
-          key={item.id}
-          href={item.href}
-          title={item.title}
-          imageUrl={item.image_url}
-          topicLabel={item.topicLabel}
-          summary={item.summary}
-          dateLabel={item.dateLabel}
-        />
-      ))}
-    </div>
+    <EditorialContentGrid
+      items={items.map((item) => ({
+        id: item.id,
+        href: item.href,
+        title: item.title,
+        summary: item.summary,
+        imageUrl: item.image_url,
+        topicLabel: item.topicLabel,
+        dateLabel: item.sortDate ? formatDateID(item.sortDate) : null,
+        isFeatured: item.is_featured,
+      }))}
+    />
   );
 }
 
@@ -161,8 +163,9 @@ export default async function BerandaPage() {
   // data master, bukan publikasi bertanggal), lalu section per topik
   // sistem/custom seperti sebelumnya (fetchHomeSections, tidak diubah).
   const [terbaru, populer, others, { data: settings }] = await Promise.all([
-    fetchUnifiedContent(supabase, topics, { limit: 6 }),
-    fetchUnifiedContent(supabase, topics, { onlyPopular: true, limit: 6 }),
+    // 5 = komposisi grid editorial (1 card utama + 4 card kecil).
+    fetchUnifiedContent(supabase, topics, { limit: 5 }),
+    fetchUnifiedContent(supabase, topics, { onlyPopular: true, limit: 5 }),
     fetchHomeSections(supabase, topics),
     supabase.from("site_settings").select("nama_organisasi, tagline").maybeSingle(),
   ]);
@@ -182,7 +185,7 @@ export default async function BerandaPage() {
           components/public/scroll-morph-hero.tsx. */}
       <ScrollMorphHero items={heroSlides} brandName={brandName} tagline={tagline} />
 
-      {/* Terbaru: 6 content terbaru dari SEMUA topik (bukan hanya Berita) -
+      {/* Terbaru: 5 content terbaru dari SEMUA topik (bukan hanya Berita) -
           menggantikan 3 section Berita-only (Terbaru/Minggu Lalu/Bulan
           Lalu) yang lama, karena section itu sekarang duplikat dengan ini
           (Berita tetap ikut tampil di sini, hanya tidak lagi py punya

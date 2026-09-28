@@ -60,7 +60,7 @@ function EditorialCard({
           src={item.imageUrl}
           alt=""
           loading={lead ? "eager" : "lazy"}
-          className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_30%] transition-transform duration-700 ease-out motion-safe:group-hover:scale-[1.04]"
+          className="absolute inset-0 -z-10 h-full w-full object-cover object-[center_15%] transition-transform duration-700 ease-out motion-safe:group-hover:scale-[1.04]"
         />
       ) : null}
 
@@ -151,7 +151,13 @@ function EditorialCard({
  *  - Mobile  : 1 kolom, card utama lebih tinggi (4:5), card lain 16:11.
  *  - Tablet  : card utama melebar penuh (16:9), card lain grid 2 kolom.
  *  - Desktop : card utama di kiri setinggi grid 2x2 di kanan.
- * Jumlah card kecil 1-4 ditangani tanpa sel kosong (card terakhir melebar).
+ * Jumlah card kecil 1-4 ditangani tanpa sel kosong dan tanpa card sangat
+ * lebar (rasio ekstrem memotong foto potret): 3 card kecil = 1 card tinggi
+ * + 2 card bertumpuk di sampingnya.
+ *
+ * Foto: object-cover dengan posisi center 15% untuk SEMUA foto (tidak ada
+ * data titik fokus per foto di CMS) - kepala pada foto potret tidak
+ * terpotong, foto landscape hampir tidak terpengaruh.
  */
 export function EditorialContentGrid({ items }: { items: EditorialItem[] }) {
   if (items.length === 0) return null;
@@ -162,7 +168,7 @@ export function EditorialContentGrid({ items }: { items: EditorialItem[] }) {
       <EditorialCard
         item={lead}
         variant="lead"
-        className="aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9]"
+        className="aspect-[4/5] sm:aspect-[16/9]"
       />
     );
   }
@@ -184,11 +190,13 @@ export function EditorialContentGrid({ items }: { items: EditorialItem[] }) {
           "grid grid-cols-1 gap-4 sm:gap-5",
           rest.length > 1 && "sm:grid-cols-2",
           rows === 2 && "lg:grid-rows-2",
+          rest.length === 3 && "sm:grid-rows-2",
         )}
       >
         {rest.map((item, index) => {
-          // Jumlah ganjil: card terakhir melebar 2 kolom supaya grid penuh.
-          const spanWide = rest.length % 2 === 1 && rest.length > 1 && index === rest.length - 1;
+          // 3 card kecil: card pertama setinggi 2 baris, dua lainnya
+          // bertumpuk di sampingnya (bukan card terakhir melebar 2 kolom).
+          const tall = rest.length === 3 && index === 0;
           return (
             <EditorialCard
               key={item.id}
@@ -196,7 +204,7 @@ export function EditorialContentGrid({ items }: { items: EditorialItem[] }) {
               variant="small"
               className={cn(
                 "aspect-[16/11] sm:aspect-[5/4] lg:aspect-auto",
-                spanWide && "sm:col-span-2 sm:aspect-[16/7] lg:aspect-auto",
+                tall && "sm:row-span-2 sm:aspect-auto",
                 rest.length === 1 && "sm:aspect-[16/9] lg:aspect-auto",
               )}
             />

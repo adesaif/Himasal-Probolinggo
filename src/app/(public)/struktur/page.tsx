@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 
 import { createPublicClient } from "@/lib/supabase/public";
 import { Card, CardContent } from "@/components/ui/card";
+import { OrganizationStructure } from "@/components/public/organization-structure";
+import { buildOrganizationLayout } from "@/lib/organization-structure";
 import { topicLabel } from "@/lib/topics";
+
+const DESCRIPTION = "Susunan pengurus HIMASAL Probolinggo.";
 
 export const metadata: Metadata = {
   title: "Struktur Organisasi",
-  description: "Susunan pengurus HIMASAL Probolinggo.",
+  description: DESCRIPTION,
 };
 
 export const revalidate = 300;
@@ -23,10 +27,19 @@ export default async function StrukturPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-semibold tracking-tight">
-        {topicLabel(topic ? [topic] : null, "struktur", "Struktur")} Organisasi
-      </h1>
+    <div className="relative isolate flex flex-col gap-10 md:gap-12">
+      {/* Grid tipis dekoratif di area atas, memudar ke bawah. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 -top-8 -z-10 h-[36rem] bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)] bg-[size:36px_36px] opacity-70"
+      />
+
+      <header className="md:mx-auto md:max-w-2xl md:text-center">
+        <h1 className="text-3xl font-semibold tracking-tight text-brand-text-himasal md:text-4xl">
+          {topicLabel(topic ? [topic] : null, "struktur", "Struktur")} Organisasi
+        </h1>
+        <p className="mt-2 text-muted-foreground">{DESCRIPTION}</p>
+      </header>
 
       {!structure || structure.length === 0 ? (
         <Card>
@@ -35,35 +48,7 @@ export default async function StrukturPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {structure.map((person) => (
-            <Card key={person.id}>
-              <CardContent className="flex flex-col items-center gap-2 text-center">
-                {person.foto_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={person.foto_url}
-                    alt={person.nama}
-                    className="size-20 rounded-full object-cover"
-                  />
-                ) : (
-                  <div
-                    aria-hidden="true"
-                    className="flex size-20 items-center justify-center rounded-full bg-muted text-lg font-medium"
-                  >
-                    {person.nama.charAt(0)}
-                  </div>
-                )}
-                <div>
-                  <p className="font-medium">{person.nama}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {person.jabatan}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <OrganizationStructure layout={buildOrganizationLayout(structure)} />
       )}
     </div>
   );

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/shared/reveal";
 import { ScrollMorphHero } from "@/components/public/scroll-morph-hero";
-import { ContentCard } from "@/components/public/content-card";
 import { EditorialContentGrid } from "@/components/public/editorial-content-grid";
 import { TOPIC_SELECT_COLUMNS } from "@/lib/topics";
 import {
@@ -29,29 +28,25 @@ export const metadata: Metadata = {
 // revalidasi.
 export const dynamic = "force-dynamic";
 
-// Catatan: sempat dicoba membatasi jumlah kolom mengikuti jumlah item
-// (supaya section dengan 1 kartu tidak menyisakan 3 kolom kosong), tapi
-// verifikasi visual nyata menunjukkan itu regresi lebih buruk - grid-
-// cols-1 membuat SATU kartu meregang penuh ke lebar container (aspect-
-// video jadi raksasa ~650px tinggi). Ruang kosong di sisa kolom untuk
-// section yang baru punya sedikit konten adalah pola yang wajar dan
-// tidak rusak, jadi grid tetap - kolom (1/2/4) TIDAK bergantung jumlah
-// item.
+// Grid section Topik - treatment editorial yang SAMA dengan Terbaru/Populer
+// (lihat EditorialContentGrid), untuk topik sistem maupun custom tanpa JSX
+// per-topik. keepOrder: urutan item mengikuti data (mis. display_order
+// Struktur) - item pertama selalu card utama, tanpa foto = permukaan navy.
+// Badge = label topik section ini dari site_topics.
 function CardGrid({ items, topicLabel }: { items: HomeCardItem[]; topicLabel: string }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-      {items.map((item) => (
-        <ContentCard
-          key={item.id}
-          href={item.href}
-          title={item.title}
-          imageUrl={item.image_url}
-          topicLabel={topicLabel}
-          summary={item.summary}
-          dateLabel={item.dateLabel}
-        />
-      ))}
-    </div>
+    <EditorialContentGrid
+      keepOrder
+      items={items.map((item) => ({
+        id: item.id,
+        href: item.href,
+        title: item.title,
+        summary: item.summary,
+        imageUrl: item.image_url,
+        topicLabel,
+        dateLabel: item.dateLabel,
+      }))}
+    />
   );
 }
 

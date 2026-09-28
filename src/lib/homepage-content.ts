@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database.types";
 import type { HeroSlide } from "@/components/public/scroll-morph-hero";
-import { formatCardDateTimeID, formatDateID } from "@/lib/format-date";
+import { formatDateID } from "@/lib/format-date";
 import { isTopicFeaturedAllowed, topicHref, type SiteTopic } from "@/lib/topics";
 
 type PublicSupabase = SupabaseClient<Database>;
@@ -14,8 +14,8 @@ export type HomeCardItem = {
   // Ringkasan singkat (excerpt/deskripsi/jabatan tergantung sumber data) -
   // dirender di bawah judul kalau tersedia, disembunyikan kalau tidak.
   summary?: string | null;
-  // Tanggal+jam terformat (mis. dari published_at) - baris paling bawah
-  // card, disembunyikan total kalau konten tidak punya tanggal publikasi.
+  // Tanggal terformat (tanggal saja, mis. dari published_at) - baris paling
+  // bawah card, disembunyikan total kalau konten tidak punya tanggal.
   dateLabel?: string | null;
   image_url?: string | null;
 };
@@ -48,7 +48,11 @@ type SectionFetchResult = {
 
 type SystemFetcher = (supabase: PublicSupabase, topic: SiteTopic) => Promise<SectionFetchResult>;
 
-const CARD_LIMIT = 4;
+// Jumlah card per section Topik di Beranda - HANYA dipakai query card
+// section Topik di file ini (Hero punya batas sendiri di bawah, halaman
+// lain tidak memakai file ini). 5 = komposisi grid editorial yang sama
+// dengan Terbaru (1 card utama + 4 card kecil).
+const HOME_TOPIC_CARD_LIMIT = 5;
 // Hero sekarang Scroll Morph (banyak kartu sekaligus, lihat
 // scroll-morph-hero.tsx) - kandidat per sumber & total dinaikkan supaya ring/
 // arc punya cukup konten nyata. Tetap dibatasi: kartu di panggung maksimal 20.
@@ -74,7 +78,8 @@ function newsRowToCardItem(n: NewsCardRow): HomeCardItem {
     href: `/berita/${n.slug}`,
     title: n.title,
     summary: n.excerpt,
-    dateLabel: n.published_at ? formatCardDateTimeID(n.published_at) : null,
+    // Tanggal saja (tanpa jam) - sama dengan card Terbaru/Populer.
+    dateLabel: n.published_at ? formatDateID(n.published_at) : null,
     image_url: n.thumbnail_url,
   };
 }
@@ -100,7 +105,7 @@ async function fetchTopicNews(
       .eq("topic_id", topic.id)
       .not("published_at", "is", null)
       .order("published_at", { ascending: false })
-      .limit(CARD_LIMIT),
+      .limit(HOME_TOPIC_CARD_LIMIT),
     isTopicFeaturedAllowed([topic], topic.key)
       ? supabase
           .from("news")
@@ -148,7 +153,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
         .select("id, title, description, thumbnail_url, start_at")
         .eq("status", "published")
         .order("start_at", { ascending: false })
-        .limit(CARD_LIMIT),
+        .limit(HOME_TOPIC_CARD_LIMIT),
       isTopicFeaturedAllowed([topic], topic.key)
         ? supabase
             .from("events")
@@ -203,7 +208,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
         .eq("is_published", true)
         .order("display_order")
         .order("created_at", { ascending: false })
-        .limit(CARD_LIMIT),
+        .limit(HOME_TOPIC_CARD_LIMIT),
       isTopicFeaturedAllowed([topic], topic.key)
         ? supabase
             .from("gallery_items")
@@ -251,7 +256,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
         .select("id, nama, jabatan, foto_url")
         .eq("is_active", true)
         .order("display_order")
-        .limit(CARD_LIMIT),
+        .limit(HOME_TOPIC_CARD_LIMIT),
       isTopicFeaturedAllowed([topic], topic.key)
         ? supabase
             .from("organization_structure")
@@ -303,7 +308,7 @@ const SYSTEM_FETCHERS: Record<string, SystemFetcher> = {
         .select("id, nama, deskripsi, foto_url")
         .eq("is_active", true)
         .order("display_order")
-        .limit(CARD_LIMIT),
+        .limit(HOME_TOPIC_CARD_LIMIT),
       isTopicFeaturedAllowed([topic], topic.key)
         ? supabase
             .from("masayikh")
@@ -402,7 +407,7 @@ async function fetchGenericSection(
       .eq("is_active", true)
       .order("display_order")
       .order("created_at", { ascending: false })
-      .limit(CARD_LIMIT),
+      .limit(HOME_TOPIC_CARD_LIMIT),
     isTopicFeaturedAllowed([topic], topic.key)
       ? supabase
           .from("topic_content")
@@ -497,7 +502,7 @@ export async function fetchHomeSections(
       // Konten topik ini dulu, sisa slot diisi berita yang ditandai ke
       // topik ini - urutan sederhana dan dapat diprediksi, bukan
       // interleave berdasarkan tanggal lintas dua sumber data berbeda.
-      const items = [...base.section.items, ...newsExtra.items].slice(0, CARD_LIMIT);
+      const items = [...base.section.items, ...newsExtra.items].slice(0, HOME_TOPIC_CARD_LIMIT);
       return { section: { ...base.section, items }, heroCandidates };
     }),
   );

@@ -119,6 +119,14 @@ function EditorialCard({
               <CalendarDays className={cn("shrink-0", lead ? "size-4" : "size-3.5")} />
               <span className="truncate">{item.dateLabel}</span>
             </p>
+          ) : !lead && item.summary ? (
+            // Konten tanpa tanggal (mis. Struktur: jabatan, Masayikh:
+            // deskripsi) - card kecil menampilkan ringkasan yang memang ada
+            // di tempat tanggal, bukan tanggal palsu. Card utama sudah
+            // menampilkan ringkasan di atas.
+            <p className="line-clamp-2 min-w-0 text-xs leading-snug text-white/80 sm:text-sm lg:text-xs xl:text-sm">
+              {item.summary}
+            </p>
           ) : (
             <span />
           )}
@@ -143,9 +151,11 @@ function EditorialCard({
 }
 
 /**
- * Grid editorial Beranda: satu card foto besar (utama) + card foto kecil
- * dalam 2 kolom. Semua foto berasal dari konten CMS; tanpa foto pengganti,
- * tanpa angka views (tidak ada field views di sumber data).
+ * Grid editorial Beranda - SATU treatment untuk semua card konten di
+ * Beranda (Terbaru, Populer, dan setiap section Topik): satu card foto
+ * besar (utama) + card foto kecil dalam 2 kolom. Semua foto berasal dari
+ * konten CMS; tanpa foto pengganti, tanpa angka views (tidak ada field
+ * views di sumber data).
  *
  * Komposisi per ukuran layar:
  *  - Mobile  : 1 kolom, card utama lebih tinggi (4:5), card lain 16:11.
@@ -159,9 +169,25 @@ function EditorialCard({
  * data titik fokus per foto di CMS) - kepala pada foto potret tidak
  * terpotong, foto landscape hampir tidak terpengaruh.
  */
-export function EditorialContentGrid({ items }: { items: EditorialItem[] }) {
+export function EditorialContentGrid({
+  items,
+  keepOrder = false,
+}: {
+  items: EditorialItem[];
+  /**
+   * true: item pertama SELALU card utama dan urutan tidak pernah bergeser
+   * (section Topik - urutan data mis. display_order Struktur adalah
+   * keputusan Admin). Item pertama tanpa foto tetap jadi card utama dengan
+   * permukaan navy. false (Terbaru/Populer): card utama dipilih lewat
+   * pickLead.
+   */
+  keepOrder?: boolean;
+}) {
   if (items.length === 0) return null;
-  const { lead, rest } = pickLead(items.slice(0, MAX_ITEMS));
+  const visible = items.slice(0, MAX_ITEMS);
+  const { lead, rest } = keepOrder
+    ? { lead: visible[0], rest: visible.slice(1) }
+    : pickLead(visible);
 
   if (rest.length === 0) {
     return (

@@ -21,14 +21,24 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatDateTimeID } from "@/lib/format-date";
 import { ATTENDANCE_STATUS_LABEL } from "@/lib/attendance";
 
-type Wilayah = { id: string; nama: string };
+type KecamatanOption = { id: string; nama: string };
 
+// SEMUA Alumni (master) - termasuk yang belum punya akun login, supaya
+// kehadirannya tetap bisa dicatat Admin (mereka tidak bisa scan QR).
 type AlumniRow = {
   id: string;
+  nama_lengkap: string | null;
   angkatan: number | null;
-  wilayah: { nama: string } | null;
+  kecamatan: { nama: string } | null;
   profile: { full_name: string | null } | null;
 };
+
+const ALUMNI_COLUMNS =
+  "id, nama_lengkap, angkatan, kecamatan:kecamatan_id(nama), profile:profile_id(full_name)";
+
+function namaAlumni(row: AlumniRow) {
+  return row.profile?.full_name?.trim() || row.nama_lengkap?.trim() || "(Belum diisi)";
+}
 
 type AttendanceEntry = { id: string; status: string; scanned_at: string | null };
 
@@ -48,11 +58,11 @@ const EMPTY_MATCH_ID = "00000000-0000-0000-0000-000000000000";
 export function AttendanceParticipantList({ eventId }: { eventId: string }) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 350);
-  const [wilayahFilter, setWilayahFilter] = useState(ALL_VALUE);
+  const [kecamatanFilter, setKecamatanFilter] = useState(ALL_VALUE);
   const [statusFilter, setStatusFilter] = useState(ALL_VALUE);
   const [page, setPage] = useState(0);
 
-  const [wilayahList, setWilayahList] = useState<Wilayah[]>([]);
+  const [kecamatanList, setKecamatanList] = useState<KecamatanOption[]>([]);
   const [rows, setRows] = useState<AlumniRow[]>([]);
   const [count, setCount] = useState(0);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceEntry>>({});
@@ -70,7 +80,7 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
 
   // Reset ke halaman pertama setiap kali filter/pencarian berubah (pola
   // "adjust state during render" - sama seperti admin/alumni).
-  const filterKey = `${debouncedSearch}|${wilayahFilter}|${statusFilter}`;
+  const filterKey = `${debouncedSearch}|${kecamatanFilter}|${statusFilter}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (filterKey !== prevFilterKey) {
     setPrevFilterKey(filterKey);
@@ -79,12 +89,12 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    async function loadWilayah() {
+    async function loadKecamatan() {
       const supabase = createClient();
-      const { data } = await supabase.from("wilayah").select("id, nama").order("nama");
-      if (!cancelled) setWilayahList(data ?? []);
+      const { data } = await supabase.from("kecamatan").select("id, nama").order("nama");
+      if (!cancelled) setKecamatanList(data ?? []);
     }
-    loadWilayah();
+    loadKecamatan();
     return () => {
       cancelled = true;
     };
@@ -128,24 +138,20 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
         }
       }
 
-      const { count: totalActive } = await supabase
+      const { count: totalAlumni } = await supabase
         .from("alumni")
-        .select("id", { count: "exact", head: true })
-        .eq("status_keanggotaan", "aktif");
+        .select("id", { count: "exact", head: true });
 
-      let query = supabase
-        .from("alumni")
-        .select(
-          "id, angkatan, wilayah:wilayah_id(nama), profile:profile_id!inner(full_name)",
-          { count: "exact" },
-        )
-        .eq("status_keanggotaan", "aktif");
+      let query = supabase.from("alumni").select(ALUMNI_COLUMNS, { count: "exact" });
 
       if (debouncedSearch.trim()) {
-        query = query.ilike("profile.full_name", `%${debouncedSearch.trim()}%`);
+        // nama_lengkap = nama master (disinkronkan ke profil akun oleh
+        // admin_save_alumni), jadi Alumni dengan & tanpa akun sama-sama
+        // bisa dicari.
+        query = query.ilike("nama_lengkap", `%${debouncedSearch.trim()}%`);
       }
-      if (wilayahFilter !== ALL_VALUE) {
-        query = query.eq("wilayah_id", wilayahFilter);
+      if (kecamatanFilter !== ALL_VALUE) {
+        query = query.eq("kecamatan_id", kecamatanFilter);
       }
       if (statusFilter === BELUM_ABSEN_VALUE) {
         const recordedIds = Object.keys(map);
@@ -166,7 +172,7 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
         data,
         error: alumniError,
         count: filteredCount,
-      } = await query.order("angkatan", { ascending: false }).range(from, to);
+      } = await query.order("nama_lengkap", { ascending: true }).range(from, to);
 
       if (cancelled) return;
 
@@ -176,7 +182,7 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
         return;
       }
 
-      nextSummary.total = totalActive ?? 0;
+      nextSummary.total = totalAlumni ?? 0;
       setSummary(nextSummary);
       setAttendanceMap(map);
       setRows((data ?? []) as unknown as AlumniRow[]);
@@ -188,7 +194,7 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [eventId, debouncedSearch, wilayahFilter, statusFilter, page, reloadKey]);
+  }, [eventId, debouncedSearch, kecamatanFilter, statusFilter, page, reloadKey]);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(count / PAGE_SIZE)), [count]);
   const belumAbsen = Math.max(
@@ -216,9 +222,8 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
     const supabase = createClient();
     const { data: allAlumni, error: exportError } = await supabase
       .from("alumni")
-      .select("id, angkatan, wilayah:wilayah_id(nama), profile:profile_id!inner(full_name)")
-      .eq("status_keanggotaan", "aktif")
-      .order("angkatan", { ascending: false })
+      .select(ALUMNI_COLUMNS)
+      .order("nama_lengkap", { ascending: true })
       .limit(5000);
 
     if (exportError) {
@@ -226,7 +231,7 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
       return;
     }
 
-    const header = ["Nama", "Angkatan", "Wilayah", "Status", "Waktu Hadir"];
+    const header = ["Nama", "Angkatan", "Kecamatan", "Status", "Waktu Hadir"];
     const lines = ((allAlumni ?? []) as unknown as AlumniRow[]).map((row) => {
       const record = attendanceMap[row.id];
       const status = record
@@ -234,9 +239,9 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
         : "Belum Absen";
       const waktu = record?.scanned_at ? formatDateTimeID(record.scanned_at) : "";
       const cells = [
-        row.profile?.full_name ?? "",
+        namaAlumni(row),
         row.angkatan?.toString() ?? "",
-        row.wilayah?.nama ?? "",
+        row.kecamatan?.nama ?? "",
         status,
         waktu,
       ];
@@ -256,7 +261,7 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <StatCard label="Total Aktif" value={summary.total} />
+        <StatCard label="Total Alumni" value={summary.total} />
         <StatCard label="Hadir" value={summary.HADIR} />
         <StatCard label="Tidak Hadir" value={summary.TIDAK_HADIR} />
         <StatCard label="Izin" value={summary.IZIN} />
@@ -277,15 +282,15 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Select value={wilayahFilter} onValueChange={setWilayahFilter}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Semua wilayah" />
+          <Select value={kecamatanFilter} onValueChange={setKecamatanFilter}>
+            <SelectTrigger className="w-full" aria-label="Filter kecamatan">
+              <SelectValue placeholder="Semua kecamatan" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_VALUE}>Semua wilayah</SelectItem>
-              {wilayahList.map((w) => (
-                <SelectItem key={w.id} value={w.id}>
-                  {w.nama}
+            <SelectContent className="max-h-72">
+              <SelectItem value={ALL_VALUE}>Semua kecamatan</SelectItem>
+              {kecamatanList.map((k) => (
+                <SelectItem key={k.id} value={k.id}>
+                  {k.nama}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -335,11 +340,10 @@ export function AttendanceParticipantList({ eventId }: { eventId: string }) {
               <Card key={row.id}>
                 <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <p className="truncate font-medium">
-                      {row.profile?.full_name || "(Belum diisi)"}
-                    </p>
+                    <p className="truncate font-medium">{namaAlumni(row)}</p>
                     <p className="text-sm text-muted-foreground">
-                      {row.wilayah?.nama ?? "Wilayah belum diisi"}
+                      {row.kecamatan?.nama ? `Kec. ${row.kecamatan.nama}` : "Kecamatan belum dipetakan"}
+                      {row.profile ? "" : " · Tanpa akun"}
                       {row.angkatan ? ` · Angkatan ${row.angkatan}` : ""}
                       {record?.scanned_at ? ` · Absen: ${formatDateTimeID(record.scanned_at)}` : ""}
                     </p>

@@ -929,32 +929,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      admin_list_alumni: {
-        Args: {
-          p_angkatan?: number
-          p_desa_kelurahan_id?: string
-          p_kecamatan_id?: string
-          p_limit?: number
-          p_offset?: number
-          p_search?: string
-          p_status?: string
-        }
-        Returns: {
-          angkatan: number
-          desa_kelurahan_id: string
-          desa_kelurahan_jenis: string
-          desa_kelurahan_nama: string
-          has_account: boolean
-          id: string
-          is_aktif: boolean
-          jumlah_absensi: number
-          kecamatan_id: string
-          kecamatan_nama: string
-          nama: string
-          no_hp: string
-          total_count: number
-        }[]
-      }
       admin_revoke_event_qr: { Args: { p_event_id: string }; Returns: number }
       admin_save_alumni: {
         Args: {
@@ -1093,6 +1067,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      alumni_activity_detail: {
+        Args: { p_alumni_id?: string; p_year?: number }
+        Returns: Json
+      }
       alumni_is_aktif: { Args: { p_alumni_id: string }; Returns: boolean }
       alumni_stats: {
         Args: never
@@ -1117,22 +1095,69 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       monitoring_alumni_by_kecamatan: {
-        Args: never
+        Args: { p_year?: number }
         Returns: {
-          kecamatan_id: string
+          aktif: number
+          belum_ada_data: number
+          kecamatan_id: string | null
           kecamatan_nama: string
+          sementara: number
+          tidak_aktif: number
           total: number
         }[]
       }
+      monitoring_alumni_list: {
+        Args: {
+          p_akun?: string
+          p_angkatan?: number
+          p_belum_dipetakan?: boolean
+          p_desa_kelurahan_id?: string
+          p_kecamatan_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_status?: string
+          p_year?: number
+        }
+        Returns: {
+          account_status: string
+          angkatan: number | null
+          desa_kelurahan_id: string | null
+          desa_kelurahan_jenis: string | null
+          desa_kelurahan_nama: string | null
+          has_account: boolean
+          hadir: number
+          id: string
+          is_final: boolean
+          jumlah_absensi: number
+          kecamatan_id: string | null
+          kecamatan_nama: string | null
+          kegiatan: number
+          nama: string | null
+          no_hp: string | null
+          persentase: number | null
+          role: Database["public"]["Enums"]["app_role"] | null
+          status: string
+          terakhir_hadir: string | null
+          total_count: number
+        }[]
+      }
       monitoring_alumni_summary: {
-        Args: never
+        Args: { p_year?: number }
         Returns: {
           akun_aktif: number
           akun_belum_ada: number
           akun_menunggu_password: number
           akun_undangan_terkirim: number
-          alumni_aktif: number
-          alumni_tidak_aktif: number
+          is_final: boolean
+          role_admin: number
+          role_alumni: number
+          role_super_admin: number
+          status_aktif: number
+          status_belum_ada_data: number
+          status_sementara: number
+          status_tidak_aktif: number
+          tahun: number
           total_alumni: number
         }[]
       }
@@ -1142,43 +1167,65 @@ export type Database = {
           year: number
         }[]
       }
+      monitoring_event_detail: { Args: { p_event_id: string }; Returns: Json }
       monitoring_overview: {
-        Args: { p_event_id?: string; p_wilayah_id?: string; p_year?: number }
+        Args: { p_year?: number }
         Returns: {
-          total_alumni_aktif: number
-          total_alumni_nonaktif: number
-          total_events: number
-          total_hadir: number
-          total_izin: number
-          total_mandatory_events: number
-          total_sakit: number
-          total_tidak_hadir: number
+          hadir: number
+          is_final: boolean
+          izin: number
+          kegiatan_akan_datang: number
+          kegiatan_terlaksana: number
+          kegiatan_wajib_terlaksana: number
+          sakit: number
+          tahun: number
+          tidak_hadir: number
+          tidak_tercatat: number
+          tingkat_kehadiran: number | null
+          total_slot: number
         }[]
       }
       monitoring_period_stats: {
-        Args: { p_event_id?: string; p_wilayah_id?: string; p_year?: number }
+        Args: { p_year?: number }
         Returns: {
+          akan_datang: boolean
           hadir: number
           izin: number
+          kegiatan: number
+          kegiatan_wajib: number
           month: number
           sakit: number
           tidak_hadir: number
-          total_events: number
-          total_mandatory_events: number
+          tidak_tercatat: number
+          tingkat_kehadiran: number | null
+        }[]
+      }
+      monitoring_recent_activity: {
+        Args: { p_limit?: number }
+        Returns: {
+          alumni_id: string | null
+          event_id: string | null
+          jenis: string
+          judul: string
+          keterangan: string
+          waktu: string | null
         }[]
       }
       monitoring_recent_events: {
-        Args: { p_limit?: number; p_wilayah_id?: string; p_year?: number }
+        Args: { p_limit?: number; p_only_held?: boolean; p_year?: number }
         Returns: {
           belum_absen: number
+          end_at: string | null
           hadir: number
           id: string
           is_mandatory: boolean
           izin: number
+          peserta: number
           sakit: number
           start_at: string
-          status: string
+          status_kegiatan: string
           tidak_hadir: number
+          tingkat_kehadiran: number | null
           title: string
         }[]
       }

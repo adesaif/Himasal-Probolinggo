@@ -26,6 +26,8 @@ import {
   BookOpen,
   FileBarChart2,
   Settings,
+  Activity,
+  CalendarCheck2,
 } from "lucide-react";
 
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -57,6 +59,8 @@ const ADMIN_ICON_MAP = {
   "book-open": BookOpen,
   "file-bar-chart": FileBarChart2,
   settings: Settings,
+  activity: Activity,
+  "calendar-check": CalendarCheck2,
 } as const;
 
 export type AdminIconKey = keyof typeof ADMIN_ICON_MAP;
@@ -69,8 +73,8 @@ export type AdminNavGroup = { label: string; items: AdminNavItem[] };
 
 const COLLAPSE_KEY = "himasal-admin-sidebar-collapsed";
 
-function isActivePath(pathname: string, href: string) {
-  if (href === "/admin") return pathname === "/admin";
+function isActivePath(pathname: string, href: string, rootHref: string) {
+  if (href === rootHref) return pathname === rootHref;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -126,15 +130,19 @@ function SidebarContent({
   groups,
   pathname,
   collapsed,
+  rootHref,
+  areaLabel,
   onNavigate,
 }: {
   groups: AdminNavGroup[];
   pathname: string;
   collapsed: boolean;
+  rootHref: string;
+  areaLabel: string;
   onNavigate?: () => void;
 }) {
   return (
-    <nav aria-label="Navigasi Admin" className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4">
+    <nav aria-label={`Navigasi ${areaLabel}`} className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 py-4">
       {groups.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
           {!collapsed ? (
@@ -146,7 +154,7 @@ function SidebarContent({
             <NavLink
               key={item.href}
               item={item}
-              active={isActivePath(pathname, item.href)}
+              active={isActivePath(pathname, item.href, rootHref)}
               collapsed={collapsed}
               onNavigate={onNavigate}
             />
@@ -158,17 +166,20 @@ function SidebarContent({
 }
 
 /**
- * Shell khusus Admin (role "admin") - sidebar + topbar, terpisah dari
- * DashboardShell generik yang masih dipakai Alumni (/dashboard) dan Super
- * Admin (/monitoring), supaya redesign ini tidak menyentuh dua area lain
- * itu sama sekali.
+ * Shell sidebar + topbar untuk area staf: Admin (/admin) dan Super Admin
+ * Monitoring (/monitoring, read-only) - satu komponen, beda label & menu.
+ * Alumni (/dashboard) tetap memakai DashboardShell generik.
  */
 export function AdminShell({
   groups,
   children,
+  areaLabel = "Admin",
+  rootHref = "/admin",
 }: {
   groups: AdminNavGroup[];
   children: ReactNode;
+  areaLabel?: string;
+  rootHref?: string;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -219,13 +230,19 @@ export function AdminShell({
             <span className="truncate text-sm leading-tight font-bold tracking-[-0.01em] text-sidebar-foreground uppercase">
               HIMASAL{" "}
               <span className="font-medium text-sidebar-foreground/60 normal-case">
-                Admin
+                {areaLabel}
               </span>
             </span>
           ) : null}
         </div>
 
-        <SidebarContent groups={groups} pathname={pathname} collapsed={collapsed} />
+        <SidebarContent
+          groups={groups}
+          pathname={pathname}
+          collapsed={collapsed}
+          rootHref={rootHref}
+          areaLabel={areaLabel}
+        />
 
         <div className="border-t border-sidebar-border p-3">
           <Button
@@ -254,14 +271,14 @@ export function AdminShell({
           <DialogPrimitive.Content
             className="fixed inset-y-0 left-0 z-50 flex h-full w-[82vw] max-w-[300px] flex-col border-r border-sidebar-border bg-sidebar outline-none data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left duration-300 lg:hidden"
           >
-            <DialogPrimitive.Title className="sr-only">Navigasi Admin</DialogPrimitive.Title>
+            <DialogPrimitive.Title className="sr-only">Navigasi {areaLabel}</DialogPrimitive.Title>
             <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border px-4">
               <span className="flex min-w-0 items-center gap-2">
                 <HimasalLogo heightClassName="h-7" className="shrink-0" />
                 <span className="truncate text-sm leading-tight font-bold tracking-[-0.01em] text-sidebar-foreground uppercase">
                   HIMASAL{" "}
                   <span className="font-medium text-sidebar-foreground/60 normal-case">
-                    Admin
+                    {areaLabel}
                   </span>
                 </span>
               </span>
@@ -280,6 +297,8 @@ export function AdminShell({
               groups={groups}
               pathname={pathname}
               collapsed={false}
+              rootHref={rootHref}
+              areaLabel={areaLabel}
               onNavigate={() => setMobileOpen(false)}
             />
           </DialogPrimitive.Content>

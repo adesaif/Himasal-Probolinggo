@@ -4,45 +4,32 @@ import { ArrowLeft } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlumniDetailActions } from "@/components/admin/alumni-detail-actions";
 import { AlumniAccountCard } from "@/components/admin/alumni-account-card";
 import { AlumniRoleCard } from "@/components/admin/alumni-role-card";
-import {
-  ROLE_BADGE,
-  toAccountStatus,
-  type AlumniAccountInfo,
-} from "@/lib/alumni-account-status";
-import { ROLE_LABEL } from "@/lib/constants";
+import { AlumniMasterDetail } from "@/components/alumni/alumni-master-detail";
+import { toAccountStatus, type AlumniAccountInfo } from "@/lib/alumni-account-status";
+import { fetchAlumniActivityDetail, parseYearParam } from "@/lib/alumni-activity";
 import { desaKelurahanLabel, fetchLokasiAlumni } from "@/lib/alumni-lokasi";
-import { formatDateID } from "@/lib/format-date";
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="font-medium">{value}</p>
-    </div>
-  );
-}
 
 export default async function AdminAlumniDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tahun?: string }>;
 }) {
   const { id } = await params;
+  const { tahun } = await searchParams;
+  const year = parseYearParam(tahun);
   const supabase = await createClient();
 
-  const [
-    { data: alumni },
-    { data: isAktif },
-    { count: jumlahHadir },
-    { count: jumlahAbsensi },
-    lokasi,
-    { data: accountRows },
-  ] = await Promise.all([
+  // Master view (profil + kehadiran) dari RPC yang sama dengan Dashboard
+  // Alumni & Monitoring; kolom mentah di bawah hanya untuk form Edit/Hapus.
+  const [{ detail }, { data: alumni }, { count: jumlahAbsensi }, lokasi, { data: accountRows }] =
+    await Promise.all([
+      fetchAlumniActivityDetail(supabase, { alumniId: id, year }),
       supabase
         .from("alumni")
         .select(
@@ -50,12 +37,6 @@ export default async function AdminAlumniDetailPage({
         )
         .eq("id", id)
         .maybeSingle(),
-      supabase.rpc("alumni_is_aktif", { p_alumni_id: id }),
-      supabase
-        .from("attendance_records")
-        .select("id", { count: "exact", head: true })
-        .eq("alumni_id", id)
-        .eq("status", "HADIR"),
       supabase
         .from("attendance_records")
         .select("id", { count: "exact", head: true })
@@ -64,7 +45,7 @@ export default async function AdminAlumniDetailPage({
       supabase.rpc("admin_alumni_account_status", { p_alumni_ids: [id] }),
     ]);
 
-  if (!alumni) {
+  if (!alumni || !detail) {
     notFound();
   }
 
@@ -90,7 +71,7 @@ export default async function AdminAlumniDetailPage({
     : null;
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex max-w-4xl flex-col gap-4">
       <Button variant="ghost" size="sm" asChild className="w-fit">
         <Link href="/admin/alumni">
           <ArrowLeft />
@@ -98,93 +79,54 @@ export default async function AdminAlumniDetailPage({
         </Link>
       </Button>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{nama || "(Belum diisi)"}</h1>
-          <Badge variant={isAktif ? "success" : "neutral"}>{isAktif ? "Aktif" : "Nonaktif"}</Badge>
-          {account.isStaff && account.role ? (
-            <Badge variant={ROLE_BADGE[account.role]}>{ROLE_LABEL[account.role]}</Badge>
-          ) : null}
+      <AlumniMasterDetail
+        detail={detail}
+        yearHref={(y) => `/admin/alumni/${id}?tahun=${y}`}
+        actions={
+          <AlumniDetailActions
+            alumniId={alumni.id}
+            lokasi={lokasi}
+            account={account}
+            initialValues={{
+              full_name: nama ?? "",
+              email: "",
+              kecamatan_id: alumni.kecamatan_id,
+              desa_kelurahan_id: alumni.desa_kelurahan_id,
+              phone: noHp ?? "",
+              tempat_lahir: alumni.tempat_lahir ?? "",
+              tanggal_lahir: alumni.tanggal_lahir ?? "",
+              angkatan: alumni.angkatan,
+            }}
+            deleteTarget={{
+              id: alumni.id,
+              nama,
+              alamat: alamatRingkas,
+              angkatan: alumni.angkatan,
+              jumlahAbsensi: jumlahAbsensi ?? 0,
+              hasAccount: alumni.profile_id !== null,
+              staffRole: account.isStaff ? account.role : null,
+            }}
+          />
+        }
+      >
+        {!kecamatanNama && alumni.alamat?.trim() ? (
+          // Data lama (sebelum struktur Kecamatan -> Desa/Kelurahan) tidak
+          // dipetakan otomatis - ditampilkan apa adanya supaya Admin bisa
+          // memperbaikinya lewat Edit, tanpa mengarang alamat baru.
+          <Card>
+            <CardContent className="flex flex-col gap-1 text-sm">
+              <p className="font-medium">Alamat lama perlu dipetakan</p>
+              <p className="text-muted-foreground">
+                Pilih Kecamatan dan Desa/Kelurahan yang sesuai lewat tombol Edit.
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <AlumniAccountCard alumniId={alumni.id} account={account} />
+          <AlumniRoleCard alumniId={alumni.id} nama={nama} account={account} />
         </div>
-        <AlumniDetailActions
-          alumniId={alumni.id}
-          lokasi={lokasi}
-          account={account}
-          initialValues={{
-            full_name: nama ?? "",
-            email: "",
-            kecamatan_id: alumni.kecamatan_id,
-            desa_kelurahan_id: alumni.desa_kelurahan_id,
-            phone: noHp ?? "",
-            tempat_lahir: alumni.tempat_lahir ?? "",
-            tanggal_lahir: alumni.tanggal_lahir ?? "",
-            angkatan: alumni.angkatan,
-          }}
-          deleteTarget={{
-            id: alumni.id,
-            nama,
-            alamat: alamatRingkas,
-            angkatan: alumni.angkatan,
-            jumlahAbsensi: jumlahAbsensi ?? 0,
-            hasAccount: alumni.profile_id !== null,
-            staffRole: account.isStaff ? account.role : null,
-          }}
-        />
-      </div>
-
-      <Card>
-        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <InfoRow
-              label="Status (otomatis)"
-              value={
-                <>
-                  {isAktif ? "Aktif" : "Nonaktif"}
-                  <span className="block text-sm font-normal text-muted-foreground">
-                    {isAktif
-                      ? `Tercatat hadir di ${jumlahHadir ?? 0} agenda.`
-                      : "Belum pernah tercatat hadir di agenda."}
-                  </span>
-                </>
-              }
-            />
-          </div>
-          <InfoRow label="Kecamatan" value={kecamatanNama ?? "-"} />
-          <InfoRow
-            label="Desa/Kelurahan"
-            value={desa ? `${desaKelurahanLabel(desa.jenis)} ${desa.nama}` : "-"}
-          />
-          <InfoRow label="Nomor HP" value={noHp ?? "-"} />
-          <InfoRow label="Angkatan" value={alumni.angkatan?.toString() ?? "-"} />
-          <InfoRow label="Tempat Lahir" value={alumni.tempat_lahir || "-"} />
-          <InfoRow
-            label="Tanggal Lahir"
-            value={alumni.tanggal_lahir ? formatDateID(alumni.tanggal_lahir) : "-"}
-          />
-        </CardContent>
-      </Card>
-
-      <AlumniAccountCard alumniId={alumni.id} account={account} />
-
-      <AlumniRoleCard alumniId={alumni.id} nama={nama} account={account} />
-
-      {!kecamatanNama && alumni.alamat?.trim() ? (
-        // Data lama (sebelum struktur Kecamatan -> Desa/Kelurahan) tidak
-        // dipetakan otomatis - ditampilkan apa adanya supaya Admin bisa
-        // memperbaikinya lewat Edit, tanpa mengarang alamat baru.
-        <Card>
-          <CardContent className="flex flex-col gap-1 text-sm">
-            <p className="font-medium">Alamat lama perlu dipetakan</p>
-            <p className="text-muted-foreground">
-              Tercatat sebelum alamat memakai Kecamatan → Desa/Kelurahan:{" "}
-              <span className="text-foreground">{alumni.alamat}</span>
-            </p>
-            <p className="text-muted-foreground">
-              Pilih Kecamatan dan Desa/Kelurahan yang sesuai lewat tombol Edit.
-            </p>
-          </CardContent>
-        </Card>
-      ) : null}
+      </AlumniMasterDetail>
     </div>
   );
 }

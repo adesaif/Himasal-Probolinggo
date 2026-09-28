@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Mail, Plus, RotateCcw, Search } from "lucide-react";
+import { CalendarCheck2, Mail, Plus, RotateCcw, Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,19 +23,35 @@ import { DeleteAlumniButton } from "@/components/admin/delete-alumni-button";
 import { createClient } from "@/lib/supabase/client";
 import { desaKelurahanLabel, type Kecamatan } from "@/lib/alumni-lokasi";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { ACCOUNT_STATUS_LABEL, ROLE_BADGE, toAccountStatus } from "@/lib/alumni-account-status";
 import {
-  ACCOUNT_STATUS_LABEL,
-  ROLE_BADGE,
-  toAccountStatus,
-  type AlumniAccountStatus,
-} from "@/lib/alumni-account-status";
-import { ROLE_LABEL, type Role } from "@/lib/constants";
+  ACTIVITY_STATUSES,
+  ACTIVITY_STATUS_BADGE,
+  ACTIVITY_STATUS_LABEL,
+  activityStatusLabel,
+  formatPercent,
+  toActivityStatus,
+} from "@/lib/alumni-activity";
+import { ROLE_LABEL } from "@/lib/constants";
+import { formatDateID } from "@/lib/format-date";
 import type { Database } from "@/types/database.types";
 
-type AlumniRow = Database["public"]["Functions"]["admin_list_alumni"]["Returns"][number];
+type AlumniRow = Database["public"]["Functions"]["monitoring_alumni_list"]["Returns"][number];
 
 const PAGE_SIZE = 20;
 const ALL_VALUE = "__all__";
+/** Pilihan Kecamatan khusus: Alumni yang belum dipetakan ke kecamatan. */
+export const UNMAPPED_KECAMATAN = "__belum_dipetakan__";
+
+export type AlumniListFilters = {
+  q?: string;
+  kecamatan?: string;
+  desa?: string;
+  status?: string;
+  angkatan?: string;
+  akun?: string;
+  tahun?: string;
+};
 
 function formatAlamat(row: AlumniRow): string | null {
   if (!row.kecamatan_nama) return null;
@@ -55,25 +71,47 @@ function FilterField({ label, children }: { label: string; children: React.React
 }
 
 /**
- * Admin -> Alumni. Tanpa pencarian/filter: SEMUA alumni tampil. Semua
- * filter (nama, kecamatan, desa/kelurahan, status otomatis, angkatan)
- * digabung dengan logika AND dan dieksekusi di database lewat RPC
- * admin_list_alumni (satu query, berhalaman) - bukan memfilter di browser.
+ * Daftar Alumni - SATU komponen untuk Admin -> Alumni (mode "admin": tambah
+ * & hapus) dan Super Admin -> Monitoring Alumni (mode "monitoring":
+ * read-only). Semua filter (nama, kecamatan, desa/kelurahan, status
+ * keaktifan, angkatan, status akun, tahun) digabung AND dan dieksekusi di
+ * database lewat RPC monitoring_alumni_list. Filter awal bisa datang dari
+ * URL (drill-down dari dashboard) dan URL ikut diperbarui saat filter
+ * diubah, sehingga tautan bisa dibagikan.
  */
-export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
-  const [search, setSearch] = useState("");
+export function AlumniList({
+  lokasi,
+  mode = "admin",
+  years,
+  initialFilters = {},
+}: {
+  lokasi: Kecamatan[];
+  mode?: "admin" | "monitoring";
+  years: number[];
+  initialFilters?: AlumniListFilters;
+}) {
+  const readOnly = mode === "monitoring";
+  const detailBase = readOnly ? "/monitoring/alumni" : "/admin/alumni";
+  const currentYear = years[0] ?? new Date().getFullYear();
+
+  const [search, setSearch] = useState(initialFilters.q ?? "");
   const debouncedSearch = useDebouncedValue(search, 350);
-  const [kecamatanId, setKecamatanId] = useState<string | null>(null);
-  const [desaId, setDesaId] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>(ALL_VALUE);
-  const [angkatan, setAngkatan] = useState<string>(ALL_VALUE);
+  const [kecamatanId, setKecamatanId] = useState<string | null>(initialFilters.kecamatan ?? null);
+  const [desaId, setDesaId] = useState<string | null>(initialFilters.desa ?? null);
+  const [status, setStatus] = useState<string>(
+    ACTIVITY_STATUSES.includes(initialFilters.status as never) ? initialFilters.status! : ALL_VALUE,
+  );
+  const [angkatan, setAngkatan] = useState<string>(initialFilters.angkatan ?? ALL_VALUE);
+  const [akun, setAkun] = useState<string>(
+    initialFilters.akun === "ada" || initialFilters.akun === "belum" ? initialFilters.akun : ALL_VALUE,
+  );
+  const [tahun, setTahun] = useState<string>(
+    years.includes(Number(initialFilters.tahun)) ? initialFilters.tahun! : String(currentYear),
+  );
   const [page, setPage] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
 
   const [rows, setRows] = useState<AlumniRow[]>([]);
-  const [accounts, setAccounts] = useState<
-    Record<string, { status: AlumniAccountStatus; role: Role }>
-  >({});
   const [count, setCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,12 +119,26 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
 
   // Reset ke halaman pertama setiap kali filter/pencarian berubah
   // ("adjusting state during render", pola yang dipakai sejak versi lama).
-  const filterKey = `${debouncedSearch}|${kecamatanId}|${desaId}|${status}|${angkatan}`;
+  const filterKey = `${debouncedSearch}|${kecamatanId}|${desaId}|${status}|${angkatan}|${akun}|${tahun}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (filterKey !== prevFilterKey) {
     setPrevFilterKey(filterKey);
     setPage(0);
   }
+
+  // URL mengikuti filter (tanpa memicu navigasi/refresh server).
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearch.trim()) params.set("q", debouncedSearch.trim());
+    if (kecamatanId) params.set("kecamatan", kecamatanId);
+    if (desaId) params.set("desa", desaId);
+    if (status !== ALL_VALUE) params.set("status", status);
+    if (angkatan !== ALL_VALUE) params.set("angkatan", angkatan);
+    if (akun !== ALL_VALUE) params.set("akun", akun);
+    if (tahun !== String(currentYear)) params.set("tahun", tahun);
+    const qs = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+  }, [debouncedSearch, kecamatanId, desaId, status, angkatan, akun, tahun, currentYear]);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,13 +147,17 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
       setIsLoading(true);
       setError(null);
       const supabase = createClient();
+      const unmapped = kecamatanId === UNMAPPED_KECAMATAN;
 
-      const { data, error } = await supabase.rpc("admin_list_alumni", {
+      const { data, error } = await supabase.rpc("monitoring_alumni_list", {
         p_search: debouncedSearch.trim() || undefined,
-        p_kecamatan_id: kecamatanId ?? undefined,
+        p_kecamatan_id: kecamatanId && !unmapped ? kecamatanId : undefined,
+        p_belum_dipetakan: unmapped,
         p_desa_kelurahan_id: desaId ?? undefined,
         p_status: status === ALL_VALUE ? undefined : status,
         p_angkatan: angkatan === ALL_VALUE ? undefined : Number(angkatan),
+        p_akun: akun === ALL_VALUE ? undefined : akun,
+        p_year: Number(tahun),
         p_limit: PAGE_SIZE,
         p_offset: page * PAGE_SIZE,
       });
@@ -118,24 +174,6 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
         setPage((p) => Math.max(0, p - 1));
         return;
       } else {
-        // Status akun login untuk baris di halaman ini saja - satu query,
-        // bukan per baris.
-        const ids = (data ?? []).map((r) => r.id);
-        const { data: statuses } = ids.length
-          ? await supabase.rpc("admin_alumni_account_status", { p_alumni_ids: ids })
-          : { data: [] };
-        if (cancelled) return;
-        setAccounts(
-          Object.fromEntries(
-            (statuses ?? []).map((st) => [
-              st.alumni_id,
-              {
-                status: toAccountStatus(st.account_status),
-                role: st.role ?? "alumni",
-              },
-            ]),
-          ),
-        );
         setRows(data ?? []);
         setCount(data?.[0]?.total_count ?? 0);
       }
@@ -146,7 +184,7 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, kecamatanId, desaId, status, angkatan, page, reloadKey]);
+  }, [debouncedSearch, kecamatanId, desaId, status, angkatan, akun, tahun, page, reloadKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -161,7 +199,10 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
   }, [reloadKey]);
 
   const kecamatanOptions = useMemo(
-    () => lokasi.map((k) => ({ value: k.id, label: k.nama })),
+    () => [
+      ...lokasi.map((k) => ({ value: k.id, label: k.nama })),
+      { value: UNMAPPED_KECAMATAN, label: "Belum Dipetakan" },
+    ],
     [lokasi],
   );
   const desaOptions = useMemo(() => {
@@ -183,7 +224,12 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
 
   const hasSearch = debouncedSearch.trim() !== "";
   const hasFilter =
-    kecamatanId !== null || desaId !== null || status !== ALL_VALUE || angkatan !== ALL_VALUE;
+    kecamatanId !== null ||
+    desaId !== null ||
+    status !== ALL_VALUE ||
+    angkatan !== ALL_VALUE ||
+    akun !== ALL_VALUE ||
+    tahun !== String(currentYear);
   const canReset = hasFilter || search !== "";
 
   function resetFilters() {
@@ -192,27 +238,36 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
     setDesaId(null);
     setStatus(ALL_VALUE);
     setAngkatan(ALL_VALUE);
+    setAkun(ALL_VALUE);
+    setTahun(String(currentYear));
   }
 
   const reload = () => setReloadKey((k) => k + 1);
   const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
+  const tahunLabel = Number(tahun) < currentYear ? `rekap ${tahun}` : `tahun ${tahun}`;
 
   return (
     <div className="flex flex-col gap-4">
       <AdminPageHeader
-        title="Data Alumni"
-        description={!isLoading && !error ? `${count} alumni${hasSearch || hasFilter ? " sesuai pencarian/filter" : ""}` : undefined}
+        title={readOnly ? "Monitoring Alumni" : "Data Alumni"}
+        description={
+          !isLoading && !error
+            ? `${count} alumni${hasSearch || hasFilter ? " sesuai pencarian/filter" : ""} · status ${tahunLabel}`
+            : undefined
+        }
         actions={
-          <AlumniFormDialog
-            lokasi={lokasi}
-            onSaved={reload}
-            trigger={
-              <Button>
-                <Plus />
-                Tambah Alumni
-              </Button>
-            }
-          />
+          readOnly ? undefined : (
+            <AlumniFormDialog
+              lokasi={lokasi}
+              onSaved={reload}
+              trigger={
+                <Button>
+                  <Plus />
+                  Tambah Alumni
+                </Button>
+              }
+            />
+          )
         }
       />
 
@@ -228,8 +283,8 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto] lg:items-end">
-        <FilterField label="Alamat (Kecamatan)">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <FilterField label="Kecamatan">
           <AlumniSearchableSelect
             value={kecamatanId}
             onChange={(next) => {
@@ -250,21 +305,43 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
             onChange={setDesaId}
             options={desaOptions}
             allOptionLabel="Semua Desa/Kelurahan"
-            placeholder={kecamatanId ? "Semua Desa/Kelurahan" : "Pilih kecamatan dulu"}
+            placeholder={
+              kecamatanId && kecamatanId !== UNMAPPED_KECAMATAN
+                ? "Semua Desa/Kelurahan"
+                : "Pilih kecamatan dulu"
+            }
             searchPlaceholder="Cari desa/kelurahan..."
             emptyText="Desa/kelurahan tidak ditemukan."
-            disabled={!kecamatanId}
+            disabled={!kecamatanId || kecamatanId === UNMAPPED_KECAMATAN}
           />
         </FilterField>
-        <FilterField label="Status">
+        <FilterField label="Status Keaktifan">
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-full" aria-label="Filter status">
+            <SelectTrigger className="w-full" aria-label="Filter status keaktifan">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL_VALUE}>Semua Status</SelectItem>
-              <SelectItem value="aktif">Aktif</SelectItem>
-              <SelectItem value="nonaktif">Nonaktif</SelectItem>
+              {ACTIVITY_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {ACTIVITY_STATUS_LABEL[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FilterField>
+        <FilterField label="Tahun">
+          <Select value={tahun} onValueChange={setTahun}>
+            <SelectTrigger className="w-full" aria-label="Filter tahun">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}
+                  {y === currentYear ? " (berjalan)" : " (final)"}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </FilterField>
@@ -283,21 +360,35 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
             </SelectContent>
           </Select>
         </FilterField>
-        <Button
-          variant="outline"
-          onClick={resetFilters}
-          disabled={!canReset}
-          className="sm:col-span-2 lg:col-span-1"
-        >
-          <RotateCcw />
-          Reset Filter
-        </Button>
+        <FilterField label="Status Akun">
+          <Select value={akun} onValueChange={setAkun}>
+            <SelectTrigger className="w-full" aria-label="Filter status akun">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_VALUE}>Semua</SelectItem>
+              <SelectItem value="ada">Sudah punya akun</SelectItem>
+              <SelectItem value="belum">Belum punya akun</SelectItem>
+            </SelectContent>
+          </Select>
+        </FilterField>
+        <div className="flex items-end sm:col-span-2">
+          <Button
+            variant="outline"
+            onClick={resetFilters}
+            disabled={!canReset}
+            className="w-full sm:w-auto"
+          >
+            <RotateCcw />
+            Reset Filter
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-[72px] w-full" />
+            <Skeleton key={i} className="h-[88px] w-full" />
           ))}
         </div>
       ) : error ? (
@@ -328,16 +419,16 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
         <ul className="flex flex-col gap-2">
           {rows.map((row) => {
             const alamat = formatAlamat(row);
-            // Label role - Alumni tanpa akun tetap "Alumni".
-            const role = accounts[row.id]?.role ?? "alumni";
+            const activity = toActivityStatus(row.status);
+            const role = row.role ?? "alumni";
             return (
               <li key={row.id}>
                 <Card className="relative gap-0 py-0 transition-colors hover:bg-muted/50">
                   <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <Link
-                        href={`/admin/alumni/${row.id}`}
-                        className="font-medium outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:underline"
+                        href={`${detailBase}/${row.id}${Number(tahun) !== currentYear ? `?tahun=${tahun}` : ""}`}
+                        className="font-medium break-words outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:underline"
                       >
                         {row.nama || "(Belum diisi)"}
                       </Link>
@@ -345,30 +436,42 @@ export function AlumniList({ lokasi }: { lokasi: Kecamatan[] }) {
                         {alamat ?? <span className="italic">Alamat belum dipetakan</span>}
                         {row.angkatan ? ` · Angkatan ${row.angkatan}` : ""}
                       </p>
-                      {accounts[row.id] ? (
-                        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
                           <Mail className="size-3 shrink-0" />
-                          {ACCOUNT_STATUS_LABEL[accounts[row.id].status]}
-                        </p>
-                      ) : null}
+                          {ACCOUNT_STATUS_LABEL[toAccountStatus(row.account_status)]}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <CalendarCheck2 className="size-3 shrink-0" />
+                          Terakhir hadir:{" "}
+                          {row.terakhir_hadir ? formatDateID(row.terakhir_hadir) : "belum pernah"}
+                        </span>
+                      </p>
                     </div>
-                    <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 sm:justify-end">
+                    <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
                       <Badge variant={ROLE_BADGE[role]}>{ROLE_LABEL[role]}</Badge>
-                      <Badge variant={row.is_aktif ? "success" : "neutral"}>
-                        {row.is_aktif ? "Aktif" : "Nonaktif"}
+                      <Badge variant={ACTIVITY_STATUS_BADGE[activity]}>
+                        {activityStatusLabel(activity, row.is_final)}
                       </Badge>
-                      <DeleteAlumniButton
-                        target={{
-                          id: row.id,
-                          nama: row.nama,
-                          alamat,
-                          angkatan: row.angkatan,
-                          jumlahAbsensi: row.jumlah_absensi,
-                          hasAccount: row.has_account,
-                          staffRole: role !== "alumni" ? role : null,
-                        }}
-                        onDeleted={reload}
-                      />
+                      {activity !== "belum_ada_data" ? (
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {formatPercent(row.persentase)} · {row.hadir}/{row.kegiatan}
+                        </span>
+                      ) : null}
+                      {readOnly ? null : (
+                        <DeleteAlumniButton
+                          target={{
+                            id: row.id,
+                            nama: row.nama,
+                            alamat,
+                            angkatan: row.angkatan,
+                            jumlahAbsensi: row.jumlah_absensi,
+                            hasAccount: row.has_account,
+                            staffRole: role !== "alumni" ? role : null,
+                          }}
+                          onDeleted={reload}
+                        />
+                      )}
                     </div>
                   </CardContent>
                 </Card>

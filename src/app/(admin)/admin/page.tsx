@@ -10,16 +10,28 @@ import {
   Images,
   QrCode,
   ListTree,
+  CircleDashed,
+  CircleAlert,
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
-import { AdminStatCard } from "@/components/admin/admin-stat-card";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RecentEventsTable } from "@/components/monitoring/recent-events-table";
-import { AdminDashboardCharts } from "@/components/admin/admin-dashboard-charts";
+import {
+  AccountPanel,
+  AttendanceTrendPanel,
+  EventMonthlyPanel,
+  EventStatsGrid,
+  KecamatanPanel,
+  KpiCard,
+  RecentEventsPanel,
+  SectionTitle,
+  StatusPanel,
+  listHref,
+  type DrillLinks,
+} from "@/components/analytics/activity-panels";
 import { formatEventRange, formatDateID } from "@/lib/format-date";
 
 const QUICK_ACTIONS = [
@@ -31,16 +43,24 @@ const QUICK_ACTIONS = [
   { href: "/admin/konten/topik", label: "Topik", icon: ListTree },
 ];
 
+// Drill-down Admin: angka -> daftar Alumni terfilter -> master detail.
+const LINKS: DrillLinks = {
+  alumniList: (query) => listHref("/admin/alumni", query),
+  alumni: (id) => `/admin/alumni/${id}`,
+  event: (id) => `/admin/absensi/${id}`,
+};
+
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
-  const year = new Date().getFullYear();
 
   // Dashboard yang sama untuk SEMUA Admin (Admin Pusat maupun Admin yang
-  // diangkat) - RPC yang sama dengan /monitoring, definisi Aktif = pernah
-  // tercatat HADIR (alumni_is_aktif), distribusi per Kecamatan master.
+  // diangkat) dan sumber data yang sama dengan Super Admin Monitoring:
+  // status keaktifan dihitung di database dari riwayat kehadiran
+  // (alumni_activity_stats) untuk tahun berjalan.
   const [
-    { data: alumniSummary, error: alumniSummaryError },
+    { data: summary, error: summaryError },
     { data: byKecamatan, error: byKecamatanError },
+    { data: overview, error: overviewError },
     { data: periodStats, error: periodError },
     { data: recentEvents },
     { data: nextEvent },
@@ -49,7 +69,8 @@ export default async function AdminDashboardPage() {
   ] = await Promise.all([
     supabase.rpc("monitoring_alumni_summary").single(),
     supabase.rpc("monitoring_alumni_by_kecamatan"),
-    supabase.rpc("monitoring_period_stats", { p_year: year }),
+    supabase.rpc("monitoring_overview").single(),
+    supabase.rpc("monitoring_period_stats"),
     supabase.rpc("monitoring_recent_events", { p_limit: 5 }),
     supabase
       .from("events")
@@ -73,16 +94,7 @@ export default async function AdminDashboardPage() {
       .limit(3),
   ]);
 
-  const statsError = alumniSummaryError || byKecamatanError || periodError;
-  const summary = {
-    total_alumni: alumniSummary?.total_alumni ?? 0,
-    alumni_aktif: alumniSummary?.alumni_aktif ?? 0,
-    alumni_tidak_aktif: alumniSummary?.alumni_tidak_aktif ?? 0,
-    akun_belum_ada: alumniSummary?.akun_belum_ada ?? 0,
-    akun_undangan_terkirim: alumniSummary?.akun_undangan_terkirim ?? 0,
-    akun_menunggu_password: alumniSummary?.akun_menunggu_password ?? 0,
-    akun_aktif: alumniSummary?.akun_aktif ?? 0,
-  };
+  const statsError = summaryError || byKecamatanError || overviewError || periodError;
 
   return (
     <div className="flex flex-col gap-8">
@@ -99,58 +111,100 @@ export default async function AdminDashboardPage() {
         ))}
       />
 
-      {statsError ? (
+      {statsError || !summary || !overview ? (
         <Card>
           <CardContent className="py-8 text-center text-sm text-destructive">
-            Gagal memuat statistik: {statsError.message}
+            Gagal memuat statistik: {statsError?.message ?? "data tidak tersedia"}
           </CardContent>
         </Card>
       ) : (
         <>
           <section className="flex flex-col gap-3">
-            <div>
-              <h2 className="text-lg font-semibold tracking-tight">Ringkasan Alumni</h2>
-              <p className="text-sm text-muted-foreground">
-                Aktif = pernah tercatat hadir di minimal satu agenda.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
-              <AdminStatCard label="Total Alumni" value={summary.total_alumni} icon={Users} />
-              <AdminStatCard
-                label="Alumni Aktif"
-                value={summary.alumni_aktif}
+            <SectionTitle
+              title={`Ringkasan Alumni ${summary.tahun}`}
+              description="Status dihitung otomatis dari riwayat kehadiran tahun berjalan. Klik angka untuk melihat daftar Alumni."
+            />
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+              <KpiCard
+                label="Total Alumni"
+                value={summary.total_alumni}
+                icon={Users}
+                href={LINKS.alumniList({})}
+                hint="Lihat semua"
+                accent
+              />
+              <KpiCard
+                label="Aktif"
+                value={summary.status_aktif}
                 icon={UserCheck}
-                emphasis
+                tone="text-green-600 dark:text-green-400"
+                href={LINKS.alumniList({ status: "aktif" })}
+                hint="Kehadiran ≥ 50%"
               />
-              <AdminStatCard
-                label="Alumni Tidak Aktif"
-                value={summary.alumni_tidak_aktif}
+              <KpiCard
+                label="Tidak Aktif"
+                value={summary.status_tidak_aktif}
                 icon={UserX}
+                tone="text-red-600 dark:text-red-400"
+                href={LINKS.alumniList({ status: "tidak_aktif" })}
+                hint="Kehadiran < 50%"
               />
-              <AdminStatCard
-                label="Sudah Punya Akun"
+              <KpiCard
+                label="Tidak Aktif (Sementara)"
+                value={summary.status_sementara}
+                icon={CircleAlert}
+                tone="text-amber-600 dark:text-amber-400"
+                href={LINKS.alumniList({ status: "tidak_aktif_sementara" })}
+                hint="Absen 2 bulan terakhir"
+              />
+              <KpiCard
+                label="Belum ada data aktivitas"
+                value={summary.status_belum_ada_data}
+                icon={CircleDashed}
+                href={LINKS.alumniList({ status: "belum_ada_data" })}
+                hint="Belum ada kegiatan dihitung"
+              />
+              <KpiCard
+                label="Sudah punya akun"
                 value={summary.total_alumni - summary.akun_belum_ada}
                 icon={KeyRound}
+                href={LINKS.alumniList({ akun: "ada" })}
+                hint="Lihat daftar"
               />
-              <AdminStatCard
-                label="Belum Punya Akun"
+              <KpiCard
+                label="Belum punya akun"
                 value={summary.akun_belum_ada}
                 icon={UserRoundX}
+                href={LINKS.alumniList({ akun: "belum" })}
+                hint="Lihat daftar"
               />
             </div>
           </section>
 
-          <AdminDashboardCharts
-            summary={summary}
-            byKecamatan={(byKecamatan ?? []).map((r) => ({
-              id: r.kecamatan_id,
-              nama: r.kecamatan_nama,
-              total: r.total,
-            }))}
-            latestEvent={recentEvents?.[0] ?? null}
-            periodStats={periodStats ?? []}
-            year={year}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <StatusPanel summary={summary} links={LINKS} />
+            <AccountPanel summary={summary} links={LINKS} />
+          </div>
+
+          <KecamatanPanel
+            rows={byKecamatan ?? []}
+            year={summary.tahun}
+            isFinal={summary.is_final}
+            links={LINKS}
           />
+
+          <section className="flex flex-col gap-3">
+            <SectionTitle
+              title={`Statistik Kegiatan & Kehadiran ${overview.tahun}`}
+              description="Hanya kegiatan yang sudah terlaksana; kegiatan mendatang tidak dihitung."
+            />
+            <EventStatsGrid overview={overview} />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <AttendanceTrendPanel stats={periodStats ?? []} year={overview.tahun} />
+              <EventMonthlyPanel stats={periodStats ?? []} year={overview.tahun} />
+            </div>
+            <RecentEventsPanel events={recentEvents ?? []} eventHref={LINKS.event} />
+          </section>
 
           <section className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold tracking-tight">Agenda Mendatang</h2>
@@ -262,13 +316,6 @@ export default async function AdminDashboardPage() {
             </section>
           </div>
 
-          <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Ringkasan Absensi Terbaru</h2>
-            <RecentEventsTable
-              events={recentEvents ?? []}
-              emptyMessage="Belum ada kegiatan dengan data absensi."
-            />
-          </section>
         </>
       )}
     </div>

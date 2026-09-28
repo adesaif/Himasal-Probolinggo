@@ -347,7 +347,7 @@ export function OrganizationStructure({ layout }: { layout: OrganizationLayout }
       content: (
         <section aria-labelledby="struktur-inti">
           <Connector />
-          <TierHeading id="struktur-inti" title="Pengurus Inti" className="md:my-2" />
+          <TierHeading id="struktur-inti" title="Dewan Harian" className="md:my-2" />
           {hasFork(core) ? <Connector className="h-5" /> : null}
           <CoreColumns columns={core} />
         </section>
@@ -364,7 +364,7 @@ export function OrganizationStructure({ layout }: { layout: OrganizationLayout }
         <section aria-labelledby="struktur-bidang" className="md:mt-14">
           <TierHeading
             id="struktur-bidang"
-            title="Bidang"
+            title="Management"
             meta={`${divisions.length} bidang`}
           />
           <DivisionGrid divisions={divisions} />

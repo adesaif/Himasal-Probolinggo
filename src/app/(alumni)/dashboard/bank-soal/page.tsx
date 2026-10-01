@@ -1,10 +1,7 @@
-import { PagePlaceholder } from "@/components/shared/page-placeholder";
+import { redirect } from "next/navigation";
 
+// Bank Soal belum tersedia untuk Alumni - rute lama diarahkan ke Beranda
+// alih-alih menampilkan halaman placeholder.
 export default function AlumniBankSoalPage() {
-  return (
-    <PagePlaceholder
-      title="Bank Soal"
-      description="Kerjakan quiz dan lihat hasilnya di sini."
-    />
-  );
+  redirect("/dashboard");
 }

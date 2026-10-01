@@ -111,7 +111,7 @@ export function AttendanceScanClient() {
           </p>
           <div className="mt-2 flex flex-wrap justify-center gap-2">
             <Button asChild>
-              <Link href="/dashboard/absensi/riwayat">Lihat Riwayat</Link>
+              <Link href="/dashboard#riwayat">Lihat Riwayat</Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href="/dashboard/absensi">Kembali</Link>

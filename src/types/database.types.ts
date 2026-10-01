@@ -1067,6 +1067,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      alumni_save_own_profile: {
+        Args: {
+          p_alamat?: string
+          p_desa_kelurahan_id?: string
+          p_kecamatan_id?: string
+          p_nama_lengkap: string
+          p_no_hp?: string
+          p_tanggal_lahir?: string
+          p_tempat_lahir?: string
+        }
+        Returns: {
+          alamat: string | null
+          angkatan: number | null
+          created_at: string
+          desa_kelurahan_id: string | null
+          id: string
+          kecamatan_id: string | null
+          nama_lengkap: string | null
+          no_hp: string | null
+          profile_id: string | null
+          status_keanggotaan: string
+          tanggal_lahir: string | null
+          tempat_lahir: string | null
+          updated_at: string
+          wilayah_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "alumni"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       alumni_activity_detail: {
         Args: { p_alumni_id?: string; p_year?: number }
         Returns: Json

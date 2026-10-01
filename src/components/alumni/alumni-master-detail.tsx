@@ -50,12 +50,18 @@ export function AlumniMasterDetail({
   yearHref,
   eventHref,
   actions,
+  hideAccountStatus = false,
+  underlineEventLinks = false,
   children,
 }: {
   detail: AlumniActivityDetail;
   yearHref: (year: number) => string;
   eventHref?: (eventId: string) => string;
   actions?: React.ReactNode;
+  /** Dashboard Alumni sendiri: status akun login tidak relevan bagi pemiliknya. */
+  hideAccountStatus?: boolean;
+  /** Garis bawah permanen pada judul kegiatan (perangkat sentuh tanpa hover). */
+  underlineEventLinks?: boolean;
   /** Kartu tambahan (mis. Akun & Role di Admin) - tampil setelah Profil. */
   children?: React.ReactNode;
 }) {
@@ -150,10 +156,12 @@ export function AlumniMasterDetail({
               value={detail.data_sensitif_disembunyikan ? profil.tempat_lahir : lahir}
             />
             <Field label="Angkatan" value={profil.angkatan?.toString()} />
-            <Field
-              label="Status Akun"
-              value={ACCOUNT_STATUS_LABEL[toAccountStatus(profil.status_akun)]}
-            />
+            {hideAccountStatus ? null : (
+              <Field
+                label="Status Akun"
+                value={ACCOUNT_STATUS_LABEL[toAccountStatus(profil.status_akun)]}
+              />
+            )}
             {role && role !== "alumni" ? <Field label="Role" value={ROLE_LABEL[role]} /> : null}
             <Field label="Terdaftar" value={formatDateID(profil.terdaftar)} />
           </dl>
@@ -284,7 +292,7 @@ export function AlumniMasterDetail({
       </Card>
 
       {/* RIWAYAT */}
-      <Card>
+      <Card id="riwayat" className="scroll-mt-24">
         <CardContent className="flex flex-col gap-3">
           <div>
             <h2 className="font-semibold tracking-tight">Riwayat Kehadiran</h2>
@@ -309,7 +317,14 @@ export function AlumniMasterDetail({
                       .filter((h) => h.tahun === year)
                       .map((h) => {
                         const title = eventHref ? (
-                          <Link href={eventHref(h.event_id)} className="font-medium hover:underline">
+                          <Link
+                            href={eventHref(h.event_id)}
+                            className={cn(
+                              "font-medium hover:underline",
+                              underlineEventLinks &&
+                                "underline decoration-primary/40 underline-offset-4 hover:text-primary hover:decoration-primary",
+                            )}
+                          >
                             {h.judul}
                           </Link>
                         ) : (

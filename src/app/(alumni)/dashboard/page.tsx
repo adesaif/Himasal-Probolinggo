@@ -7,9 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AlumniMasterDetail } from "@/components/alumni/alumni-master-detail";
 import { fetchAlumniActivityDetail, parseYearParam } from "@/lib/alumni-activity";
 
-// Dashboard Alumni: master view milik SENDIRI - RPC dipanggil tanpa id,
-// sehingga database memakai akun yang sedang login (Alumni tidak pernah
-// bisa membuka data Alumni lain). Tampilan sama dengan Admin & Monitoring.
+// Beranda Alumni: master view milik SENDIRI - RPC dipanggil tanpa id,
+// sehingga database mencari data alumni lewat profile_id akun yang sedang
+// login (Alumni tidak pernah bisa membuka data Alumni lain). Tampilan sama
+// dengan Admin & Monitoring; status/persentase dihitung di database.
 export default async function AlumniDashboardPage({
   searchParams,
 }: {
@@ -24,15 +25,15 @@ export default async function AlumniDashboardPage({
   const actions = (
     <>
       <Button asChild size="sm">
-        <Link href="/dashboard/absensi">
+        <Link href="/dashboard/absensi/scan">
           <QrCode />
-          Absensi
+          Scan QR
         </Link>
       </Button>
       <Button asChild size="sm" variant="outline">
         <Link href="/dashboard/profil">
           <UserPen />
-          Profil
+          Edit Profil
         </Link>
       </Button>
     </>
@@ -41,25 +42,25 @@ export default async function AlumniDashboardPage({
   if (!detail) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard Alumni</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Beranda</h1>
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
             {error?.message ?? "Data alumni belum tersedia."} Hubungi Admin HIMASAL bila
             akun Anda belum terhubung dengan data alumni.
           </CardContent>
         </Card>
-        <div className="flex gap-2">{actions}</div>
       </div>
     );
   }
 
   return (
-    <div id="riwayat" className="flex flex-col gap-4">
-      <AlumniMasterDetail
-        detail={detail}
-        yearHref={(y) => `/dashboard?tahun=${y}`}
-        actions={actions}
-      />
-    </div>
+    <AlumniMasterDetail
+      detail={detail}
+      yearHref={(y) => `/dashboard?tahun=${y}`}
+      eventHref={(eventId) => `/agenda/${eventId}`}
+      actions={actions}
+      hideAccountStatus
+      underlineEventLinks
+    />
   );
 }

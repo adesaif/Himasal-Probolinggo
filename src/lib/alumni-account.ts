@@ -1,7 +1,7 @@
 import "server-only";
 import type { AuthError, SupabaseClient } from "@supabase/supabase-js";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, getServiceRoleKey } from "@/lib/supabase/admin";
 import {
   createManualAlumniAccount,
   type ManualAccountOutcome,
@@ -37,7 +37,7 @@ export function activationRedirectUrl(request: Request) {
 }
 
 function serviceClient() {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (!getServiceRoleKey()) {
     throw new Error(
       "SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi di server - akun alumni tidak dapat dibuat.",
     );

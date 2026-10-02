@@ -2,6 +2,10 @@ import "server-only";
 import type { AuthError, SupabaseClient } from "@supabase/supabase-js";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  createManualAlumniAccount,
+  type ManualAccountOutcome,
+} from "@/lib/alumni-manual-account";
 import type { Database } from "@/types/database.types";
 
 type SessionClient = SupabaseClient<Database>;
@@ -340,4 +344,74 @@ export async function changeAlumniRole(
     accountCreated: true,
     message: `Akun ${email} dibuat dan diangkat menjadi ${ROLE_NAME[role]}. Akun langsung dapat login.`,
   };
+}
+
+/**
+ * "Buat Akun Manual" untuk Alumni yang belum punya akun: email + password
+ * awal dari Admin, akun langsung aktif (email_confirm, TANPA undangan),
+ * role 'alumni' dari trigger handle_new_user, lalu dihubungkan ke record
+ * Alumni. Alur & rollback ada di createManualAlumniAccount. Service-role
+ * hanya dipakai untuk createUser/deleteUser; pemeriksaan & penautan memakai
+ * sesi Admin sehingga is_admin() dan aturan RPC tetap berlaku.
+ */
+export async function createAlumniAccountManual(
+  supabase: SessionClient,
+  params: { alumniId: string; email: string; password: string },
+): Promise<ManualAccountOutcome> {
+  const admin = serviceClient();
+
+  return createManualAlumniAccount(
+    {
+      async findAlumni(alumniId) {
+        const { data, error } = await supabase
+          .from("alumni")
+          .select("id, profile_id, nama_lengkap")
+          .eq("id", alumniId)
+          .maybeSingle();
+        if (error) throw new Error(error.message);
+        return data;
+      },
+      async emailInUse(email) {
+        const { data, error } = await supabase.rpc("admin_find_account_by_email", {
+          p_email: email,
+        });
+        if (error) throw new Error(error.message);
+        return Boolean(data?.[0]);
+      },
+      async createUser({ email, password, fullName }) {
+        const { data, error } = await admin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { full_name: fullName },
+        });
+        if (error || !data.user) {
+          return {
+            status: error?.status === 422 ? 409 : 502,
+            error: error
+              ? error.code === "weak_password"
+                ? "Password ditolak Supabase Auth karena terlalu lemah. Gunakan password lain."
+                : describeAuthError(error)
+              : "Gagal membuat akun.",
+          };
+        }
+        return { userId: data.user.id };
+      },
+      async linkAccount(alumniId, userId) {
+        const { error } = await supabase.rpc("admin_link_alumni_account", {
+          p_alumni_id: alumniId,
+          p_user_id: userId,
+        });
+        return { error: error?.message ?? null };
+      },
+      async deleteUser(userId) {
+        const { error } = await admin.auth.admin.deleteUser(userId);
+        return { error: error?.message ?? null };
+      },
+      logOrphan({ alumniId, userId }) {
+        console.error("[alumni-manual-account] rollback gagal, akun yatim", { alumniId, userId });
+      },
+    },
+    params,
+  );
 }

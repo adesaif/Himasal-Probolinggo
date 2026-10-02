@@ -112,3 +112,15 @@ export const alumniRoleBodySchema = z
   .refine((v) => (v.email === undefined) === (v.password === undefined), {
     message: "Email dan password harus diisi bersamaan",
   });
+
+// Body POST /api/admin/alumni/:id/account/manual - Buat Akun Manual untuk
+// Alumni yang belum punya akun (tanpa undangan). Kebijakan password sama
+// dengan akun staf & aktivasi.
+export const alumniManualAccountBodySchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email wajib diisi")
+    .refine(isValidEmailFormat, { message: EMAIL_INVALID }),
+  password: staffPasswordSchema,
+});

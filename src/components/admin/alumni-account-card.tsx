@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { AlumniManualAccountDialog } from "@/components/admin/alumni-manual-account-dialog";
 import {
   ACCOUNT_STATUS_BADGE,
   ACCOUNT_STATUS_LABEL,
@@ -18,18 +19,24 @@ import { ROLE_HOME_ROUTE, ROLE_LABEL } from "@/lib/constants";
 import { formatDateID } from "@/lib/format-date";
 
 const STATUS_HINT = {
-  tanpa_akun: "Alumni ini belum punya akun login. Isi email lewat tombol Edit untuk membuat akun dan mengirim undangan.",
+  tanpa_akun:
+    "Alumni ini belum punya akun login. Buat akun manual (email + password awal, langsung aktif), atau isi email lewat tombol Edit untuk mengirim undangan.",
   undangan_terkirim: "Undangan sudah dikirim, tetapi link aktivasi belum dibuka.",
   menunggu_password: "Email sudah terverifikasi lewat link undangan, tetapi password belum dibuat.",
-  aktif: "Alumni sudah membuat password dan dapat login ke Dashboard Alumni.",
+  aktif: "Akun aktif - Alumni dapat login ke Dashboard Alumni.",
 } as const;
 
-/** Status akun login alumni + Kirim Ulang Undangan (tanpa akun kedua). */
+/**
+ * Status akun login alumni + Buat Akun Manual (belum punya akun) + Kirim
+ * Ulang Undangan (undangan belum diaktifkan; tanpa akun kedua).
+ */
 export function AlumniAccountCard({
   alumniId,
+  nama,
   account,
 }: {
   alumniId: string;
+  nama: string | null;
   account: AlumniAccountInfo;
 }) {
   const router = useRouter();
@@ -83,6 +90,9 @@ export function AlumniAccountCard({
             {account.invitedAt && account.lastSignInAt ? " · " : null}
             {account.lastSignInAt ? `Login terakhir: ${formatDateID(account.lastSignInAt)}` : null}
           </p>
+        ) : null}
+        {!account.isStaff && account.status === "tanpa_akun" ? (
+          <AlumniManualAccountDialog alumniId={alumniId} nama={nama} />
         ) : null}
         {canResendInvitation(account) ? (
           <Button variant="outline" className="w-full sm:w-fit" disabled={isSending} onClick={resend}>

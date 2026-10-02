@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { AuthError } from "@supabase/supabase-js";
-import { Eye, EyeOff, KeyRound } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { LoadingButton } from "@/components/shared/loading-button";
+import { PasswordInput } from "@/components/shared/password-input";
 import {
   Form,
   FormControl,
@@ -22,35 +22,6 @@ import { createClient } from "@/lib/supabase/client";
 import { changePasswordSchema, type ChangePasswordInput } from "@/lib/validators/profile";
 
 const EMPTY: ChangePasswordInput = { current_password: "", new_password: "", confirm: "" };
-
-function PasswordInput({
-  autoComplete,
-  disabled,
-  ...field
-}: React.ComponentProps<"input"> & { autoComplete: string }) {
-  const [visible, setVisible] = useState(false);
-  return (
-    <div className="relative">
-      <Input
-        {...field}
-        type={visible ? "text" : "password"}
-        autoComplete={autoComplete}
-        disabled={disabled}
-        className="pr-11"
-      />
-      <button
-        type="button"
-        onClick={() => setVisible((v) => !v)}
-        disabled={disabled}
-        aria-label={visible ? "Sembunyikan password" : "Tampilkan password"}
-        aria-pressed={visible}
-        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50"
-      >
-        {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-      </button>
-    </div>
-  );
-}
 
 type PasswordErrorInfo = { message: string; field?: keyof ChangePasswordInput };
 

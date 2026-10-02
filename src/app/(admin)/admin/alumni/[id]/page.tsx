@@ -123,7 +123,7 @@ export default async function AdminAlumniDetailPage({
           </Card>
         ) : null}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <AlumniAccountCard alumniId={alumni.id} account={account} />
+          <AlumniAccountCard alumniId={alumni.id} nama={nama} account={account} />
           <AlumniRoleCard alumniId={alumni.id} nama={nama} account={account} />
         </div>
       </AlumniMasterDetail>

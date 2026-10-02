@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
+import { ChangePasswordForm } from "@/components/alumni/change-password-form";
 import { ProfileForm } from "@/components/alumni/profile-form";
 import { fetchLokasiAlumni } from "@/lib/alumni-lokasi";
 
@@ -80,6 +81,9 @@ export default async function AlumniProfilPage() {
           />
         </>
       )}
+
+      {/* Keamanan akun berlaku untuk akun login sendiri (email dari sesi). */}
+      <ChangePasswordForm email={user.email ?? ""} />
     </div>
   );
 }

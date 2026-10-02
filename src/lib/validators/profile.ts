@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { staffPasswordSchema } from "@/lib/validators/alumni";
+
 // Form Profil Saya (Alumni). Menulis ke master alumni lewat
 // alumni_save_own_profile - aturan yang sama divalidasi ulang di database.
 // Lokasi memakai Kecamatan -> Desa/Kelurahan (bukan Wilayah lama).
@@ -23,3 +25,23 @@ export const profileFormSchema = z
   });
 
 export type ProfileFormInput = z.infer<typeof profileFormSchema>;
+
+// Form Ganti Password (Profil -> Keamanan Akun). Kebijakan password sama
+// dengan aktivasi akun & akun staf: minimal 8, maksimal 72, huruf + angka.
+// Password lama divalidasi oleh Supabase Auth (current_password).
+export const changePasswordSchema = z
+  .object({
+    current_password: z.string().min(1, "Password lama wajib diisi"),
+    new_password: staffPasswordSchema,
+    confirm: z.string().min(1, "Konfirmasi password wajib diisi"),
+  })
+  .refine((v) => v.new_password === v.confirm, {
+    message: "Konfirmasi password tidak sama",
+    path: ["confirm"],
+  })
+  .refine((v) => v.new_password !== v.current_password, {
+    message: "Password baru harus berbeda dari password lama",
+    path: ["new_password"],
+  });
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

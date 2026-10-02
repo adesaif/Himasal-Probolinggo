@@ -1,0 +1,25 @@
+-- Balikkan trigger blokir-delete yang ditambahkan sesi audit sebelumnya
+-- (site_topics_prevent_system_delete). Setelah ditinjau ulang bersama
+-- pemilik produk: TIDAK ADA topik (termasuk 7 topik "sistem") yang punya
+-- alasan teknis kuat untuk diblokir permanen dari DELETE, karena:
+--
+-- 1. Semua FK content ke site_topics (topic_content.topic_id,
+--    news.topic_id) sudah ON DELETE SET NULL - konten tidak pernah ikut
+--    terhapus, persis jaminan desain awal fitur ini (lihat commit
+--    "Fix Topic Management: real permanent delete...", 20260921).
+-- 2. Setiap fetcher homepage (SYSTEM_FETCHERS di homepage-content.ts,
+--    fetchBeritaSections) mencocokkan topik berdasarkan `key` STRING,
+--    bukan row id atau flag is_system - membuat ulang topik dengan key
+--    yang identik (mis. "berita", via Tambah Topik dengan label yang
+--    sama - key di-slugify dari label) otomatis menyambung kembali
+--    logic & tampilannya sepenuhnya.
+-- 3. Route publik/admin (/berita, /admin/berita, dst) adalah file route
+--    Next.js yang berdiri sendiri, tidak bergantung pada keberadaan row
+--    site_topics untuk tetap berfungsi.
+--
+-- Proteksi terhadap penghapusan tidak sengaja sekarang murni tanggung
+-- jawab UI (confirmation dialog yang menjelaskan dampak secara eksplisit
+-- untuk topik sistem), bukan blokir keras di database - sesuai desain
+-- awal fitur Topic Management.
+drop trigger if exists site_topics_prevent_system_delete on public.site_topics;
+drop function if exists public.prevent_system_topic_delete();

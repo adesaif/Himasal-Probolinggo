@@ -1,0 +1,22 @@
+-- ROOT CAUSE dari "topic aktif di Admin tidak muncul di public header/
+-- hamburger/homepage": migrasi site_topics_select_public_active_only
+-- (round audit sebelumnya) mengganti policy SELECT publik dari
+-- `using (true)` menjadi `using (is_active = true or is_admin() or
+-- is_super_admin())` untuk role {anon, authenticated} - tapi role `anon`
+-- TIDAK PERNAH diberi EXECUTE grant pada fungsi is_admin()/is_super_admin()
+-- (keduanya dibuat sejak awal hanya dengan grant implisit ke authenticated).
+-- Postgres memeriksa hak EXECUTE atas fungsi yang direferensikan dalam
+-- sebuah query pada tahap parse/ACL, TERLEPAS dari apakah short-circuit
+-- OR akan melewati pemanggilan fungsi itu saat runtime untuk baris
+-- tertentu - jadi SETIAP SELECT anon ke site_topics gagal total dengan
+-- "permission denied for function is_admin", bukan sekadar terfilter.
+-- Ini membuat query topics di server (public.ts, dipakai semua halaman
+-- publik + layout) selalu error -> data null -> nav/homepage jatuh ke
+-- array kosong (hanya Beranda/Kontak yang hardcoded yang tersisa).
+--
+-- Aman untuk digrant: kedua fungsi hanya membaca auth.uid() milik
+-- PEMANGGIL sendiri - untuk anon, auth.uid() selalu null, jadi hasilnya
+-- SELALU false, tidak pernah membocorkan status admin siapa pun atau
+-- memberi privilese tambahan apa pun ke anon.
+grant execute on function public.is_admin() to anon;
+grant execute on function public.is_super_admin() to anon;
